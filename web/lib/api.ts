@@ -30,6 +30,7 @@ export type Evidence = {
   credit: string | null;
   source_url?: string | null;
   location_precision?: string;
+  kind?: "photo" | "survey";  // survey = USGS high-water mark minus 3DEP ground; no image
 };
 export type SegmentState = "unknown" | "stale" | "reported_unknown" | "reported";
 export type SegmentProps = {

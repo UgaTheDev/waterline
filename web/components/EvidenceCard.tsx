@@ -71,6 +71,10 @@ export function EvidenceItem({
       {!photoOnly && (
         <>
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-[13px]">
+            <dt className="eyebrow self-center">Source</dt>
+            <dd className="text-[12.5px] text-text">
+              {ev.kind === "survey" ? "USGS survey · estimated peak depth, surveyed after the flood" : "Photo · depth read by Cosmos Reason 2"}
+            </dd>
             <dt className="eyebrow self-center">Depth</dt>
             <dd className="font-mono text-text tabular-nums">{range(ev.low_cm, ev.high_cm)}</dd>
             <dt className="eyebrow self-center">Measured on</dt>
