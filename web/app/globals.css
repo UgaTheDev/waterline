@@ -1,0 +1,191 @@
+@import "tailwindcss";
+
+/* Waterline: night-storm instrument panel. Surfaces stay quiet so depth colours carry the meaning. */
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #070b10;
+  --panel: #0c1218;
+  --panel-2: #111922;
+  --glass: rgb(10 16 22 / 0.82);
+  --line: #1c2733;
+  --line-strong: #2a3847;
+  --text: #e6edf3;
+  --muted: #8c99a8;
+  --faint: #5a6878;
+  --accent: #67e8f9;
+  --accent-ink: #032129;
+  --accent-soft: rgb(103 232 249 / 0.12);
+  --danger: #fb7185;
+  --danger-soft: rgb(251 113 133 / 0.1);
+  --warn: #fbbf24;
+  --warn-soft: rgb(251 191 36 / 0.1);
+  --water: rgb(56 189 248 / 0.55);
+  --water-line: #7dd3fc;
+  --shadow: 0 10px 40px -12px rgb(0 0 0 / 0.7);
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f3f0e8;
+  --panel: #fdfcf9;
+  --panel-2: #f6f3ec;
+  --glass: rgb(253 252 249 / 0.88);
+  --line: #e2ddd1;
+  --line-strong: #cfc8b8;
+  --text: #12161b;
+  --muted: #5a626d;
+  --faint: #8a919a;
+  --accent: #0e7490;
+  --accent-ink: #ffffff;
+  --accent-soft: rgb(14 116 144 / 0.1);
+  --danger: #be123c;
+  --danger-soft: rgb(190 18 60 / 0.07);
+  --warn: #a16207;
+  --warn-soft: rgb(161 98 7 / 0.08);
+  --water: rgb(14 116 144 / 0.35);
+  --water-line: #0e7490;
+  --shadow: 0 10px 30px -14px rgb(40 30 10 / 0.35);
+}
+
+@theme inline {
+  --font-sans: var(--font-plex), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+  --font-display: var(--font-serif), Georgia, serif;
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-glass: var(--glass);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Film grain over everything, very faint. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 60;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+/* The map page fills the viewport on desktop, whatever sits above it (header, sample-data banner). */
+@media (min-width: 768px) {
+  body:has(.map-page) { height: 100dvh; overflow: hidden; }
+}
+
+.glass {
+  background: var(--glass);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+}
+
+.eyebrow {
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes scan {
+  0%, 100% { top: 8%; }
+  50% { top: 88%; }
+}
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pulse-dot {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 60%, transparent); }
+  50% { box-shadow: 0 0 0 5px transparent; }
+}
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+@keyframes wave {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes water-up {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+@keyframes callout {
+  0% { opacity: 0; transform: translateY(8px) scale(0.92); }
+  10%, 82% { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: translateY(-6px); }
+}
+
+.rise { animation: rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.fade { animation: fade 0.4s ease both; }
+.live-dot { animation: pulse-dot 2s ease-in-out infinite; }
+.shimmer-text {
+  background: linear-gradient(90deg, var(--muted) 30%, var(--text) 50%, var(--muted) 70%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 2.2s linear infinite;
+}
+.water-rise { transform-origin: bottom; animation: water-up 0.9s cubic-bezier(0.3, 0.8, 0.2, 1) both; }
+.callout { animation: callout 4.8s ease both; }
+
+input[type="range"].scrub {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  height: 28px;
+  cursor: pointer;
+}
+input[type="range"].scrub::-webkit-slider-runnable-track { height: 28px; background: transparent; }
+input[type="range"].scrub::-moz-range-track { height: 28px; background: transparent; }
+input[type="range"].scrub::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 3px;
+  height: 28px;
+  background: var(--accent);
+  border-radius: 2px;
+  box-shadow: 0 0 12px var(--accent);
+}
+input[type="range"].scrub::-moz-range-thumb {
+  width: 3px;
+  height: 28px;
+  border: 0;
+  background: var(--accent);
+  border-radius: 2px;
+}
+input[type="range"].scrub:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+.maplibregl-ctrl-group { background: var(--glass) !important; border: 1px solid var(--line) !important; box-shadow: none !important; }
+.maplibregl-ctrl-group button + button { border-top-color: var(--line) !important; }
+:root:not([data-theme="light"]) .maplibregl-ctrl-icon { filter: invert(1) brightness(1.4); }
+.maplibregl-ctrl-attrib { background: var(--glass) !important; color: var(--muted) !important; font-size: 10px; }
+.maplibregl-ctrl-attrib a { color: var(--muted) !important; }
+:root:not([data-theme="light"]) .maplibregl-ctrl-attrib-button { filter: invert(1); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

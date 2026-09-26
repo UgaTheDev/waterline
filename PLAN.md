@@ -15,9 +15,9 @@ One slide of numbers says it never called a dangerous street safe on the evaluat
 ## 2. Decisions to make first (by Sep 30)
 | Decision | Recommendation | Why |
 |---|---|---|
-| Replay event and city | Pick whichever historical flood has the most **public-domain, geotaggable** imagery with known depths (USGS high-water marks). Candidates: Houston/Harvey 2017, NYC/Ida 2021, Vermont 2023. Boston for a live-mode walkthrough. | Ground truth decides the demo city, not preference |
+| Replay event and city | **Decided: Houston / Harvey 2017** (bbox in backend/profiles.py). STN has ~1,000 HWM photos with depth per candidate event, and 187 archived NWS flood-warning polygons (IEM) for Harvey | Urban street flooding is the story; Houston has the data |
 | Frontend | Next.js + **MapLibre GL** on Vercel | You know Next.js; MapLibre is free, no token needed |
-| Backend | Python FastAPI + Postgres/**PostGIS** (Supabase or Neon) | Spatial snapping and segment queries are one SQL call |
+| Backend | Python FastAPI + shapely STRtree snapping + SQLite (uploads only) | Changed 2026-09-26: Supabase free tier pauses after 7 idle days, which would kill the demo before judging; city-scale snapping doesn't need PostGIS |
 | Road graph | **OSMnx** (OpenStreetMap) for the demo city, cached | Free; networkx routing is plenty at city scale |
 | Vision model | **Cosmos Reason 2** (8B) on **Nebius AI Cloud**, Containers over VM (vLLM or NIM) | Required NVIDIA model; built for physical-world reasoning |
 | Agent model | **Nemotron** via **Token Factory** (OpenAI-compatible) | Qualifies for the Best Apps and Agents track; Token Factory is the "runs on Nebius" proof |
@@ -37,10 +37,10 @@ One slide of numbers says it never called a dangerous street safe on the evaluat
           |                    Known heights table: curb 15, tire 65 (dia), car door sill 30,
           |                    hubcap center 33, fire hydrant 75, stop-sign post, adult knee 50
           v
-  [3] Fusion (PostGIS)      -- snap to the nearest road segment within 30 m; per-segment state =
-          |                    confidence-weighted recent observations with a 45-min half-life
-          |                    decay; keep the max plausible depth (high_cm) as the routing value;
-          |                    NO data means "unknown", never "dry"
+  [3] Fusion               -- snap to the nearest road segment within 30 m (both directions); state =
+          |                    max high_cm over observations whose weight conf*0.5^(age/45min) >= 0.1;
+          |                    when all decay: "stale" (last-known shown, routed as unknown), never "dry";
+          |                    photo with unreadable depth: "reported_unknown" (blocks every vehicle)
           v
   [4] Router (networkx)     -- vehicle profiles: sedan 15 cm, SUV 30 cm, truck 45 cm (conservative,
           |                    cite NWS/FEMA); block an edge if high_cm > limit; penalize unknown
@@ -58,8 +58,12 @@ One slide of numbers says it never called a dangerous street safe on the evaluat
 
 ## 4. Evaluation (your signature: make it the headline)
 Build `eval/` from week 1:
-- **Ground truth:** USGS/NOAA public-domain images with measured depths (high-water marks),
-  plus research datasets **only if their license permits** (check FloodVision's data).
+- **Ground truth (revised 2026-09-26):** STN HWM photos are post-event shots of surveyors holding
+  tape measures in dry brush: no standing water, and the answer is visible in the frame, so they are
+  NOT a valid headline eval (eval/stn_candidates.csv keeps them as a secondary sanity set only).
+  FloodVision's MyCoast data has no stated license; the Twitter flood set has only binary labels and
+  can't be redistributed; V-FloodNet is all-rights-reserved. Headline set = public-domain/CC-BY
+  during-event photos, human-labeled with depth bands from reference objects, frozen 60/40 dev/test.
   Target 100+ labeled images.
 - **Metrics:**
   - **Dangerous-road miss rate:** the share of images with true depth > 15 cm that the system

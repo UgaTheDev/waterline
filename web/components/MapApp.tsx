@@ -1,0 +1,510 @@
+"use client";
+import { BRAND } from "@/lib/brand";
+import dynamic from "next/dynamic";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { api, type Alerts, type Config, type Point, type RouteResponse, type Segments } from "@/lib/api";
+import { LEGEND, PALETTE, bandFor, fmtClock, fmtTime } from "@/lib/depth";
+import { useReducedMotion, useTheme } from "@/lib/theme";
+import Chat from "./Chat";
+import EvidenceCard from "./EvidenceCard";
+import Hero from "./Hero";
+import RouteSummary, { type Selection } from "./Route";
+import Timeline from "./Timeline";
+import { VehiclePicker } from "./Vehicles";
+
+// MapLibre touches window/WebGL, so it only renders in the browser.
+const FloodMap = dynamic(() => import("./FloodMap"), {
+  ssr: false,
+  loading: () => <div className="absolute inset-0 bg-bg" />,
+});
+
+const TICK_MS = 400;
+const TICK_STEP = 10 * 60_000; // 1x plays the whole event in about four minutes
+const HOUR = 3_600_000;
+
+function Legend({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+  const theme = useTheme();
+  return (
+    <div className="glass rounded-xl border border-line shadow-[var(--shadow)] text-[12px] overflow-hidden">
+      <button onClick={onToggle} aria-expanded={open} className="w-full flex items-center justify-between gap-3 px-3 py-2">
+        <span className="eyebrow">Reported water depth</span>
+        <span className={`text-faint transition-transform ${open ? "rotate-180" : ""}`} aria-hidden>
+          ⌃
+        </span>
+      </button>
+      {open && (
+        <div className="px-3 pb-3 fade">
+          <ul className="grid grid-cols-2 md:grid-cols-1 gap-x-3 gap-y-1.5">
+            {LEGEND.map((l) => {
+              const c = PALETTE[theme][l.band];
+              return (
+                <li key={l.band} className="flex items-center gap-2.5">
+                  <span
+                    className="inline-block w-6 h-[5px] rounded-full shrink-0"
+                    style={
+                      l.band === "stale"
+                        ? { background: `repeating-linear-gradient(90deg, ${c} 0 4px, transparent 4px 7px)` }
+                        : l.band === "sweep" && theme === "dark"
+                          ? { background: `linear-gradient(${c} 0 35%, #ffb3bf 35% 65%, ${c} 65%)`, boxShadow: `0 0 8px ${c}` }
+                          : { background: c, boxShadow: l.band === "float" ? `0 0 8px ${c}` : undefined }
+                    }
+                  />
+                  <span className="font-mono text-[11px] text-text w-12 shrink-0">{l.label}</span>
+                  <span className="text-muted hidden md:inline">{l.note}</span>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="mt-2.5 pt-2.5 border-t border-line text-muted leading-snug">
+            Uncoloured streets have <span className="text-text">no reports</span>. That does not mean they are dry.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ReportsFeed({ segments, onOpen }: { segments: Segments | null; onOpen: (s: Selection) => void }) {
+  const theme = useTheme();
+  const seen = new Set<string>();
+  const rows = (segments?.features ?? [])
+    .filter((f) => f.properties.state !== "unknown" && f.properties.evidence.length)
+    .sort((a, b) => b.properties.obs_time.localeCompare(a.properties.obs_time))
+    .filter((f) => {
+      const k = f.properties.name ?? f.properties.edge_id;
+      return seen.has(k) ? false : (seen.add(k), true);
+    })
+    .slice(0, 6);
+  return (
+    <div>
+      <p className="eyebrow mb-2 flex items-center gap-2">
+        <span className="w-1.5 h-1.5 rounded-full bg-accent text-accent live-dot" /> Latest reports
+      </p>
+      {rows.length === 0 ? (
+        <p className="text-[13px] text-muted">No reports yet at this time. That does not mean the streets are dry.</p>
+      ) : (
+        <ul className="divide-y divide-line border-y border-line">
+          {rows.map((f) => {
+            const p = f.properties;
+            const color = PALETTE[theme][bandFor(p.state, p.high_cm)];
+            return (
+              <li key={p.edge_id + p.obs_time} className="fade">
+                <button
+                  onClick={() => onOpen({ id: p.edge_id, name: p.name, state: p.state, low: p.low_cm, high: p.high_cm, evidence: p.evidence })}
+                  className="w-full flex items-center gap-3 py-2.5 text-left hover:bg-panel-2/60 transition-colors"
+                >
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
+                  <span className="flex-1 min-w-0 text-[13.5px] text-text truncate">{p.name ?? "Unnamed street"}</span>
+                  <span className="font-mono text-[12px] tabular-nums" style={{ color }}>
+                    {p.state === "reported_unknown" || p.high_cm === null ? "depth ?" : `≤ ${Math.round(p.high_cm)} cm`}
+                  </span>
+                  <span className="font-mono text-[11px] text-faint w-16 text-right">{fmtClock(new Date(p.obs_time).getTime())}</span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function parsePoint(s: string): Point | string {
+  const m = s.trim().match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);
+  return m ? { lat: Number(m[1]), lon: Number(m[2]) } : s.trim();
+}
+
+export default function MapApp() {
+  const theme = useTheme();
+  const reduced = useReducedMotion();
+  const [config, setConfig] = useState<Config | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [t, setT] = useState<number>(0);
+  const [playing, setPlaying] = useState(false);
+  const [speed, setSpeed] = useState(1);
+  const [hist, setHist] = useState<number[]>([]);
+  const [segments, setSegments] = useState<Segments | null>(null);
+  const [alerts, setAlerts] = useState<Alerts | null>(null);
+  const [layerError, setLayerError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Selection | null>(null);
+  const [tab, setTab] = useState<"route" | "ask">("route");
+  const [vehicle, setVehicle] = useState("sedan");
+  const [legendOpen, setLegendOpen] = useState(true);
+
+  const [fromText, setFromText] = useState("");
+  const [toText, setToText] = useState("");
+  const [fromPt, setFromPt] = useState<Point | null>(null);
+  const [toPt, setToPt] = useState<Point | null>(null);
+  const [picking, setPicking] = useState<"from" | "to" | null>(null);
+  const [route, setRoute] = useState<RouteResponse | null>(null);
+  const [routing, setRouting] = useState(false);
+  const [routeError, setRouteError] = useState<string | null>(null);
+  const [flash, setFlash] = useState({ ids: [] as string[], key: 0 });
+  const routeAbort = useRef<AbortController | null>(null);
+  const mapBox = useRef<HTMLElement>(null);
+
+  // On phones the map sits above the panel; bring it into view so the report card is seen.
+  const open = (sel: Selection) => {
+    setSelected(sel);
+    if (window.innerWidth < 768) mapBox.current?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+  };
+
+  const loadConfig = useCallback(() => {
+    api
+      .config()
+      .then((c) => {
+        setConfig(c);
+        setT(new Date(c.replay.default_t || c.replay.start).getTime());
+        if (c.vehicles.length && !c.vehicles.some((v) => v.id === "sedan")) setVehicle(c.vehicles[0].id);
+        // Sparkline: every observation the replay will ever show, bucketed by hour.
+        const start = new Date(c.replay.start).getTime();
+        const hours = Math.ceil((new Date(c.replay.end).getTime() - start) / HOUR);
+        api
+          .segments(c.replay.end)
+          .then((s) => {
+            const h = new Array(Math.max(1, hours)).fill(0);
+            const ids = new Set<string>();
+            for (const f of s.features)
+              for (const e of f.properties.evidence) {
+                if (ids.has(e.obs_id)) continue; // both directions of a street share observations
+                ids.add(e.obs_id);
+                const i = Math.floor((new Date(e.time).getTime() - start) / HOUR);
+                if (i >= 0 && i < h.length) h[i]++;
+              }
+            setHist(h);
+          })
+          .catch(() => {});
+      })
+      .catch((e: Error) => setLoadError(e.message));
+  }, []);
+  useEffect(loadConfig, [loadConfig]);
+
+  const iso = t ? new Date(t).toISOString() : "";
+
+  // Refetch the depth layer and alerts when the replay time moves.
+  useEffect(() => {
+    if (!iso) return;
+    const ctrl = new AbortController();
+    const id = setTimeout(() => {
+      Promise.all([api.segments(iso, ctrl.signal), api.alerts(iso, ctrl.signal)])
+        .then(([s, a]) => {
+          setSegments(s);
+          setAlerts(a);
+          setLayerError(null);
+        })
+        .catch((e: Error) => {
+          if (e.name !== "AbortError") setLayerError(e.message);
+        });
+    }, 90);
+    return () => {
+      clearTimeout(id);
+      ctrl.abort();
+    };
+  }, [iso]);
+
+  useEffect(() => {
+    if (!playing || !config) return;
+    const end = new Date(config.replay.end).getTime();
+    const id = setInterval(() => {
+      setT((cur) => {
+        const next = Math.min(end, cur + TICK_STEP * speed);
+        if (next >= end) setPlaying(false);
+        return next;
+      });
+    }, TICK_MS);
+    return () => clearInterval(id);
+  }, [playing, config, speed]);
+
+  const showRoute = useCallback((r: RouteResponse) => {
+    setRoute(r);
+    if (r.avoided.length) setFlash({ ids: r.avoided.map((a) => a.edge_id), key: Date.now() });
+  }, []);
+
+  const findRoute = useCallback(
+    async (veh: string) => {
+      const from = fromPt ?? parsePoint(fromText);
+      const to = toPt ?? parsePoint(toText);
+      if (!from || !to) {
+        setRouteError("Enter a start and a destination, or pick them on the map.");
+        return;
+      }
+      routeAbort.current?.abort();
+      const ctrl = new AbortController();
+      routeAbort.current = ctrl;
+      setRouting(true);
+      setRouteError(null);
+      try {
+        showRoute(await api.route({ from, to, vehicle: veh, t: iso }, ctrl.signal));
+      } catch (e) {
+        if ((e as Error).name !== "AbortError") setRouteError((e as Error).message);
+      } finally {
+        if (routeAbort.current === ctrl) setRouting(false);
+      }
+    },
+    [fromPt, toPt, fromText, toText, iso, showRoute],
+  );
+
+  const chooseVehicle = (id: string) => {
+    setVehicle(id);
+    // Switching vehicle re-plans the same trip, so the difference is visible.
+    if (route && tab === "route" && (fromPt || fromText) && (toPt || toText)) findRoute(id);
+  };
+
+  const onPick = (p: Point) => {
+    const label = `${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}`;
+    if (picking === "from") {
+      setFromPt(p);
+      setFromText(label);
+    } else if (picking === "to") {
+      setToPt(p);
+      setToText(label);
+    }
+    setPicking(null);
+  };
+
+  const stats = useMemo(() => {
+    const f = segments?.features ?? [];
+    const live = f.filter((x) => x.properties.state === "reported" || x.properties.state === "reported_unknown");
+    const names = (xs: typeof f) => new Set(xs.map((x) => x.properties.name ?? x.properties.edge_id)).size;
+    return {
+      reported: names(live),
+      deep: names(live.filter((x) => ["float", "sweep", "unknownDepth"].includes(bandFor(x.properties.state, x.properties.high_cm)))),
+    };
+  }, [segments]);
+
+  if (loadError) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className="max-w-sm text-center space-y-3">
+          <p className="font-display text-[28px] text-text">Can&apos;t reach the flood data service</p>
+          <p className="text-sm text-muted font-mono">{loadError}</p>
+          <button
+            onClick={() => {
+              setLoadError(null);
+              loadConfig();
+            }}
+            className="rounded-full bg-accent text-accent-ink text-sm px-5 py-2"
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
+  if (!config)
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <Hero />
+        <p className="shimmer-text font-mono text-sm">Loading flood map…</p>
+      </div>
+    );
+
+  const start = new Date(config.replay.start).getTime();
+  const end = new Date(config.replay.end).getTime();
+  const activeAlerts = alerts?.features ?? [];
+  const current = config.vehicles.find((v) => v.id === vehicle);
+
+  return (
+    <div className="flex-1 flex flex-col md:flex-row min-h-0">
+      <Hero />
+      <main ref={mapBox} className="relative h-[62dvh] md:h-auto md:flex-1 md:order-2 shrink-0 overflow-hidden">
+        <FloodMap
+          config={config}
+          theme={theme}
+          reduced={reduced}
+          segments={segments}
+          alerts={alerts}
+          route={route?.found ? route.geometry : null}
+          endpoints={route?.found && route.from && route.to ? { from: route.from, to: route.to } : { from: fromPt, to: toPt }}
+          flash={flash}
+          selectedId={selected?.id ?? null}
+          picking={picking !== null}
+          onSegment={(p) => setSelected({ id: p.edge_id, name: p.name, state: p.state, low: p.low_cm, high: p.high_cm, evidence: p.evidence })}
+          onPick={onPick}
+        />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-bg/50 to-transparent" aria-hidden />
+
+        <div className="absolute top-3 left-3 right-14 flex flex-wrap gap-2 pointer-events-none">
+          <span className="pointer-events-auto glass rounded-full border border-line px-3 py-1 text-[11.5px] text-text flex items-center gap-2">
+            <span className={`w-1.5 h-1.5 rounded-full live-dot ${config.live ? "bg-danger text-danger" : "bg-accent text-accent"}`} />
+            <span className="font-mono uppercase tracking-wider text-[10.5px]">{config.live ? "Live" : "Replay"}</span>
+            <span className="text-muted">{config.event}</span>
+          </span>
+          {activeAlerts.slice(0, 1).map((a, i) => (
+            <span key={i} className="pointer-events-auto rise glass rounded-full border border-danger/50 px-3 py-1 text-[11.5px] text-text flex items-center gap-2">
+              <span className="text-danger" aria-hidden>▲</span>
+              {a.properties.event}
+              <span className="text-muted font-mono text-[10.5px] hidden sm:inline">until {fmtTime(a.properties.expires, false)}</span>
+              {activeAlerts.length > 1 && <span className="text-muted">+{activeAlerts.length - 1}</span>}
+            </span>
+          ))}
+          {layerError && (
+            <span className="pointer-events-auto glass rounded-full border border-warn/50 px-3 py-1 text-[11.5px] text-warn">Depth layer not updated: {layerError}</span>
+          )}
+        </div>
+
+        {picking && (
+          <div className="absolute top-14 left-1/2 -translate-x-1/2 rise glass rounded-full border border-accent px-4 py-1.5 text-[13px] text-text shadow-[var(--shadow)] z-10 whitespace-nowrap">
+            Tap the map to set the {picking === "from" ? "start" : "destination"}
+            <button className="ml-3 text-accent underline" onClick={() => setPicking(null)}>
+              Cancel
+            </button>
+          </div>
+        )}
+
+        {selected && (
+          <div className="absolute z-20 left-2 right-2 bottom-2 top-14 md:top-14 md:left-3 md:right-auto md:bottom-auto md:w-[360px] md:max-h-[calc(100%-13rem)] flex flex-col justify-end md:justify-start pointer-events-none">
+            <div className="pointer-events-auto min-h-0 flex">
+              <EvidenceCard key={selected.id ?? selected.name} {...selected} vehicle={current} onClose={() => setSelected(null)} />
+            </div>
+          </div>
+        )}
+
+        <div className={`hidden md:block absolute bottom-[6.75rem] left-3 w-[300px] transition-opacity ${selected ? "opacity-0 pointer-events-none" : ""}`}>
+          <Legend open={legendOpen} onToggle={() => setLegendOpen(!legendOpen)} />
+        </div>
+
+        <div className="absolute bottom-8 left-2 right-2 md:left-3 md:right-3">
+          <Timeline
+            start={start}
+            end={end}
+            t={t}
+            onScrub={(v) => {
+              setPlaying(false);
+              setT(v);
+            }}
+            playing={playing}
+            onPlay={() => {
+              if (!playing && t >= end) setT(start);
+              setPlaying(!playing);
+            }}
+            speed={speed}
+            onSpeed={setSpeed}
+            hist={hist}
+            live={config.live}
+          />
+        </div>
+      </main>
+
+      <aside className="md:order-1 md:w-[420px] shrink-0 bg-panel md:border-r border-line flex flex-col md:min-h-0">
+        <div className="px-4 pt-4 pb-3 border-b border-line">
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <p className="eyebrow">{config.city}</p>
+              <p className="font-display text-[26px] leading-none text-text mt-1">Street conditions</p>
+            </div>
+            <dl className="flex gap-4 text-right">
+              <div>
+                <dt className="eyebrow">Reported</dt>
+                <dd className="font-mono text-[20px] leading-tight text-text tabular-nums">{stats.reported}</dd>
+              </div>
+              <div>
+                <dt className="eyebrow">Deep / unknown</dt>
+                <dd className="font-mono text-[20px] leading-tight tabular-nums" style={{ color: stats.deep ? PALETTE[theme].float : "var(--muted)" }}>
+                  {stats.deep}
+                </dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+
+        <div className="px-4 py-3 border-b border-line">
+          <p className="eyebrow mb-2">Your vehicle</p>
+          <VehiclePicker vehicles={config.vehicles} value={vehicle} onChange={chooseVehicle} />
+          <p className="text-[12px] text-muted mt-2 leading-snug">
+            Routes avoid streets reported deeper than your vehicle&apos;s limit, and any water of unknown depth.
+          </p>
+        </div>
+
+        <div className="flex border-b border-line px-2" role="tablist">
+          {(["route", "ask"] as const).map((k) => (
+            <button
+              key={k}
+              role="tab"
+              aria-selected={tab === k}
+              onClick={() => setTab(k)}
+              className={`relative flex-1 py-3 text-[13px] font-medium transition-colors ${tab === k ? "text-text" : "text-muted hover:text-text"}`}
+            >
+              {k === "route" ? "Plan a route" : "Ask the agent"}
+              <span className={`absolute left-4 right-4 -bottom-px h-0.5 rounded-full bg-accent transition-opacity ${tab === k ? "opacity-100" : "opacity-0"}`} />
+            </button>
+          ))}
+        </div>
+
+        <div className="p-4 space-y-4 md:overflow-y-auto md:flex-1">
+          {tab === "route" ? (
+            <>
+              <form
+                className="space-y-3"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  findRoute(vehicle);
+                }}
+              >
+                <div className="relative space-y-2">
+                  <span className="absolute left-[13px] top-[26px] bottom-[26px] w-px bg-line-strong" aria-hidden />
+                  {(
+                    [
+                      ["from", "Start", fromText, setFromText, setFromPt, "Address, place, or lat, lon"],
+                      ["to", "Destination", toText, setToText, setToPt, "e.g. Memorial Hermann Hospital"],
+                    ] as const
+                  ).map(([key, label, value, setText, setPt, ph]) => (
+                    <label key={key} className="flex items-center gap-2.5">
+                      <span
+                        className={`relative z-10 w-[11px] h-[11px] ml-2 shrink-0 rounded-full border-2 ${key === "from" ? "border-text bg-panel" : "border-accent bg-accent"}`}
+                        aria-hidden
+                      />
+                      <span className="sr-only">{label}</span>
+                      <input
+                        value={value}
+                        onChange={(e) => {
+                          setText(e.target.value);
+                          setPt(null);
+                        }}
+                        placeholder={ph}
+                        className="flex-1 min-w-0 rounded-lg border border-line bg-panel-2 px-3 py-2.5 text-[14px] text-text placeholder:text-faint focus:outline-none focus:border-accent"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setPicking(picking === key ? null : key)}
+                        aria-label={`Pick ${label.toLowerCase()} on the map`}
+                        aria-pressed={picking === key}
+                        className={`shrink-0 w-10 h-10 rounded-lg border flex items-center justify-center transition-colors ${picking === key ? "border-accent bg-accent text-accent-ink" : "border-line text-muted hover:text-text hover:border-line-strong"}`}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                          <circle cx="12" cy="12" r="7" />
+                          <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
+                        </svg>
+                      </button>
+                    </label>
+                  ))}
+                </div>
+                <button
+                  type="submit"
+                  disabled={routing}
+                  className="w-full rounded-lg bg-accent text-accent-ink text-[14px] font-medium py-3 disabled:opacity-60 hover:brightness-110 transition"
+                >
+                  {routing ? <span className="animate-pulse">Planning around reported water…</span> : `Find a ${current?.label.toLowerCase() ?? ""} route`}
+                </button>
+              </form>
+              {routeError && <p className="text-[13px] text-danger">{routeError}</p>}
+              {!route && <ReportsFeed segments={segments} onOpen={open} />}
+              {route && <RouteSummary key={JSON.stringify(route.found ? route.geometry.coordinates[0] : route.reason) + vehicle} route={route} onEvidence={open} />}
+            </>
+          ) : (
+            <Chat vehicle={vehicle} vehicleLabel={current?.label ?? "car"} t={iso} location={fromPt} onRoute={showRoute} onEvidence={open} />
+          )}
+
+          <div className="md:hidden">
+            <Legend open={legendOpen} onToggle={() => setLegendOpen(!legendOpen)} />
+          </div>
+
+          <p className="text-[11.5px] text-faint border-t border-line pt-3 leading-relaxed">
+            {BRAND} shows reported water only and never tells you a road is clear. If water covers the road,{" "}
+            <strong className="text-muted">Turn Around, Don&apos;t Drown</strong>.
+          </p>
+        </div>
+      </aside>
+    </div>
+  );
+}

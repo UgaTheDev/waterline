@@ -13,3 +13,10 @@ build/
 data/raw/
 *.mp4
 *.mov
+# runtime state (uploads are private and never committed)
+data/uploads.db
+data/uploads/
+eval/results/preds_*.jsonl
+# osmnx http cache (root only; data/cache/ IS committed)
+/cache/
+.playwright-mcp/
