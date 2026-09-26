@@ -46,7 +46,7 @@ def main():
     if not labels:
         sys.exit(f"no {a.split} rows in {a.labels}")
     RESULTS.mkdir(parents=True, exist_ok=True)
-    version = hashlib.sha1(f"{depth.PROMPT}|{P.COSMOS_MODEL}|{P.HIGH_SCALE}|{P.HIGH_MARGIN_CM}".encode()).hexdigest()[:10]
+    version = hashlib.sha1(f"{depth.PROMPT}|{depth.model()}|{P.HIGH_SCALE}|{P.HIGH_MARGIN_CM}".encode()).hexdigest()[:10]
     cache_p = RESULTS / f"preds_{version}.jsonl"
     cache = {json.loads(l)["path"]: json.loads(l) for l in cache_p.open()} if cache_p.exists() else {}
     c = depth.client()
@@ -59,7 +59,7 @@ def main():
                 fh.write(json.dumps(pred) + "\n")
         rows.append({**pred, "true_cm": float(lab["true_cm"])})
         print(f"\r{i + 1}/{len(labels)}", end="", file=sys.stderr)
-    m = {**metrics(rows), "split": a.split, "prompt_version": version, "model": P.COSMOS_MODEL,
+    m = {**metrics(rows), "split": a.split, "prompt_version": version, "model": depth.model(),
          "note": "MAE is not directly comparable to FloodVision's 8.75 cm: different images and labels."}
     (RESULTS / f"{a.split}.json").write_text(json.dumps(m, indent=1))
     print("\n" + json.dumps({k: v for k, v in m.items() if k != "by_reference"}, indent=1))

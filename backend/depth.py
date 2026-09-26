@@ -1,4 +1,4 @@
-"""Cosmos Reason 2 (self-hosted vLLM on Nebius AI Cloud) -> water depth with a conservative interval."""
+"""Photo/video -> water depth with a conservative interval. NVIDIA VLM via Token Factory (default) or self-hosted Cosmos Reason 2."""
 import base64, io, json, re
 from openai import OpenAI
 from PIL import Image, ImageOps
@@ -76,10 +76,15 @@ def finalize(e: Estimate | None) -> dict:
             "confidence": round(e.confidence, 2), "reference": ref, "rationale": e.rationale}
 
 
+def model():
+    return P.COSMOS_MODEL if P.DEPTH_PROVIDER == "cosmos" else P.DEPTH_MODEL
+
+
 def client():
-    if not P.COSMOS_URL:
-        raise RuntimeError("COSMOS_URL not configured")
-    return OpenAI(base_url=P.COSMOS_URL, api_key=P.COSMOS_KEY, timeout=180, max_retries=0)
+    url, key = (P.COSMOS_URL, P.COSMOS_KEY) if P.DEPTH_PROVIDER == "cosmos" else (P.TF_URL, P.TF_KEY)
+    if not url or not key:
+        raise RuntimeError(f"depth provider {P.DEPTH_PROVIDER!r} not configured")
+    return OpenAI(base_url=url, api_key=key, timeout=180, max_retries=0)
 
 
 def estimate(media: bytes, mime="image/jpeg", c=None) -> dict:
@@ -90,7 +95,7 @@ def estimate(media: bytes, mime="image/jpeg", c=None) -> dict:
     url = f"data:{mime};base64,{base64.b64encode(media).decode()}"
     part = {"type": "video_url", "video_url": {"url": url}} if mime.startswith("video") else {"type": "image_url", "image_url": {"url": url}}
     for _ in range(2):  # one retry on unparseable output
-        r = c.chat.completions.create(model=P.COSMOS_MODEL, temperature=0.2, max_tokens=1200,
+        r = c.chat.completions.create(model=model(), temperature=0.2, max_tokens=1200,
                                       messages=[{"role": "user", "content": [part, {"type": "text", "text": PROMPT}]}])
         e = parse(r.choices[0].message.content or "")
         if e:

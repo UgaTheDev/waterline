@@ -67,6 +67,8 @@ def limit(req: Request, key: str, n: int, per_s: int):
 
 @app.get("/health")
 def health():
+    if P.DEPTH_PROVIDER != "cosmos":
+        return {"ok": True, "gpu": "not needed", "depth_model": P.DEPTH_MODEL if P.TF_KEY else "unconfigured"}
     if not P.COSMOS_URL:
         return {"ok": True, "gpu": "unconfigured"}
     try:

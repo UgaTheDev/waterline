@@ -34,6 +34,10 @@ ALERT_UNKNOWN_COST = 10  # ... inside an active flood warning polygon
 HIGH_MARGIN_CM = float(os.getenv("HIGH_MARGIN_CM", "0"))
 HIGH_SCALE = max(1.0, float(os.getenv("HIGH_SCALE", "1.0")))
 
+# Depth model. Default: Nemotron Nano 2 VL on Token Factory (pay-per-token, no GPU to keep alive through judging).
+# "cosmos": Cosmos Reason 2 self-hosted on Nebius AI Cloud, run as a benchmark on the same eval; ship the lower miss rate.
+DEPTH_PROVIDER = os.getenv("DEPTH_PROVIDER", "tokenfactory")
+DEPTH_MODEL = os.getenv("DEPTH_MODEL", "nvidia/NVIDIA-Nemotron-Nano-12B-v2-VL")  # confirm the exact id with GET /v1/models
 COSMOS_URL = os.getenv("COSMOS_URL")  # e.g. http://<vm-ip>:8000/v1
 COSMOS_KEY = os.getenv("COSMOS_KEY", "EMPTY")
 COSMOS_MODEL = os.getenv("COSMOS_MODEL", "nvidia/Cosmos-Reason2-8B")

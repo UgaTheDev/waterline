@@ -13,7 +13,7 @@ If water covers the road: Turn Around, Don't Drown.
 
 ## How it works
 ```
-photo / video ─▶ Cosmos Reason 2 (Nebius AI Cloud) ─▶ depth + interval + reference object
+photo / video ─▶ NVIDIA VLM (Token Factory / Cosmos) ─▶ depth + interval + reference object
                                                     │
      snap to road (OSM, 30 m) ◀─────────────────────┘
           │
@@ -27,7 +27,7 @@ photo / video ─▶ Cosmos Reason 2 (Nebius AI Cloud) ─▶ depth + interval +
 
 | Piece | What it does |
 |---|---|
-| **Cosmos Reason 2 8B** (NVIDIA open model), self-hosted with vLLM on **Nebius AI Cloud** | Reads the waterline against objects with known heights (curb 15 cm, tire 65 cm, door sill 30 cm, ...) and returns strict JSON: depth, low/high bound, confidence, reference object, rationale. Unreadable output becomes "reported, depth unknown", never 0 cm. |
+| **Nemotron Nano 2 VL** on **Nebius Token Factory** (default) and **Cosmos Reason 2 8B** self-hosted with vLLM on **Nebius AI Cloud** (benchmarked on the same eval; we ship the one with the lower dangerous-road miss rate) | Reads the waterline against objects with known heights (curb 15 cm, tire 65 cm, door sill 30 cm, ...) and returns strict JSON: depth, low/high bound, confidence, reference object, rationale. Unreadable output becomes "reported, depth unknown", never 0 cm. |
 | **Nemotron** on **Nebius Token Factory** | Tool-using agent: `route`, `segment_status`, `active_alerts`, `local_reports`. Road status always comes from the router, not the language model; a wording guard falls back to a deterministic answer. |
 | **Tavily** | Local news and road-closure reports, cited as unverified context. |
 | NWS / Iowa Environmental Mesonet | Live flood warning polygons, and the 187 archived Harvey polygons used in the replay. Unreported streets inside a warning cost 10x in routing. |
