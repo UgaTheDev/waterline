@@ -32,8 +32,9 @@ photo / video ─▶ Cosmos Reason 2 (Nebius AI Cloud) ─▶ depth + interval +
 | **Tavily** | Local news and road-closure reports, cited as unverified context. |
 | NWS / Iowa Environmental Mesonet | Live flood warning polygons, and the 187 archived Harvey polygons used in the replay. Unreported streets inside a warning cost 10x in routing. |
 | OpenStreetMap (OSMnx) + networkx + shapely | Road graph, snapping, routing. |
+| USGS survey layer | Estimated peak depth on roads near surveyed high-water marks: water-surface elevation minus USGS 3DEP 1 m ground elevation, bridges excluded, roads above the water skipped (never marked dry). Checked against 26 marks with a measured height: median error +11 cm (it errs deep). Shown as a separate source from photo reports. |
 
-The hosted demo replays Hurricane Harvey in Houston (Aug 26-31, 2017). All replay inference is run once and
+The hosted demo replays Hurricane Harvey in Houston (Aug 26 - Sep 3, 2017; Buffalo Bayou peaked late because of the reservoir releases). All replay inference is run once and
 cached, so the demo works with the GPU switched off. Live uploads queue until the model is online.
 
 ## Evaluation
@@ -60,7 +61,7 @@ set -a; . ./.env; set +a
 cd web && npm install && npm run dev            # http://localhost:3000
 ```
 The road graph (`data/cache/graph.graphml`) and Harvey warning polygons are committed. To rebuild them:
-`python -m scripts.build_graph` and `python -m scripts.fetch_alerts`.
+`python -m scripts.build_graph`, `python -m scripts.fetch_alerts` and `python -m scripts.survey_layer` (add `--validate` to rerun the accuracy check).
 
 ### Deploying Cosmos Reason 2 on Nebius
 Follow NVIDIA's cookbook: [Cosmos Reason 2 on Nebius](https://nvidia-cosmos.github.io/cosmos-cookbook/getting_started/nebius/reason2/reason2_on_nebius.html)
