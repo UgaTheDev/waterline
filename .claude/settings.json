@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc --noEmit)",
+      "Bash(npx tsc --noEmit *)",
+      "Bash(npx vitest run)",
+      "Bash(pdfinfo *)",
+      "Bash(git grep *)",
+      "Bash(gh search *)",
+      "mcp__plugin_playwright_playwright__browser_take_screenshot",
+      "Bash(dig *)",
+      "Bash(git ls-tree *)",
+      "Bash(git check-ignore *)",
+      "Bash(vercel ls)",
+      "Bash(vercel ls *)",
+      "Bash(vercel env ls)",
+      "Bash(vercel env ls *)",
+      "mcp__plugin_playwright_playwright__browser_snapshot",
+      "Bash(vercel whoami)",
+      "Bash(vercel whoami *)",
+      "mcp__plugin_playwright_playwright__browser_console_messages",
+      "Bash(vercel project ls *)",
+      "mcp__plugin_context7_context7__query-docs",
+      "Bash(vercel domains ls *)"
+    ]
+  }
+}
