@@ -22,6 +22,7 @@ import type {
 } from "./api";
 
 const config: Config = {
+  features: { risk: false }, // mirrors the backend: the nowcast didn't beat a terrain-only baseline
   city: "Houston, TX",
   event: "Hurricane Harvey (2017)",
   bbox: [-95.5, 29.66, -95.33, 29.81],

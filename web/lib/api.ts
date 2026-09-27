@@ -17,6 +17,7 @@ export type Config = {
   vehicles: Vehicle[];
   thresholds: { cm: number; text: string }[];
   live: boolean;
+  features?: { risk?: boolean };
 };
 export type Evidence = {
   obs_id: string;

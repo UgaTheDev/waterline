@@ -46,4 +46,6 @@ TF_URL = os.getenv("TF_URL", "https://api.tokenfactory.nebius.com/v1/")
 TF_KEY = os.getenv("TF_KEY")
 NEMOTRON_MODEL = os.getenv("NEMOTRON_MODEL", "nvidia/nemotron-3-super-120b-a12b")
 TAVILY_KEY = os.getenv("TAVILY_KEY")
+# Flood-risk nowcast: off. On held-out streets it didn't beat a terrain-only baseline (eval/results/nowcast.json).
+NOWCAST_ENABLED = os.getenv("NOWCAST_ENABLED") == "1"
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")

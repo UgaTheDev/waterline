@@ -388,6 +388,7 @@ export default function MapApp() {
               {activeAlerts.length > 1 && <span className="text-muted">+{activeAlerts.length - 1}</span>}
             </span>
           ))}
+          {config?.features?.risk && (
           <button
             onClick={() => {
               setRiskOn(!riskOn);
@@ -402,6 +403,7 @@ export default function MapApp() {
             </span>
             Flood risk next hour
           </button>
+          )}
           {layerError && (
             <span className="pointer-events-auto glass rounded-full border border-warn/50 px-3 py-1 text-[11.5px] text-warn">Depth layer not updated: {layerError}</span>
           )}

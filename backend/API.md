@@ -83,6 +83,7 @@ when the agent filed a voice report ("water's up to my knees at Main and 5th"). 
   UI: inferred streets are hatched and labeled "Inferred from nearby reports + terrain".
 - **Risk** `GET /risk?t=&session=` → FeatureCollection, properties `{edge_id, name, risk: 0..1, band: "elevated"|"high",
   drivers: {rain_3h_mm, depression_cm, hand_m}}`. Only data ≤ t. Never blocks a route, never says dry. It may add a route warning.
+- **Feature flags**: `/config.features.risk` (false by default). The web shows the risk toggle only when true. `/risk` returns an empty collection with a `note` while it's off.
 - **Vehicles**: `/config.vehicles[]` gains `responder_only` (true for `rescue`, 90 cm). Show it only in responder mode.
 - **Responder** (header `X-Responder-Token`): `GET /responder/queue` → `[{obs_id, flags:["person_in_water"|"occupied_vehicle"], evidence, reviewed}]`,
   `POST /responder/review {obs_id, action:"seen"|"dismissed"}` → `{ok}`. 401 without a token. Label: "Needs human review". Flags never reach the public map.

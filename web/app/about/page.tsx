@@ -127,9 +127,10 @@ export default function About() {
         <div>
           <h2 className="font-display text-[32px] text-text">Flood risk</h2>
           <p className="text-[14px] text-muted mt-2 leading-relaxed">
-            The &ldquo;Flood risk next hour&rdquo; layer flags streets where water is likely to collect soon: heavy rain over the last three hours, low ground
-            that holds water, and little height above the nearest bayou. It draws as a soft haze, never in depth colours, because it is a risk estimate, not a
-            depth report. It never blocks a route and never marks a street dry; at most it adds a warning.
+            We built a &ldquo;flood risk next hour&rdquo; layer from Harvey rainfall, low ground that holds water, and height above the nearest bayou, then
+            tested it on streets it had never seen. It didn&apos;t beat a terrain-only baseline: the rain data is about 12&nbsp;km coarse, and Harvey&apos;s
+            worst street flooding came days after the rain, from reservoir releases. So it&apos;s switched off. A risk layer that isn&apos;t better than a
+            guess would send people the wrong way, and we&apos;d rather tell you that than show you a pretty haze.
           </p>
         </div>
         <div>

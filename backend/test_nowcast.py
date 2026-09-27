@@ -1,4 +1,6 @@
 """Nowcast invariants on the real Harvey caches. Run: .venv/bin/python -m backend.test_nowcast"""
+import os
+os.environ['NOWCAST_ENABLED'] = '1'  # the endpoint is off in the product; test the model itself
 import time
 from datetime import timedelta
 import numpy as np

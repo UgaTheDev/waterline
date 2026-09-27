@@ -116,8 +116,14 @@ def risk_at(t):
 _GEOM = {}  # edge_id -> GeoJSON geometry, built once per edge
 
 
+DISABLED_NOTE = "Flood-risk nowcast is off: in evaluation it did not beat a terrain-only baseline (eval/results/nowcast.json)."
+
+
 @router.get("/risk")
 def risk(t: str | None = None, session: str | None = None):
+    from .profiles import NOWCAST_ENABLED
+    if not NOWCAST_ENABLED:
+        return JSONResponse({"type": "FeatureCollection", "features": [], "note": DISABLED_NOTE}, headers={"X-Waterline-Note": DISABLED_NOTE})
     try:
         when = _ts(t or REPLAY["default_t"])
     except ValueError:
