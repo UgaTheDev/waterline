@@ -1,0 +1,37 @@
+# STATUS
+
+<!-- Worker-owned. Update at every checkpoint, blocker, or decision. The orchestrator reads this file; keep the headings exactly. -->
+
+**Updated:** 2026-09-27 15:25  ·  **Stage:** building  ·  **Health:** 🟡 at risk
+
+## Needs Kush
+- **Token Factory key** (blocks the live depth model, the agent and latency/cost numbers): join https://dev.nebius.com/builders, create a key, add `TF_KEY=...` to `.env` in this repo (never paste it in chat).
+- **Tavily key** (blocks local_reports and the $3K bonus): claim it via the Builder Program, then add `TAVILY_KEY=...` to `.env`.
+- **Label the eval set (~45 min)** (blocks the headline miss-rate number): run `python3 eval/label.py`, open http://localhost:8766, and press 1-5 per photo.
+- **Nebius AI Cloud + $25 deposit** (blocks backend hosting on a CPU VM, the Cosmos Reason 2 benchmark and the Cosmos Transfer spike): create the account and deposit, then tell this session so it can set up the VMs with you watching.
+- **Hugging Face read token** (needed for the Cosmos weights on the GPU VM): create it at https://huggingface.co/settings/tokens and add `HF_TOKEN=...` to `.env`.
+- **Oct 28: make the repo public** (Nebius requires public + license): `gh repo edit UgaTheDev/waterline --visibility public --accept-visibility-change-consequences`
+
+## Done since last update
+- v1 live on Vercel (sample data until the backend is hosted); USGS survey layer (366 road obs, validated); Openverse eval pool (216 photos).
+- Voice reports, dashcam endpoint, session-sandboxed replay reports (backend, tested).
+- Depth default switched to Nemotron Nano 2 VL on Token Factory; Cosmos Reason 2 kept as a benchmark.
+- v2 plan approved; v2 contracts frozen (backend/API.md) with stub routers for risk, responder and simulations.
+
+## In progress (streams)
+| Stream | Owner/worktree | State | Next |
+|---|---|---|---|
+| C voice + dashcam UI | agent web-voice (web/) | building | review + merge |
+| R recon (MRMS, 311, PD dashcam footage, street clip) | worktree agent (sonnet) | starting | sources + licenses |
+| A terrain inference | worktree agent (opus) | starting | DEM + infer() + leave-one-out eval |
+| E responder + 311 ingest | worktree agent (sonnet) | starting | queue + flags; 311 once R confirms |
+| B nowcast | after R + A | queued | — |
+| D Cosmos Transfer spike | after R + Nebius deposit | queued | — |
+| F eval | Kush labels + keys | blocked | see Needs Kush |
+| G web integration + hosting | after web-voice | queued | — |
+
+## Blockers (not Kush)
+- none
+
+## Next checkpoint
+- 2026-09-29: streams A, E and R merged to main; the voice/dashcam UI is live on Vercel (sample mode).

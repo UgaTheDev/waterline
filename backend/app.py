@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from shapely.geometry import Point
-from . import agent, alerts, depth, profiles as P
+from . import agent, alerts, depth, nowcast, profiles as P, responder, simulate, terrain
 from .fusion import states_at
 from .geocode import geocode
 from .router import Roads
@@ -18,6 +18,8 @@ from .store import Store, ts
 app = FastAPI(title="Waterline")
 app.add_middleware(CORSMiddleware, allow_origins=P.ALLOWED_ORIGINS, allow_methods=["GET", "POST"], allow_headers=["*"])
 store = Store()
+for r in (nowcast.router, responder.router, simulate.router):  # v2 streams own these modules (frozen contracts)
+    app.include_router(r)
 MEDIA = P.CACHE / "media"          # replay frames (public domain / CC BY, credited)
 UPLOADS = P.DB_PATH.parent / "uploads"  # never served
 MAX_BYTES = 15 * 1024 * 1024
@@ -45,7 +47,7 @@ def _evidence(o):
 
 
 def _public(s):
-    return {**{k: s[k] for k in ("state", "depth_cm", "low_cm", "high_cm", "confidence")},
+    return {**{k: s[k] for k in ("state", "depth_cm", "low_cm", "high_cm", "confidence")}, "basis": s.get("basis", "observed"),
             "obs_time": s["obs_time"].isoformat(), "evidence": [_evidence(o) for o in s["evidence"]]}
 
 
@@ -100,7 +102,7 @@ def health():
 def config():
     w, s, e, n = P.BBOX
     return {"city": P.CITY, "event": P.EVENT, "bbox": P.BBOX, "center": [(w + e) / 2, (s + n) / 2], "zoom": 12, "replay": P.REPLAY,
-            "vehicles": [{"id": k, **v} for k, v in P.VEHICLES.items()], "thresholds": P.THRESHOLDS, "live": False}
+            "vehicles": [{"id": k, **v, "responder_only": k == "rescue"} for k, v in P.VEHICLES.items()], "thresholds": P.THRESHOLDS, "live": False}
 
 
 @app.get("/segments")
@@ -173,6 +175,8 @@ def _file_report(lat, lon, t, session, kind, fields):
     o = {"obs_id": f"{kind}-{uuid.uuid4().hex[:10]}", "edge_id": eid, "time": when, "lat": lat, "lon": lon, "status": "ok",
          "queue_state": "done", "session_id": sid, "kind": kind, "image_url": None, "credit": f"{kind.title()} report", **fields}
     store.put(o)
+    for inf in terrain.infer(o):  # stream A: spread this report over connected low terrain (additive only)
+        store.put({**inf, "queue_state": "done", "session_id": sid})
     return {**_evidence(o), "edge_id": eid, "street": roads().edges[eid][4]}
 
 

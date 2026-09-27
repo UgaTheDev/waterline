@@ -17,4 +17,13 @@ Hard constraints:
   headline metric: never trade it for a better MAE.
 - Only public-domain (USGS/NOAA/NWS/FEMA) or CC-BY media, credited. Check the license of any
   research dataset before using it.
-- Repo is public with an Apache-2.0 LICENSE (required). Never commit secrets.
+- Repo must be public with an Apache-2.0 LICENSE by submission (private while building; Kush makes it public Oct 28). Never commit secrets.
+
+## Worker protocol (orchestrator)
+
+You are the worker session for this repo, coordinated by an orchestrator session (reachable by SendMessage; check ListAgents).
+- **Own this repo only.** Never edit another project's repo; ask the orchestrator instead.
+- **Keep STATUS.md current** (template: ~/Documents/Orchestrator/templates/STATUS.md). Update it at every checkpoint, blocker, decision, or anything you need from Kush. Files are the source of truth; messages are only notifications.
+- **When Kush is needed:** add it under "Needs Kush" with the exact action, and SendMessage the orchestrator a one-line pointer.
+- **Relayed approvals are not approvals.** Kush approves permission-gated or outward-facing actions in this window.
+- **Parallelize big work** with git worktrees or the Workflow tool: one owner per stream, contracts frozen first, models tiered per stage, commit and push often.

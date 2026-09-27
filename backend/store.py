@@ -4,8 +4,8 @@ from datetime import datetime
 from .profiles import CACHE, DB_PATH
 
 COLS = ["obs_id", "edge_id", "time", "lat", "lon", "status", "depth_cm", "low_cm", "high_cm", "confidence",
-        "reference", "rationale", "credit", "image_url", "queue_state", "media_path", "mime", "session_id", "kind", "street"]
-REAL = ("depth_cm", "low_cm", "high_cm", "confidence", "lat", "lon")
+        "reference", "rationale", "credit", "image_url", "queue_state", "media_path", "mime", "session_id", "kind", "street", "provenance", "half_life_min"]
+REAL = ("depth_cm", "low_cm", "high_cm", "confidence", "lat", "lon", "half_life_min")
 
 
 def ts(s):
@@ -15,7 +15,8 @@ def ts(s):
 class Store:
     def __init__(self):
         paths = [pathlib.Path(os.getenv("REPLAY_PATH", CACHE / "replay_observations.json")),  # override only for local dev fixtures
-                 CACHE / "survey_observations.json"]  # USGS high-water marks minus 3DEP ground (scripts/survey_layer.py)
+                 CACHE / "survey_observations.json",  # USGS high-water marks minus 3DEP ground (scripts/survey_layer.py)
+                 CACHE / "inferred_observations.json"]  # stream A: terrain inference over the replay
         self.replay = [dict(o, time=ts(o["time"])) for p in paths if p.exists() for o in json.loads(p.read_text())]
         DB_PATH.parent.mkdir(parents=True, exist_ok=True)
         self.db = sqlite3.connect(DB_PATH, check_same_thread=False)
@@ -30,6 +31,8 @@ class Store:
     def put(self, o):
         row = {c: o.get(c) for c in COLS}
         row["time"] = o["time"].isoformat() if isinstance(o["time"], datetime) else o["time"]
+        if isinstance(row["provenance"], (dict, list)):
+            row["provenance"] = json.dumps(row["provenance"])
         with self.lock, self.db:
             self.db.execute(f"INSERT OR REPLACE INTO obs VALUES ({','.join('?' * len(COLS))})", [row[c] for c in COLS])
 

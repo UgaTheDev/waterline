@@ -30,8 +30,8 @@ def edge_state(obs, t):
                 "confidence": None, "obs_time": evidence[0]["time"], "evidence": evidence}
     # Route on the worst plausible depth among reports that still count. Recession shows up
     # as the deep reports decay; a single shallow photo can't erase a fresh deep one.
-    top = max(known, key=lambda o: o["high_cm"])
-    return {"state": "reported", "high_cm": top["high_cm"], "depth_cm": top["depth_cm"], "low_cm": top["low_cm"],
+    top = max(known, key=lambda o: (o["high_cm"], o.get("kind") != "inferred"))  # a tie goes to the observed report
+    return {"state": "reported", "basis": "inferred" if top.get("kind") == "inferred" else "observed", "high_cm": top["high_cm"], "depth_cm": top["depth_cm"], "low_cm": top["low_cm"],
             "confidence": top["confidence"], "obs_time": top["time"], "evidence": evidence}
 
 

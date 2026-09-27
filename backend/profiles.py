@@ -17,6 +17,7 @@ VEHICLES = {
     "sedan": {"label": "Sedan", "limit_cm": 15},
     "suv": {"label": "SUV", "limit_cm": 30},
     "truck": {"label": "Pickup truck", "limit_cm": 45},
+    "rescue": {"label": "High-water rescue truck", "limit_cm": 90},  # responder mode; FEMA high-water vehicle class
 }
 THRESHOLDS = [  # NWS "Turn Around, Don't Drown"
     {"cm": 15, "text": "6 in (15 cm) reaches the bottom of most cars and can cause loss of control or stalling."},
