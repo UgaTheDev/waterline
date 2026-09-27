@@ -204,6 +204,8 @@ def _file_report(lat, lon, t, session, kind, fields):
 @app.post("/chat")
 def chat(req: ChatReq, request: Request):
     limit(request, "chat", 10, 60)
+    if len(req.messages) > 20 or len(json.dumps(req.messages, default=str)) > 30000:
+        raise HTTPException(413, "Conversation too long; start a new one.")
     budget("chat")
     t = _t(req.t)
     R = roads()
@@ -245,37 +247,49 @@ def _sniff(b: bytes):
     return None
 
 
+MAX_ATTEMPTS = 3
+
+
 def _process(obs_id):
+    if not store.claim(obs_id):
+        return  # another worker has it, or it's no longer queued
     o = store.get(obs_id)
-    if not o or o["queue_state"] != "queued":
-        return
     try:
         media = (UPLOADS / o["media_path"]).read_bytes()
         est = depth.estimate(media, o["mime"])
     except Exception:
-        return  # GPU off or unreachable: stays queued, retried on the next upload
+        tries = int(o.get("attempts") or 0) + 1  # model offline: retry later, but a poison file can't loop forever
+        store.put({**o, "attempts": tries, "queue_state": "queued" if tries < MAX_ATTEMPTS else "failed"})
+        return
+    if est.get("status") == "ok" and not est.get("water_visible"):
+        store.put({**o, **est, "queue_state": "no_water"})  # a dry photo is not evidence that the street is clear
+        return
     store.put({**o, **est, "queue_state": "done"})
 
 
 def _upload_view(o):
     if not o:
         raise HTTPException(404, "unknown upload")
-    status = {"queued": "queued", "done": "done"}.get(o["queue_state"], "rejected")
+    status = {"queued": "queued", "processing": "queued", "done": "done"}.get(o["queue_state"], "rejected")
     return {"obs_id": o["obs_id"], "status": status, "result": _evidence(o) if status == "done" else None,
-            "message": "Queued: the depth model is starting or offline; it will process this when it's online." if status == "queued" else "Processed."}
+            "message": {"queued": "Queued: the depth model is starting or offline; it will process this when it's online.", "done": "Processed.",
+                        "no_water": "No flood water visible in this photo, so no report was filed. That doesn't mean the street is clear.",
+                        "failed": "This file couldn't be processed. Try a clear JPEG photo of the water."}.get(o["queue_state"], "Rejected.")}
 
 
 @app.post("/upload", status_code=202)
-async def upload(request: Request, bg: BackgroundTasks, file: UploadFile = File(...), lat: float | None = Form(None), lon: float | None = Form(None),
+def upload(request: Request, bg: BackgroundTasks, file: UploadFile = File(...), lat: float | None = Form(None), lon: float | None = Form(None),
                  t: str | None = Form(None), session: str | None = Form(None)):
     limit(request, "upload", 5, 600)
     budget("upload")
-    raw = await file.read(MAX_BYTES + 1)
+    raw = file.file.read(MAX_BYTES + 1)
     if len(raw) > MAX_BYTES:
         raise HTTPException(413, "File is larger than 15 MB.")
     mime = _sniff(raw)
     if not mime:
         raise HTTPException(415, "Upload a JPEG, PNG or MP4.")
+    if mime == "video/mp4" and P.DEPTH_PROVIDER != "cosmos":
+        raise HTTPException(415, "Video uploads need the self-hosted depth model, which is offline. Upload a photo instead.")
     loc = (lat, lon) if lat is not None and lon is not None else (depth.exif_latlon(raw) if mime != "video/mp4" else None)
     if not loc:
         raise HTTPException(422, "We need a location: allow location access or enter it.")
@@ -287,7 +301,10 @@ async def upload(request: Request, bg: BackgroundTasks, file: UploadFile = File(
         raise HTTPException(422, f"No road within {P.SNAP_M} m of that location.")
     obs_id = uuid.uuid4().hex[:12]
     UPLOADS.mkdir(parents=True, exist_ok=True)
-    body = depth.prepare_image(raw) if mime.startswith("image") else raw  # images: EXIF stripped here
+    try:
+        body = depth.prepare_image(raw) if mime.startswith("image") else raw  # images: EXIF stripped here
+    except (ValueError, OSError):
+        raise HTTPException(413, "That image is too large or unreadable.")
     name = f"{obs_id}.{'jpg' if mime.startswith('image') else 'mp4'}"
     (UPLOADS / name).write_bytes(body)
     when, sid = _ingest(t, session)
@@ -295,8 +312,10 @@ async def upload(request: Request, bg: BackgroundTasks, file: UploadFile = File(
                "credit": "Community upload", "image_url": None, "queue_state": "queued", "media_path": name,
                "session_id": sid, "kind": "photo",
                "mime": "image/jpeg" if mime.startswith("image") else mime})
-    for q in store.queued():
-        bg.add_task(_process, q["obs_id"])
+    bg.add_task(_process, obs_id)
+    for q in store.queued():  # at most 3 older retries per upload
+        if q["obs_id"] != obs_id:
+            bg.add_task(_process, q["obs_id"])
     return _upload_view(store.get(obs_id))
 
 
@@ -312,17 +331,21 @@ def _speak_dash(street, ev, vehicle, over):
 
 
 @app.post("/dashcam")
-async def dashcam(request: Request, frame: UploadFile = File(...), lat: float = Form(...), lon: float = Form(...),
+def dashcam(request: Request, frame: UploadFile = File(...), lat: float = Form(...), lon: float = Form(...),
                   vehicle: str = Form("sedan"), t: str | None = Form(None), session: str | None = Form(None)):
     limit(request, "dashcam", 40, 60)
     budget("dashcam")
     if vehicle not in P.VEHICLES:
         raise HTTPException(400, f"vehicle must be one of {list(P.VEHICLES)}")
-    raw = await frame.read(DASHCAM_BYTES + 1)
+    raw = frame.file.read(DASHCAM_BYTES + 1)
     if len(raw) > DASHCAM_BYTES or _sniff(raw) != "image/jpeg":
         raise HTTPException(415, "Send one JPEG frame under 3 MB.")
     try:
-        est = depth.estimate(depth.prepare_image(raw, max_px=1024))  # frame stays in memory; never written to disk
+        img = depth.prepare_image(raw, max_px=1024)  # frame stays in memory; never written to disk
+    except (ValueError, OSError):
+        raise HTTPException(415, "Send one JPEG frame under 3 MB.")
+    try:
+        est = depth.estimate(img)
     except Exception:
         raise HTTPException(503, "Depth model offline. No warnings until it's back.")
     if est["status"] != "ok" or not est.get("water_visible") or (est["high_cm"] or 0) < 5:
@@ -331,7 +354,10 @@ async def dashcam(request: Request, frame: UploadFile = File(...), lat: float = 
     eid = roads().snap(lat, lon)
     street = roads().edges[eid][4] if eid else None
     over = est["high_cm"] > P.VEHICLES[vehicle]["limit_cm"]
-    key, now = (_session(session) or (request.client.host if request.client else "?"), street), time.time()
+    key, now = ((request.client.host if request.client else "?"), street), time.time()
+    if len(_dash_recent) > 5000:
+        for k in [k for k, v in _dash_recent.items() if now - v > 120]:
+            del _dash_recent[k]
     if not eid or now - _dash_recent.get(key, 0) < 120:
         return {"water": True, "filed": False, "street": street, "over_limit": over, "evidence": None,
                 "speak": None if eid else "Water ahead. Location unclear, so no report was filed."}

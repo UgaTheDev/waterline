@@ -1,16 +1,17 @@
 """Observations: the committed replay cache (read-only) + live uploads in SQLite."""
 import json, os, pathlib, sqlite3, threading
-from datetime import datetime
+from datetime import datetime, timezone
 from .profiles import CACHE, DB_PATH
 
 COLS = ["obs_id", "edge_id", "time", "lat", "lon", "status", "depth_cm", "low_cm", "high_cm", "confidence",
         "reference", "rationale", "credit", "image_url", "queue_state", "media_path", "mime", "session_id", "kind", "street", "provenance", "half_life_min",
-        "flags"]  # flags: JSON list of "person_in_water"|"occupied_vehicle"; never reaches /segments or routing
-REAL = ("depth_cm", "low_cm", "high_cm", "confidence", "lat", "lon", "half_life_min")
+        "flags", "attempts"]  # flags: JSON list of "person_in_water"|"occupied_vehicle"; never reaches /segments or routing
+REAL = ("depth_cm", "low_cm", "high_cm", "confidence", "lat", "lon", "half_life_min", "attempts")
 
 
 def ts(s):
-    return datetime.fromisoformat(s.replace("Z", "+00:00"))
+    d = datetime.fromisoformat(s.replace("Z", "+00:00"))
+    return d if d.tzinfo else d.replace(tzinfo=timezone.utc)  # naive input is UTC, never a 500
 
 
 class Store:
@@ -43,8 +44,13 @@ class Store:
         r = self.db.execute("SELECT * FROM obs WHERE obs_id=?", (obs_id,)).fetchone()
         return dict(r, time=ts(r["time"])) if r else None
 
+    def claim(self, obs_id):
+        """Atomically take a queued upload so two workers never pay for the same media."""
+        with self.lock, self.db:
+            return self.db.execute("UPDATE obs SET queue_state='processing' WHERE obs_id=? AND queue_state='queued'", (obs_id,)).rowcount == 1
+
     def queued(self):
-        return [dict(r, time=ts(r["time"])) for r in self.db.execute("SELECT * FROM obs WHERE queue_state='queued'")]
+        return [dict(r, time=ts(r["time"])) for r in self.db.execute("SELECT * FROM obs WHERE queue_state='queued' ORDER BY time LIMIT 3")]
 
     def all(self, session=None):
         """Replay cache + global live reports + reports sandboxed to this session (filed while viewing the replay)."""

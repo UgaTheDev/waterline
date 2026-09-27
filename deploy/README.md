@@ -112,3 +112,10 @@ and duplicate uploads could dedup only within one worker. At 2 vCPU / 4 GB with 
 peak RSS (graph + DEM loaded), one worker has headroom; add a second only after moving
 that state to something shared (e.g. SQLite, which `store.py` already uses for
 persistence) — it is not a memory-constrained decision, it's a correctness one.
+
+## Client IPs and rate limits
+Per-visitor rate limits key on the client IP. The container trusts `X-Forwarded-For` only from the Docker bridge network
+(`FORWARDED_ALLOW_IPS=172.16.0.0/12` in the Dockerfile). That's safe because the API port is published on 127.0.0.1 only,
+so Caddy is the only thing that can reach it, and Caddy overwrites any client-sent `X-Forwarded-For`. Don't publish port
+8000 on a public interface: that would let anyone spoof their IP. Check it with `docker logs waterline`: the access log
+should show real client IPs, not 172.17.0.1.

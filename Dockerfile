@@ -31,4 +31,8 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
     CMD python -c "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/health', timeout=3)" || exit 1
 
+# Rate limits key on the client IP. Caddy on the host reaches this container through the Docker bridge (the port is
+# published on 127.0.0.1 only), so trust X-Forwarded-For from the bridge network and nothing else. Caddy overwrites any
+# client-sent X-Forwarded-For by default, so it can't be spoofed through the proxy.
+ENV FORWARDED_ALLOW_IPS=172.16.0.0/12
 CMD ["uvicorn", "backend.app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]

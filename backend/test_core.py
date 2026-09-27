@@ -71,6 +71,10 @@ def test_depth_parsing():
 def test_wording():
     assert violates("Main St is safe to drive") and violates("You can safely take I-45")
     assert not violates("That road is unsafe.") and not violates("It is not safe.")
+    for bad in ["the safest way is Main St", "Main is safer", "s-a-f-e to drive", "It's \u0455afe", "sa\u00adfe route", "Yale St is dry", "the road is clear", "all clear on I-45"]:
+        assert violates(bad), bad
+    for ok in ["unknown is not dry", "No deep water reported along it", "If you see water, turn around.", "Photo is clear and sharp"]:
+        assert not violates(ok), ok
     for r in [None, {"found": False, "reason": "No route avoids reported deep water for a sedan.", "avoided": []},
               {"found": True, "distance_m": 3000, "avoided": [{"name": "Main St", "reason": "reported up to 40 cm"}], "unknown_m": 500, "warnings": []}]:
         assert not violates(template(r)), template(r)
@@ -137,6 +141,54 @@ def test_global_budget():
     finally:
         A.P.BUDGET_PER_HOUR["chat"] = old
         A._spend.clear()
+
+
+def test_security_regressions():
+    """Findings from the 2026-09-27 adversarial review."""
+    import io
+    from fastapi.testclient import TestClient
+    from PIL import Image
+    from . import app as A, depth as D, agent as G
+    c = TestClient(A.app)
+    # 2. decompression bomb rejected from the header, before decoding
+    buf = io.BytesIO(); Image.new("1", (13000, 13000)).save(buf, "PNG")
+    try:
+        D.prepare_image(buf.getvalue()); raise AssertionError("bomb accepted")
+    except ValueError:
+        pass
+    # 3. a live "depth unknown" report is not cleared by a dry reading; a reading that blocks everything still wins
+    assert edge_state([obs(status="unknown"), obs(5, 2)], T0 + timedelta(minutes=10))["state"] == "reported_unknown"
+    assert edge_state([obs(status="unknown"), obs(5, 120)], T0 + timedelta(minutes=10))["high_cm"] == 120
+    # 9. naive timestamps are UTC, not a 500
+    assert c.get("/segments", params={"t": "2017-09-01T20:00:00"}).status_code == 200
+    assert c.get("/alerts", params={"t": "2017-09-01T20:00:00"}).status_code == 200
+    # 4. list-valued chat content is flattened and capped; oversized bodies refused
+    assert c.post("/chat", json={"messages": [{"role": "user", "content": ["x" * 40000]}]}).status_code == 413
+    # 5. uploads: mp4 refused without the self-hosted model; a failing file stops retrying; a dry photo files nothing
+    mp4 = b"\x00\x00\x00\x18ftypmp42" + b"\x00" * 64
+    assert c.post("/upload", files={"file": ("v.mp4", mp4, "video/mp4")}, data={"lat": 29.778, "lon": -95.399}).status_code == 415
+    jb = io.BytesIO(); Image.new("RGB", (64, 64)).save(jb, "JPEG")
+    real = D.estimate
+    try:
+        D.estimate = lambda *a, **k: (_ for _ in ()).throw(ConnectionError())
+        oid = c.post("/upload", files={"file": ("p.jpg", jb.getvalue(), "image/jpeg")}, data={"lat": 29.778, "lon": -95.399}).json()["obs_id"]
+        for _ in range(A.MAX_ATTEMPTS + 2):
+            A.store.db.execute("UPDATE obs SET queue_state='queued' WHERE obs_id=? AND queue_state='processing'", (oid,))
+            A._process(oid)
+        assert A.store.get(oid)["queue_state"] == "failed", "a poison file must stop retrying"
+        D.estimate = lambda *a, **k: {"status": "ok", "water_visible": False, "depth_cm": 0, "low_cm": 0, "high_cm": 2, "confidence": 0.9, "flags": []}
+        oid = c.post("/upload", files={"file": ("p.jpg", jb.getvalue(), "image/jpeg")}, data={"lat": 29.778, "lon": -95.399}).json()["obs_id"]
+        v = c.get(f"/upload/{oid}").json()
+        assert v["status"] == "rejected" and "no report was filed" in v["message"], v
+    finally:
+        D.estimate = real
+    # 6. per-chat tool budget
+    t = G.Tools({"location": None, "vehicle": "sedan", "alerts_fn": lambda: []})
+    outs = [t.call("active_alerts", {}) for _ in range(G.Tools.MAX_CALLS + 1)]
+    assert "error" in outs[-1] and "error" not in outs[0]
+    # 12. non-ASCII responder token is a 401, not a 500
+    os.environ["RESPONDER_TOKEN"] = "right-token"
+    assert c.get("/responder/queue", headers={"X-Responder-Token": "caf\u00e9".encode("latin-1")}).status_code in (400, 401)
 
 
 def test_inferred_is_display_only():

@@ -38,9 +38,18 @@ class Estimate(BaseModel):
     occupied_vehicle: bool = False
 
 
+MAX_PIXELS = 40_000_000  # ~7700x5200; a phone photo is 12-50 MP after downscale-free capture, bombs are far larger
+
+
 def prepare_image(raw: bytes, max_px=1280) -> bytes:
-    """Downscale + re-encode. Re-encoding drops EXIF (location, device) from what we store/send."""
-    im = ImageOps.exif_transpose(Image.open(io.BytesIO(raw))).convert("RGB")
+    """Downscale + re-encode. Re-encoding drops EXIF (location, device) from what we store/send.
+    Raises ValueError for decompression bombs, checked from the header before any pixels are decoded."""
+    im = Image.open(io.BytesIO(raw))
+    if im.width * im.height > MAX_PIXELS:
+        raise ValueError("image too large")
+    if im.format == "JPEG":
+        im.draft("RGB", (max_px, max_px))  # decode at reduced scale: memory stays small
+    im = ImageOps.exif_transpose(im).convert("RGB")
     im.thumbnail((max_px, max_px))
     buf = io.BytesIO()
     im.save(buf, "JPEG", quality=85)

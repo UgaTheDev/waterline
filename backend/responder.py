@@ -16,7 +16,7 @@ _store.db.execute("CREATE TABLE IF NOT EXISTS reviews (obs_id TEXT PRIMARY KEY, 
 
 def _auth(token):
     want = os.getenv("RESPONDER_TOKEN")
-    if not want or not token or not hmac.compare_digest(token, want):
+    if not want or not token or not hmac.compare_digest(token.encode(), want.encode()):  # bytes: non-ASCII can't 500
         raise HTTPException(401, "Responder access needs a token.")
 
 
@@ -55,6 +55,8 @@ def queue(x_responder_token: str | None = Header(None)):
 def review(body: dict, x_responder_token: str | None = Header(None)):
     _auth(x_responder_token)
     obs_id, action = body.get("obs_id"), body.get("action")
+    if not isinstance(obs_id, str) or len(obs_id) > 64:
+        raise HTTPException(400, "obs_id must be a string")
     if action not in ("seen", "dismissed"):
         raise HTTPException(400, "action must be 'seen' or 'dismissed'")
     if not obs_id or not _store.get(obs_id):

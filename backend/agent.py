@@ -1,5 +1,5 @@
 """Nemotron (Nebius Token Factory) agent. Read-only tools; road status always comes from the router."""
-import json, re
+import json, re, unicodedata
 from openai import OpenAI, BadRequestError
 from . import profiles as P
 from .alerts import local_reports
@@ -34,8 +34,14 @@ TOOLS = [
      "parameters": {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}}},
 ]
 
-# "safe" asserted about a road, not negated ("not safe", "unsafe")
-UNSAFE_CLAIM = re.compile(r"(?<!un)(?<!not )(?<!never )\bsafe(ly)?\b", re.I)
+# Claims the product must never make about a road: "safe"/"safer"/"safely"/"safest" (also spelled s-a-f-e), and
+# affirmative "dry"/"clear"/"passable". Negations ("not safe", "unsafe", "not dry") are fine.
+_CONFUSABLE = str.maketrans("аеорсухѕіјԁ", "aeopcyxsijd")  # Cyrillic look-alikes
+_INVISIBLE = re.compile(r"[\u00ad\u200b-\u200f\u2060\ufeff]")
+UNSAFE_CLAIM = re.compile(r"(?<!un)(?<!not )(?<!never )(?<!isn't )\bs[\W_]{0,2}a[\W_]{0,2}f[\W_]{0,2}e(st|r|ly|ty)?\b"
+                          r"|\b(is|are|looks|seems|stays|remains)\s+(dry|passable)\b"
+                          r"|\b(road|roads|street|streets|route|way|lane|lanes|highway|freeway|st|ave|blvd|dr)\.?('s)?\s+(is\s+|are\s+|looks\s+)?clear\b"
+                          r"|\b(all clear|clear to drive)\b", re.I)
 
 
 # What the water reached -> depth (cm). Deterministic: the model picks the words, never the number.
@@ -50,7 +56,8 @@ def reached_cm(text):
 
 
 def violates(text):
-    return bool(UNSAFE_CLAIM.search(text or ""))
+    t = _INVISIBLE.sub("", unicodedata.normalize("NFKC", text or "")).lower().translate(_CONFUSABLE)
+    return bool(UNSAFE_CLAIM.search(t))
 
 
 def _slim(ev):
@@ -60,8 +67,11 @@ def _slim(ev):
 class Tools:
     """ctx: route_fn(a, b, vehicle) -> RouteResponse, near_fn(lat, lon) -> list, alerts_fn() -> list, location, vehicle."""
 
+    MAX_CALLS, MAX_SEARCHES = 6, 2  # per chat request: bounds paid Tavily calls and geocodes
+
     def __init__(self, ctx):
         self.ctx, self.last_route, self.sources, self.filed = ctx, None, [], []
+        self.calls = {"all": 0, "local_reports": 0}
 
     def _place(self, q):
         if q.strip().lower() in ("here", "my location", "current location"):
@@ -70,6 +80,13 @@ class Tools:
         return geocode(q)
 
     def call(self, name, args):
+        self.calls["all"] += 1
+        if self.calls["all"] > self.MAX_CALLS:
+            return {"error": "tool budget for this message used up; answer with what you have"}
+        if name == "local_reports":
+            self.calls["local_reports"] += 1
+            if self.calls["local_reports"] > self.MAX_SEARCHES:
+                return {"error": "search budget used up"}
         try:
             if name == "route":
                 a, b = self._place(args["origin"]), self._place(args["destination"])
@@ -138,7 +155,8 @@ def chat(messages, ctx):
         msg = "The assistant is offline (no Token Factory key configured). Use the route panel."
         return {"reply": msg, "speak": msg, "route": None, "sources": [], "filed": []}
     c = OpenAI(base_url=P.TF_URL, api_key=P.TF_KEY, timeout=60, max_retries=1)
-    msgs = [{"role": "system", "content": SYSTEM}] + [{"role": m["role"], "content": m["content"][:2000]} for m in messages[-10:] if m["role"] in ("user", "assistant")]
+    msgs = [{"role": "system", "content": SYSTEM}] + [{"role": m.get("role"), "content": str(m.get("content", ""))[:2000]} for m in messages[-10:]
+                                            if isinstance(m, dict) and m.get("role") in ("user", "assistant")]
     reply = None
     try:
         for _ in range(4):  # at most 4 tool rounds

@@ -4,7 +4,9 @@ An observation (dict): obs_id, edge_id, time (aware datetime), status ("ok" | "u
 depth_cm, low_cm, high_cm, confidence, plus evidence fields (reference, rationale, credit, image_url).
 """
 from collections import defaultdict
-from .profiles import HALF_LIFE_MIN, MIN_WEIGHT
+from .profiles import HALF_LIFE_MIN, MIN_WEIGHT, VEHICLES
+
+BLOCKS_ALL_CM = max(v["limit_cm"] for v in VEHICLES.values())
 
 
 def weight(o, t):
@@ -25,7 +27,10 @@ def edge_state(obs, t):
         return {"state": "stale", "high_cm": last.get("high_cm"), "depth_cm": last.get("depth_cm"),
                 "low_cm": last.get("low_cm"), "confidence": None, "obs_time": last["time"], "evidence": evidence}
     known = [o for o in live if o["status"] == "ok"]
-    if not known:
+    unknown_live = any(o["status"] != "ok" for o in live)
+    # Water photographed at an unreadable depth has an unbounded upper bound: while that report is live, a readable
+    # shallower one (even a dry photo) must not clear the street. Only a reading that already blocks every vehicle wins.
+    if not known or (unknown_live and max(o["high_cm"] for o in known) <= BLOCKS_ALL_CM):
         return {"state": "reported_unknown", "high_cm": None, "depth_cm": None, "low_cm": None,
                 "confidence": None, "obs_time": evidence[0]["time"], "evidence": evidence}
     # Route on the worst plausible depth among reports that still count. Recession shows up
