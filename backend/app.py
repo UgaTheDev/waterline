@@ -312,6 +312,7 @@ async def dashcam(request: Request, frame: UploadFile = File(...), lat: float = 
                 "speak": None if eid else "Water ahead. Location unclear, so no report was filed."}
     _dash_recent[key] = now
     fields = {k: est[k] for k in ("depth_cm", "low_cm", "high_cm", "reference", "rationale")}
+    fields["flags"] = est.get("flags") or []
     ev = _file_report(lat, lon, t, session, "dashcam", {**fields, "confidence": round((est["confidence"] or 0.5) * 0.8, 2),
                                                         "precision": "street", "street": street})
     if "error" in ev:

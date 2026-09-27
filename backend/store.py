@@ -4,7 +4,8 @@ from datetime import datetime
 from .profiles import CACHE, DB_PATH
 
 COLS = ["obs_id", "edge_id", "time", "lat", "lon", "status", "depth_cm", "low_cm", "high_cm", "confidence",
-        "reference", "rationale", "credit", "image_url", "queue_state", "media_path", "mime", "session_id", "kind", "street", "provenance", "half_life_min"]
+        "reference", "rationale", "credit", "image_url", "queue_state", "media_path", "mime", "session_id", "kind", "street", "provenance", "half_life_min",
+        "flags"]  # flags: JSON list of "person_in_water"|"occupied_vehicle"; never reaches /segments or routing
 REAL = ("depth_cm", "low_cm", "high_cm", "confidence", "lat", "lon", "half_life_min")
 
 
@@ -33,6 +34,8 @@ class Store:
         row["time"] = o["time"].isoformat() if isinstance(o["time"], datetime) else o["time"]
         if isinstance(row["provenance"], (dict, list)):
             row["provenance"] = json.dumps(row["provenance"])
+        if isinstance(row["flags"], list):
+            row["flags"] = json.dumps(row["flags"])
         with self.lock, self.db:
             self.db.execute(f"INSERT OR REPLACE INTO obs VALUES ({','.join('?' * len(COLS))})", [row[c] for c in COLS])
 
