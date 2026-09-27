@@ -89,6 +89,8 @@ body::after {
 @media (min-width: 768px) {
   body:has(.map-page) { height: 100dvh; overflow: hidden; }
 }
+/* Drive mode is a full-screen HUD at every width. */
+body:has(.drive-page) { height: 100dvh; overflow: hidden; }
 
 .glass {
   background: var(--glass);

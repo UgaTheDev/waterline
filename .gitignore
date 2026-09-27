@@ -20,3 +20,5 @@ eval/results/preds_*.jsonl
 # osmnx http cache (root only; data/cache/ IS committed)
 /cache/
 .playwright-mcp/
+# agent git worktrees
+.claude/worktrees/

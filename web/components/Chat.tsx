@@ -1,10 +1,12 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { api, type ChatMessage, type ChatResponse, type Point, type RouteResponse } from "@/lib/api";
+import { api, type ChatMessage, type ChatResponse, type Evidence, type Point, type RouteResponse } from "@/lib/api";
+import { range } from "@/lib/depth";
+import { recognitionCtor, speak, stopSpeaking, useCanListen, useSpeaking, type Recognition } from "@/lib/speech";
 import { useReducedMotion } from "@/lib/theme";
 import RouteSummary, { type Selection } from "./Route";
 
-type Msg = ChatMessage & { sources?: ChatResponse["sources"]; route?: RouteResponse | null; steps?: string[]; fresh?: boolean };
+type Msg = ChatMessage & { sources?: ChatResponse["sources"]; route?: RouteResponse | null; steps?: string[]; fresh?: boolean; filed?: Evidence[] };
 
 // Reveals text word by word so a long answer reads as it arrives.
 function Typing({ text, onDone }: { text: string; onDone: () => void }) {
@@ -60,20 +62,32 @@ export default function Chat(props: {
   location: Point | null;
   onRoute: (r: RouteResponse) => void;
   onEvidence: (s: Selection) => void;
+  onFiled?: () => void;
 }) {
-  const { vehicle, vehicleLabel, t, location, onRoute, onEvidence } = props;
+  const { vehicle, vehicleLabel, t, location, onRoute, onEvidence, onFiled } = props;
   const reduced = useReducedMotion();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const end = useRef<HTMLDivElement>(null);
+  const canListen = useCanListen();
+  const speaking = useSpeaking();
+  const [listening, setListening] = useState(false);
+  const rec = useRef<Recognition | null>(null);
+  const heard = useRef("");
+
+  useEffect(() => () => {
+    rec.current?.abort();
+    stopSpeaking();
+  }, []);
 
   useEffect(() => {
     end.current?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "nearest" });
   }, [messages, busy, reduced]);
 
-  const send = async (text: string) => {
+  // Replies are spoken only for questions asked by voice; typed questions stay silent.
+  const send = async (text: string, voice = false) => {
     const content = text.trim();
     if (!content || busy) return;
     const next: Msg[] = [...messages.map((m) => ({ ...m, fresh: false })), { role: "user", content }];
@@ -83,14 +97,50 @@ export default function Chat(props: {
     setError(null);
     try {
       const res = await api.chat({ messages: next.map(({ role, content }) => ({ role, content })), vehicle, t, location });
-      setMessages([...next, { role: "assistant", content: res.reply, sources: res.sources, route: res.route, steps: stepsFor(res, vehicleLabel.toLowerCase()), fresh: !reduced }]);
+      setMessages([...next, { role: "assistant", content: res.reply, sources: res.sources, route: res.route, steps: stepsFor(res, vehicleLabel.toLowerCase()), fresh: !reduced, filed: res.filed }]);
       if (res.route) onRoute(res.route);
+      if (voice && res.speak) speak(res.speak);
+      if (res.filed?.length) onFiled?.();
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setBusy(false);
     }
   };
+
+  // Push to talk: hold to record, release to send.
+  const startListening = () => {
+    const Ctor = recognitionCtor();
+    if (!Ctor || busy || rec.current) return;
+    stopSpeaking();
+    const r = new Ctor();
+    r.lang = "en-US";
+    r.interimResults = true;
+    r.continuous = true;
+    heard.current = "";
+    r.onresult = (e) => {
+      heard.current = Array.from(e.results, (x) => x[0].transcript).join("");
+      setDraft(heard.current);
+    };
+    r.onerror = (e) => {
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") setError("Microphone access was blocked. You can still type.");
+    };
+    r.onend = () => {
+      rec.current = null;
+      setListening(false);
+      if (heard.current.trim()) send(heard.current, true);
+    };
+    rec.current = r;
+    setError(null);
+    setListening(true);
+    try {
+      r.start();
+    } catch {
+      rec.current = null;
+      setListening(false);
+    }
+  };
+  const stopListening = () => rec.current?.stop();
 
   const settle = (i: number) => () => setMessages((ms) => (ms[i]?.fresh ? ms.map((m, j) => (j === i ? { ...m, fresh: false } : m)) : ms));
 
@@ -143,6 +193,14 @@ export default function Chat(props: {
                   <RouteSummary route={m.route} onEvidence={onEvidence} />
                 </div>
               )}
+              {m.filed?.map((ev) => (
+                <p key={ev.obs_id} className="fade inline-flex flex-wrap items-center gap-x-2 gap-y-0.5 rounded-full border border-accent/50 bg-accent-soft px-3 py-1 text-[12px] text-text mr-1.5">
+                  <span className="text-accent" aria-hidden>●</span>
+                  Report filed
+                  <span className="font-mono tabular-nums">{range(ev.low_cm, ev.high_cm)}</span>
+                  <span className="font-mono text-[10.5px] text-muted">voice report · low confidence</span>
+                </p>
+              ))}
               {!m.fresh && m.sources && m.sources.length > 0 && (
                 <ul className="fade space-y-0.5">
                   {m.sources.map((s, k) => (
@@ -170,10 +228,43 @@ export default function Chat(props: {
           send(draft);
         }}
       >
+        {canListen && (
+          <button
+            type="button"
+            disabled={busy}
+            aria-label={listening ? "Listening. Release to send" : "Hold to talk"}
+            aria-pressed={listening}
+            title="Hold to talk"
+            onPointerDown={(e) => {
+              e.currentTarget.setPointerCapture(e.pointerId);
+              startListening();
+            }}
+            onPointerUp={stopListening}
+            onPointerCancel={stopListening}
+            onKeyDown={(e) => {
+              if ((e.key === " " || e.key === "Enter") && !e.repeat) {
+                e.preventDefault();
+                startListening();
+              }
+            }}
+            onKeyUp={(e) => {
+              if (e.key === " " || e.key === "Enter") stopListening();
+            }}
+            onContextMenu={(e) => e.preventDefault()}
+            className={`w-11 shrink-0 rounded-lg border flex items-center justify-center touch-none select-none transition-colors disabled:opacity-40 ${
+              listening ? "border-danger bg-danger-soft text-danger" : "border-line text-muted hover:text-text hover:border-line-strong"
+            }`}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden className={listening ? "animate-pulse" : ""}>
+              <rect x="9" y="3" width="6" height="11" rx="3" />
+              <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+            </svg>
+          </button>
+        )}
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder="Ask about a street or a trip"
+          placeholder={listening ? "Listening…" : "Ask about a street or a trip"}
           aria-label="Message the flood agent"
           className="flex-1 min-w-0 rounded-lg border border-line bg-panel-2 px-3 py-2.5 text-[14px] text-text placeholder:text-faint focus:outline-none focus:border-accent"
         />
@@ -183,6 +274,16 @@ export default function Chat(props: {
           </svg>
         </button>
       </form>
+      {canListen && (
+        <p className="flex items-center justify-between gap-3 font-mono text-[10.5px] text-faint -mt-2">
+          <span>Hold the mic to talk. Voice uses your browser&apos;s speech engine.</span>
+          {speaking && (
+            <button type="button" onClick={stopSpeaking} className="shrink-0 rounded-full border border-line px-2.5 py-0.5 text-muted hover:text-text">
+              ■ Stop speaking
+            </button>
+          )}
+        </p>
+      )}
     </div>
   );
 }

@@ -5,6 +5,13 @@ import { PALETTE, THRESHOLDS, bandFor, describe, fmtTime, inches, range } from "
 import { useTheme } from "@/lib/theme";
 import { VehicleSilhouette } from "./Vehicles";
 
+const SOURCE: Record<NonNullable<Evidence["kind"]>, string> = {
+  photo: "Photo · depth read by Cosmos Reason 2",
+  survey: "USGS survey · estimated peak depth, surveyed after the flood",
+  dashcam: "Dashcam frame · not stored",
+  voice: "Voice report · low confidence",
+};
+
 function DepthGauge({ low, high, color }: { low: number | null; high: number | null; color: string }) {
   const H = 132;
   const max = Math.max(90, (high ?? 0) + 10);
@@ -46,7 +53,8 @@ export function EvidenceItem({
   noPhoto?: boolean;
 }) {
   const [imgOk, setImgOk] = useState(true);
-  const photo = ev.image_url && imgOk && !noPhoto;
+  // Dashcam frames are never stored and voice reports have no picture, whatever the payload says.
+  const photo = ev.image_url && imgOk && !noPhoto && ev.kind !== "dashcam" && ev.kind !== "voice";
   return (
     <div className="space-y-2.5">
       {photo && (
@@ -73,12 +81,16 @@ export function EvidenceItem({
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-[13px]">
             <dt className="eyebrow self-center">Source</dt>
             <dd className="text-[12.5px] text-text">
-              {ev.kind === "survey" ? "USGS survey · estimated peak depth, surveyed after the flood" : "Photo · depth read by Cosmos Reason 2"}
+              {SOURCE[ev.kind ?? "photo"]}
             </dd>
             <dt className="eyebrow self-center">Depth</dt>
             <dd className="font-mono text-text tabular-nums">{range(ev.low_cm, ev.high_cm)}</dd>
-            <dt className="eyebrow self-center">Measured on</dt>
-            <dd className="text-text">{ev.reference ?? "No reference object in frame"}</dd>
+            {ev.kind !== "voice" && (
+              <>
+                <dt className="eyebrow self-center">Measured on</dt>
+                <dd className="text-text">{ev.reference ?? "No reference object in frame"}</dd>
+              </>
+            )}
             <dt className="eyebrow self-center">Observed</dt>
             <dd className="font-mono text-[12px] text-text">{fmtTime(ev.time)}</dd>
             {ev.location_precision && ev.location_precision !== "exact" && (
@@ -167,7 +179,7 @@ export default function EvidenceCard(props: {
           </button>
         </header>
 
-        {latest?.image_url && <EvidenceItem ev={latest} photoOnly />}
+        {latest?.image_url && latest.kind !== "dashcam" && latest.kind !== "voice" && <EvidenceItem ev={latest} photoOnly />}
 
         <div className="flex items-end gap-3 rounded-lg border border-line bg-panel-2/60 p-3">
           <DepthGauge low={low} high={high} color={color} />

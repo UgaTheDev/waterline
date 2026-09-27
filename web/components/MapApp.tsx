@@ -2,7 +2,7 @@
 import { BRAND } from "@/lib/brand";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { api, type Alerts, type Config, type Point, type RouteResponse, type Segments } from "@/lib/api";
+import { api, parsePoint, type Alerts, type Config, type Point, type RouteResponse, type Segments } from "@/lib/api";
 import { LEGEND, PALETTE, bandFor, fmtClock, fmtTime } from "@/lib/depth";
 import { useReducedMotion, useTheme } from "@/lib/theme";
 import Chat from "./Chat";
@@ -109,11 +109,6 @@ function ReportsFeed({ segments, onOpen }: { segments: Segments | null; onOpen: 
   );
 }
 
-function parsePoint(s: string): Point | string {
-  const m = s.trim().match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);
-  return m ? { lat: Number(m[1]), lon: Number(m[2]) } : s.trim();
-}
-
 export default function MapApp() {
   const theme = useTheme();
   const reduced = useReducedMotion();
@@ -130,6 +125,7 @@ export default function MapApp() {
   const [tab, setTab] = useState<"route" | "ask">("route");
   const [vehicle, setVehicle] = useState("sedan");
   const [legendOpen, setLegendOpen] = useState(true);
+  const [reload, setReload] = useState(0); // bumped when a report is filed, so it appears on the map
 
   const [fromText, setFromText] = useState("");
   const [toText, setToText] = useState("");
@@ -200,7 +196,7 @@ export default function MapApp() {
       clearTimeout(id);
       ctrl.abort();
     };
-  }, [iso]);
+  }, [iso, reload]);
 
   useEffect(() => {
     if (!playing || !config) return;
@@ -492,7 +488,7 @@ export default function MapApp() {
               {route && <RouteSummary key={JSON.stringify(route.found ? route.geometry.coordinates[0] : route.reason) + vehicle} route={route} onEvidence={open} />}
             </>
           ) : (
-            <Chat vehicle={vehicle} vehicleLabel={current?.label ?? "car"} t={iso} location={fromPt} onRoute={showRoute} onEvidence={open} />
+            <Chat vehicle={vehicle} vehicleLabel={current?.label ?? "car"} t={iso} location={fromPt} onRoute={showRoute} onEvidence={open} onFiled={() => setReload((n) => n + 1)} />
           )}
 
           <div className="md:hidden">

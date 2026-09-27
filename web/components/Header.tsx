@@ -19,6 +19,7 @@ export function Mark({ size = 22 }: { size?: number }) {
 const links = [
   { href: "/", label: "Map", short: "Map" },
   { href: "/upload", label: "Report water", short: "Report" },
+  { href: "/drive", label: "Drive mode", short: "Drive" },
   { href: "/about", label: "How it works", short: "About" },
 ];
 

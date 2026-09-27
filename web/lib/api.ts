@@ -1,5 +1,6 @@
 // Client for the backend contract in backend/API.md. NEXT_PUBLIC_USE_MOCK=1 swaps in lib/mock.ts.
 import * as mock from "./mock";
+import { session } from "./session";
 
 export const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "");
 export const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "1";
@@ -30,7 +31,7 @@ export type Evidence = {
   credit: string | null;
   source_url?: string | null;
   location_precision?: string;
-  kind?: "photo" | "survey";  // survey = USGS high-water mark minus 3DEP ground; no image
+  kind?: "photo" | "survey" | "dashcam" | "voice"; // survey = USGS high-water mark minus 3DEP ground; dashcam and voice have no image
 };
 export type SegmentState = "unknown" | "stale" | "reported_unknown" | "reported";
 export type SegmentProps = {
@@ -74,7 +75,17 @@ export type RouteResponse =
   | { found: false; reason: string; avoided: Avoided[] };
 export type RouteRequest = { from: Point | string; to: Point | string; vehicle: string; t: string };
 export type ChatMessage = { role: "user" | "assistant"; content: string };
-export type ChatResponse = { reply: string; route: RouteResponse | null; sources: { title: string; url: string }[] };
+export type ChatResponse = {
+  reply: string;
+  route: RouteResponse | null;
+  sources: { title: string; url: string }[];
+  speak?: string; // plain text for TTS: speak this, not reply
+  filed?: Evidence[]; // voice reports the agent filed this turn
+};
+export type ChatRequest = { messages: ChatMessage[]; vehicle: string; t: string; location: Point | null };
+export type DashcamResponse =
+  | { water: true; filed: boolean; edge_id: string | null; street: string | null; over_limit: boolean; evidence: Evidence | null; speak: string | null }
+  | { water: false; filed: false; speak: null };
 export type UploadStatus = { obs_id: string; status: "queued" | "done" | "rejected"; result: Evidence | null; message: string };
 export type EvalResult =
   | { n: 0 }
@@ -94,6 +105,9 @@ export type EvalResult =
       note: string;
     };
 
+// Errors carry the HTTP status so callers can tell "depth model offline" (503) from other failures.
+export type ApiError = Error & { status?: number };
+
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(API_BASE + path, init);
   if (!res.ok) {
@@ -102,7 +116,7 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
       const body = await res.json();
       detail = typeof body.detail === "string" ? body.detail : body.message || "";
     } catch {}
-    throw new Error(detail || `Request failed (${res.status})`);
+    throw Object.assign(new Error(detail || `Request failed (${res.status})`), { status: res.status });
   }
   return res.json();
 }
@@ -114,19 +128,31 @@ const json = (body: unknown, signal?: AbortSignal): RequestInit => ({
   signal,
 });
 
+// "29.76, -95.38" becomes a point; anything else is a place name for the backend to geocode.
+export function parsePoint(s: string): Point | string {
+  const m = s.trim().match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);
+  return m ? { lat: Number(m[1]), lon: Number(m[2]) } : s.trim();
+}
+
 // Mock media ships in public/, so it is not prefixed with the API base.
 export const mediaUrl = (u: string) => (USE_MOCK || /^https?:|^data:/.test(u) ? u : API_BASE + u);
+
+const withSession = (form: FormData) => {
+  if (!form.has("session")) form.append("session", session());
+  return form;
+};
 
 export const api = USE_MOCK
   ? mock.api
   : {
       config: () => req<Config>("/config"),
-      segments: (t: string, signal?: AbortSignal) => req<Segments>(`/segments?t=${encodeURIComponent(t)}`, { signal }),
+      segments: (t: string, signal?: AbortSignal) =>
+        req<Segments>(`/segments?t=${encodeURIComponent(t)}&session=${session()}`, { signal }),
       alerts: (t: string, signal?: AbortSignal) => req<Alerts>(`/alerts?t=${encodeURIComponent(t)}`, { signal }),
-      route: (body: RouteRequest, signal?: AbortSignal) => req<RouteResponse>("/route", json(body, signal)),
-      chat: (body: { messages: ChatMessage[]; vehicle: string; t: string; location: Point | null }) =>
-        req<ChatResponse>("/chat", json(body)),
-      upload: (form: FormData) => req<UploadStatus>("/upload", { method: "POST", body: form }),
-      uploadStatus: (id: string) => req<UploadStatus>(`/upload/${encodeURIComponent(id)}`),
+      route: (body: RouteRequest, signal?: AbortSignal) => req<RouteResponse>("/route", json({ ...body, session: session() }, signal)),
+      chat: (body: ChatRequest) => req<ChatResponse>("/chat", json({ ...body, session: session() })),
+      upload: (form: FormData) => req<UploadStatus>("/upload", { method: "POST", body: withSession(form) }),
+      uploadStatus: (id: string) => req<UploadStatus>(`/upload/${encodeURIComponent(id)}?session=${session()}`),
+      dashcam: (form: FormData) => req<DashcamResponse>("/dashcam", { method: "POST", body: withSession(form) }),
       eval: () => req<EvalResult>("/eval"),
     };

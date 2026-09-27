@@ -3,9 +3,10 @@
 import type {
   Alerts,
   Avoided,
-  ChatMessage,
+  ChatRequest,
   ChatResponse,
   Config,
+  DashcamResponse,
   EvalResult,
   Evidence,
   LngLat,
@@ -104,13 +105,14 @@ function segmentAt(s: Seed, t: number): SegmentProps | null {
   const last = Math.min(t, s.until ? ms(s.until) : t);
   const obs: Evidence[] = [];
   for (let at = first, i = 0; at <= last; at += s.every * H, i++) obs.push(observation(s, at, i));
-  obs.reverse(); // newest first
+  obs.push(...(filed.get(s.id) ?? []).filter((e) => ms(e.time) <= t));
+  obs.sort((a, b) => b.time.localeCompare(a.time)); // newest first
   const latest = obs[0];
   const stale = t - ms(latest.time) > 8 * H;
   return {
     edge_id: s.id,
     name: s.name,
-    state: stale ? "stale" : s.peak === null ? "reported_unknown" : "reported",
+    state: stale ? "stale" : latest.high_cm === null ? "reported_unknown" : "reported",
     depth_cm: latest.depth_cm,
     low_cm: latest.low_cm,
     high_cm: latest.high_cm,
@@ -199,8 +201,44 @@ function route(body: RouteRequest): RouteResponse {
   };
 }
 
-function chat(body: { messages: ChatMessage[]; vehicle: string; t: string; location: Point | null }): ChatResponse {
+// Reports filed this session (dashcam, voice), merged into segments() like the backend's session sandbox.
+const filed = new Map<string, Evidence[]>();
+function file(edge: string, ev: Evidence) {
+  filed.set(edge, [...(filed.get(edge) ?? []), ev]);
+  return ev;
+}
+
+// "Water's up to my knees at Main and 5th": the mock files a voice report on Sabine St at the replay time.
+function voiceReport(q: string, t: string): Evidence | null {
+  if (!/(knee|ankle|waist|water('s| is)? (up|over|at|on))/.test(q)) return null;
+  const [low, high] = /waist/.test(q) ? [80, 110] : /ankle/.test(q) ? [10, 20] : [40, 60];
+  return file("1007-1008-0", {
+    obs_id: `obs-voice-${Date.now()}`,
+    image_url: null,
+    reference: null,
+    depth_cm: Math.round((low + high) / 2),
+    low_cm: low,
+    high_cm: high,
+    confidence: 0.3,
+    time: t,
+    rationale: `Spoken report: "${q}".`,
+    credit: "Voice report from this session",
+    location_precision: "street",
+    kind: "voice",
+  });
+}
+
+function chat(body: ChatRequest): ChatResponse {
   const q = body.messages[body.messages.length - 1]?.content.toLowerCase() ?? "";
+  const ev = voiceReport(q, body.t);
+  if (ev)
+    return {
+      reply: `Thanks. I filed a voice report on Sabine St at ${ev.low_cm}–${ev.high_cm} cm, marked low confidence. Routes will avoid it. Please don't drive into it.`,
+      speak: `Thanks. I filed a voice report on Sabine Street, about ${ev.low_cm} to ${ev.high_cm} centimetres, marked low confidence. Routes will avoid it. Please don't drive into it.`,
+      route: null,
+      sources: [],
+      filed: [ev],
+    };
   const wantsRoute = /route|get to|drive|way to|how do i/.test(q);
   const r = wantsRoute ? route({ from: body.location ?? "", to: "", vehicle: body.vehicle, t: body.t }) : null;
   const blocked = r?.avoided.slice(0, 4).map((a) => a.name).filter(Boolean).join(", ");
@@ -208,11 +246,64 @@ function chat(body: { messages: ChatMessage[]; vehicle: string; t: string; locat
     reply: r?.found
       ? `Yes, with a detour. I found a ${(r.distance_m / 1000).toFixed(1)} km route that stays off ${r.avoided.length} streets with water reported above your vehicle's limit, including ${blocked}. About ${r.unknown_m} m of it runs through streets nobody has reported on inside the active Flash Flood Warning. That is unknown, not dry. If you see water across the road, turn around.`
       : "Water is reported on Memorial Dr (up to 65 cm) and Allen Pkwy (up to 80 cm) along Buffalo Bayou, and White Oak Dr is deeper still. A Flash Flood Warning covers the area. Tell me where you're going and in what vehicle, and I'll plan around it.",
+    speak: r?.found
+      ? `Yes, with a detour. The route is ${(r.distance_m / 1000).toFixed(1)} kilometres and stays off ${r.avoided.length} streets with water reported above your vehicle's limit. Some of it runs through streets nobody has reported on. That is unknown, not dry. If you see water across the road, turn around.`
+      : "Water is reported on Memorial Drive and Allen Parkway along Buffalo Bayou, and White Oak Drive is deeper still. A flash flood warning covers the area. Tell me where you're going and in what vehicle, and I'll plan around it.",
     route: r,
     sources: [
       { title: "NWS Houston/Galveston: Flash Flood Warning", url: "https://www.weather.gov/hgx/" },
       { title: "Harris County Flood Warning System", url: "https://www.harriscountyfws.org/" },
     ],
+  };
+}
+
+// A scripted drive: dry frames, then deep water on Washington Ave (filed, then a duplicate), then shallow water on Heights Blvd.
+const DRIVE: ({ edge: string; street: string; spoken: string; low: number; high: number } | null)[] = [
+  null,
+  null,
+  { edge: "1017-1018-0", street: "Washington Ave", spoken: "Washington Avenue", low: 28, high: 45 },
+  { edge: "1017-1018-0", street: "Washington Ave", spoken: "Washington Avenue", low: 28, high: 45 },
+  null,
+  { edge: "1021-1022-0", street: "Heights Blvd", spoken: "Heights Boulevard", low: 4, high: 12 },
+];
+let frames = 0;
+const lastFiled = new Map<string, number>();
+
+function dashcam(form: FormData): DashcamResponse {
+  const step = DRIVE[frames++ % DRIVE.length];
+  if (!step) return { water: false, filed: false, speak: null };
+  const v = config.vehicles.find((x) => x.id === form.get("vehicle")) ?? config.vehicles[0];
+  const t = (form.get("t") as string | null) || new Date().toISOString();
+  const over = step.high > v.limit_cm;
+  const dup = Date.now() - (lastFiled.get(step.edge) ?? 0) < 2 * 60_000;
+  const evidence: Evidence = {
+    obs_id: `obs-dashcam-${Date.now()}`,
+    image_url: null,
+    reference: "car tire",
+    depth_cm: Math.round((step.low + step.high) / 2),
+    low_cm: step.low,
+    high_cm: step.high,
+    confidence: 0.58,
+    time: t,
+    rationale: `Water reaches the lower sidewall of the car ahead (typical tire height 65 cm), giving ${step.low}–${step.high} cm.`,
+    credit: "Dashcam frame from this session (not stored)",
+    location_precision: "street",
+    kind: "dashcam",
+  };
+  if (!dup) {
+    lastFiled.set(step.edge, Date.now());
+    file(step.edge, evidence);
+  }
+  return {
+    water: true,
+    filed: !dup,
+    edge_id: step.edge,
+    street: step.street,
+    over_limit: over,
+    evidence,
+    speak: over
+      ? `Water reported ahead on ${step.spoken}, about ${Math.round((step.low + step.high) / 2)} centimetres, possibly up to ${step.high}. Your ${v.label.toLowerCase()}'s limit is ${v.limit_cm}. Rerouting.`
+      : `Shallow water on ${step.spoken}, up to ${step.high} centimetres. No deep water reported. Water can rise fast.`,
   };
 }
 
@@ -227,7 +318,7 @@ export const api = {
     await wait(450);
     return route(body);
   },
-  chat: async (body: { messages: ChatMessage[]; vehicle: string; t: string; location: Point | null }) => {
+  chat: async (body: ChatRequest) => {
     await wait(1400);
     return chat(body);
   },
@@ -257,6 +348,10 @@ export const api = {
         credit: "Your upload",
       },
     };
+  },
+  dashcam: async (form: FormData) => {
+    await wait(900);
+    return dashcam(form);
   },
   eval: async (): Promise<EvalResult> => ({ n: 0 }),
 };
