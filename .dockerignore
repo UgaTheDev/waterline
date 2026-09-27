@@ -1,0 +1,19 @@
+# Keep the build context to what the Dockerfile actually COPYs (backend/, data/cache/).
+.git
+.claude
+web
+eval
+scripts
+data/raw
+data/uploads.db
+data/uploads
+.venv
+node_modules
+__pycache__
+**/__pycache__
+*.pyc
+.env
+.env.*
+!.env.example
+.DS_Store
+*.md
