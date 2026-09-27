@@ -2,7 +2,7 @@
 
 <!-- Worker-owned. Update at every checkpoint, blocker, or decision. The orchestrator reads this file; keep the headings exactly. -->
 
-**Updated:** 2026-09-27 16:30  ·  **Stage:** building  ·  **Health:** 🟡 at risk
+**Updated:** 2026-09-27 16:40  ·  **Stage:** building  ·  **Health:** 🟡 at risk
 
 ## Needs Kush
 - **Token Factory key** (blocks the live depth model, the agent and latency/cost numbers): join https://dev.nebius.com/builders, create a key, add `TF_KEY=...` to `.env` in this repo (never paste it in chat).
@@ -10,7 +10,7 @@
 - **Label the eval set (~45 min)** (blocks the headline miss-rate number): run `python3 eval/label.py`, open http://localhost:8766, and press 1-5 per photo.
 - **Nebius AI Cloud + $25 deposit** (blocks backend hosting on a CPU VM, the Cosmos Reason 2 benchmark and the Cosmos Transfer spike): create the account and deposit, then tell this session so it can set up the VMs with you watching.
 - **Hugging Face read token** (needed for the Cosmos weights on the GPU VM): create it at https://huggingface.co/settings/tokens and add `HF_TOKEN=...` to `.env`.
-- **Film a 5-15 s dry street clip** (blocks the Cosmos Transfer "see your street flooded" spike; no clean PD/CC-BY clip exists): phone held steady at eye level on an ordinary street, no faces or plates up close, then drop it in `data/raw/recon/street.mp4`.
+- **Film a 5-15 s dry street clip** (daylight, steady, cars and curb in frame, no readable plates or close faces, not your own building) (blocks the Cosmos Transfer "see your street flooded" spike; no clean PD/CC-BY clip exists): phone held steady at eye level on an ordinary street, no faces or plates up close, then drop it in `data/raw/recon/street.mp4`.
 - **Oct 28: make the repo public** (Nebius requires public + license): `gh repo edit UgaTheDev/waterline --visibility public --accept-visibility-change-consequences`
 
 ## Done since last update
@@ -20,7 +20,7 @@
 - v2 plan approved; v2 contracts frozen (backend/API.md) with stub routers for risk, responder and simulations.
 - Stream C merged: voice chat (push-to-talk, spoken replies) + /drive dashcam HUD, live on Vercel (sample mode).
 - Stream A merged: 5 m DEM + terrain inference (4,248 inferred obs on 2,153 streets). Leave-one-out: errors lean high (median +15 cm), 0 reached marks under-called for a sedan, but coverage 30-60%, so inferred depths are display-only (hatched), never used for routing.
-- Stream R done: Harvey hourly rain via IEM point API (works); PD Texas National Guard clip (610 at Braeswood) added as the Drive-mode demo footage; Houston 311 dropped ("All rights reserved", no open license).
+- Stream R done: Harvey hourly rain via IEM point API (works); PD Texas National Guard clip (610 at Braeswood) added as the Drive-mode demo footage; Houston 311 dropped ("All rights reserved", no open license). Decision (Kush): ship without it; add it only if written permission from the City arrives by about Oct 20. The parser is ready (backend/ingest311.py).
 - Stream E merged: depth-model danger flags, token-guarded responder queue/review/media, 311 text parser (12 tests pass).
 
 ## In progress (streams)
