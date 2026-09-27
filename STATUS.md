@@ -2,7 +2,7 @@
 
 <!-- Worker-owned. Update at every checkpoint, blocker, or decision. The orchestrator reads this file; keep the headings exactly. -->
 
-**Updated:** 2026-09-27 18:10  ·  **Stage:** building  ·  **Health:** 🟡 at risk
+**Updated:** 2026-09-27 18:30  ·  **Stage:** building  ·  **Health:** 🟡 at risk
 
 ## Needs Kush
 - **Token Factory key: $50 free credit, no paid plan needed** (blocks the live depth model, the agent and latency/cost numbers): (1) redeem the hackathon promo form https://nebius.com/promo-code?utm_promo_event_code=2026-devpost-global-ai-hack&utm_promo_code_type=Token_Factory&utm_promo_activation_code=NEBIUS-DEVPOST-GLOBAL26 with code `NEBIUS-DEVPOST-GLOBAL26` ($25); (2) join https://dev.nebius.com/builders and claim another $25; (3) create an API key and add `TF_KEY=...` to `.env` in this repo (never paste it in chat).
@@ -40,9 +40,11 @@
 | F eval | Kush labels + keys | blocked | see Needs Kush |
 | G web integration | stream-g-web (opus) | ✅ merged 0dcc181 | — |
 | Security review | security-review (opus, read-only) | ✅ 12 findings fixed + regression-tested | — |
+| Scale #3: multi-event + Ida 2021 NYC | worktree stream-events (opus) | running | event registry, add_event.py, Ida replay, event switcher |
+| Scale #2: bigger eval (+Ida/Helene/VT photos, 2nd annotator, CIs, kappa) | worktree stream-eval-scale (sonnet) | running | harvest + label.py annotator mode |
 
 ## Blockers (not Kush)
-- none
+- Ida/Helene/VT have almost no USGS peak-time summaries (Ida 5, VT 0, Helene 0): Ida peak times will be estimated from the nearest stream gauge or the rainfall peak, and labeled as estimated.
 
 ## Next checkpoint
 - 2026-09-29: streams A, E and R merged to main; the voice/dashcam UI is live on Vercel (sample mode).
