@@ -72,7 +72,7 @@ def finalize(e: Estimate | None) -> dict:
     lo, mid, hi = sorted([e.low_cm, e.depth_cm, e.high_cm])
     hi = min(300.0, hi * P.HIGH_SCALE + P.HIGH_MARGIN_CM)
     ref = e.reference_objects[0].name if e.reference_objects else None
-    return {"status": "ok", "depth_cm": round(mid, 1), "low_cm": round(lo, 1), "high_cm": round(hi, 1),
+    return {"status": "ok", "water_visible": e.water_visible, "depth_cm": round(mid, 1), "low_cm": round(lo, 1), "high_cm": round(hi, 1),
             "confidence": round(e.confidence, 2), "reference": ref, "rationale": e.rationale}
 
 

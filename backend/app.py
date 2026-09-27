@@ -1,5 +1,5 @@
 """HTTP API. Contract: backend/API.md. Run: uvicorn backend.app:app --port 8000"""
-import json, time, uuid
+import json, re, time, uuid
 from collections import defaultdict, deque
 from datetime import datetime, timezone
 from functools import lru_cache
@@ -40,7 +40,8 @@ def _evidence(o):
     return {"obs_id": o["obs_id"], "image_url": o.get("image_url"), "reference": o.get("reference"), "depth_cm": o.get("depth_cm"),
             "low_cm": o.get("low_cm"), "high_cm": o.get("high_cm"), "confidence": o.get("confidence"),
             "time": o["time"].isoformat(), "rationale": o.get("rationale"), "credit": o.get("credit"),
-            "source_url": o.get("source_url"), "location_precision": o.get("precision") or "exact", "kind": o.get("kind") or "photo"}
+            "source_url": o.get("source_url"), "location_precision": o.get("precision") or "exact", "kind": o.get("kind") or "photo",
+            "street": o.get("street")}
 
 
 def _public(s):
@@ -48,9 +49,26 @@ def _public(s):
             "obs_time": s["obs_time"].isoformat(), "evidence": [_evidence(o) for o in s["evidence"]]}
 
 
-def _states(t):
+def _session(s):
+    return s if isinstance(s, str) and re.fullmatch(r"[0-9a-f-]{8,40}", s) else None
+
+
+def _ingest(t, session):
+    """(obs time, session_id). Reports filed while viewing the replay are stamped with the replay time and
+    sandboxed to the filer's session, so visitors can't change the shared replay. Otherwise: live, global."""
+    s = _session(session)
+    try:
+        when = ts(t) if t else None
+    except ValueError:
+        when = None
+    if when and s and ts(P.REPLAY["start"]) <= when <= ts(P.REPLAY["end"]):
+        return when, s
+    return datetime.now(timezone.utc), None
+
+
+def _states(t, session=None):
     R = roads()  # a report applies to both directions of the same street
-    return states_at([{**o, "edge_id": tw} for o in store.all() if o.get("edge_id") in R.edges for tw in R.twin_ids(o["edge_id"])], t)
+    return states_at([{**o, "edge_id": tw} for o in store.all(_session(session)) if o.get("edge_id") in R.edges for tw in R.twin_ids(o["edge_id"])], t)
 
 
 _hits = defaultdict(deque)
@@ -86,9 +104,9 @@ def config():
 
 
 @app.get("/segments")
-def segments(t: str | None = None):
+def segments(t: str | None = None, session: str | None = None):
     R = roads()
-    return {"type": "FeatureCollection", "features": [R.feature(eid, _public(s)) for eid, s in _states(_t(t)).items() if eid in R.edges]}
+    return {"type": "FeatureCollection", "features": [R.feature(eid, _public(s)) for eid, s in _states(_t(t), session).items() if eid in R.edges]}
 
 
 @app.get("/alerts")
@@ -100,6 +118,7 @@ class RouteReq(BaseModel):
     to: dict | str
     vehicle: str = "sedan"
     t: str | None = None
+    session: str | None = None
     model_config = {"extra": "allow"}  # "from" is a Python keyword; read it from extras
 
 
@@ -111,10 +130,10 @@ def _loc(x):
     return None
 
 
-def _route(a, b, vehicle, t):
+def _route(a, b, vehicle, t, session=None):
     if vehicle not in P.VEHICLES:
         raise HTTPException(400, f"vehicle must be one of {list(P.VEHICLES)}")
-    return roads().route(a, b, vehicle, _states(t), alerts.polygons(alerts.active(t)))
+    return roads().route(a, b, vehicle, _states(t, session), alerts.polygons(alerts.active(t)))
 
 
 def _public_route(r):
@@ -130,7 +149,7 @@ def route(req: RouteReq, request: Request):
     if not a or not b:
         raise HTTPException(404, f"Couldn't find the {'start' if not a else 'destination'} in {P.CITY}.")
     t = _t(req.t)
-    r = _route((a["lat"], a["lon"]), (b["lat"], b["lon"]), req.vehicle, t)
+    r = _route((a["lat"], a["lon"]), (b["lat"], b["lon"]), req.vehicle, t, req.session)
     return _public_route({**r, "from": a, "to": b})
 
 
@@ -139,6 +158,22 @@ class ChatReq(BaseModel):
     vehicle: str = "sedan"
     t: str | None = None
     location: dict | None = None
+    session: str | None = None
+
+
+def _file_report(lat, lon, t, session, kind, fields):
+    """Store a done observation snapped to a road. Returns public evidence, or {"error": ...}."""
+    w, s, e, n = P.BBOX
+    if not (s <= lat <= n and w <= lon <= e):
+        return {"error": f"outside the {P.CITY} coverage area"}
+    eid = roads().snap(lat, lon)
+    if not eid:
+        return {"error": f"no road within {P.SNAP_M} m of that spot"}
+    when, sid = _ingest(t, session)
+    o = {"obs_id": f"{kind}-{uuid.uuid4().hex[:10]}", "edge_id": eid, "time": when, "lat": lat, "lon": lon, "status": "ok",
+         "queue_state": "done", "session_id": sid, "kind": kind, "image_url": None, "credit": f"{kind.title()} report", **fields}
+    store.put(o)
+    return {**_evidence(o), "edge_id": eid, "street": roads().edges[eid][4]}
 
 
 @app.post("/chat")
@@ -148,7 +183,7 @@ def chat(req: ChatReq, request: Request):
     R = roads()
 
     def near(lat, lon):
-        st = _states(t)
+        st = _states(t, req.session)
         ids = [R.ids[int(i)] for i in R.tree.query(Point(*R.to_m(lon, lat)).buffer(600))]
         seen, out = set(), []
         for eid in ids:
@@ -158,8 +193,15 @@ def chat(req: ChatReq, request: Request):
                 out.append({"name": R.edges[eid][4], "state": s["state"], "high_cm": s["high_cm"], "time": s["obs_time"].isoformat()})
         return out[:10] or "no reports near here (unknown, not dry)"
 
-    ctx = {"route_fn": lambda a, b, v: _route(a, b, v if v in P.VEHICLES else req.vehicle, t), "near_fn": near,
-           "alerts_fn": lambda: alerts.active(t), "location": req.location, "vehicle": req.vehicle}
+    def report(lat, lon, cm, reached):
+        # eyewitness words are coarse: low confidence, wide bounds, conservative upper bound
+        return _file_report(lat, lon, req.t, req.session, "voice", {
+            "depth_cm": cm, "low_cm": round(cm * 0.5, 1), "high_cm": round(max(cm * 1.5, cm + 20), 1), "confidence": 0.35,
+            "reference": f"eyewitness: water reached {reached}", "rationale": "Spoken report; depth mapped from what the water reached.",
+            "precision": "street"})
+
+    ctx = {"route_fn": lambda a, b, v: _route(a, b, v if v in P.VEHICLES else req.vehicle, t, req.session), "near_fn": near,
+           "alerts_fn": lambda: alerts.active(t), "location": req.location, "vehicle": req.vehicle, "report_fn": report}
     out = agent.chat(req.messages, ctx)
     if out["route"]:
         out["route"] = _public_route(out["route"])
@@ -197,7 +239,8 @@ def _upload_view(o):
 
 
 @app.post("/upload", status_code=202)
-async def upload(request: Request, bg: BackgroundTasks, file: UploadFile = File(...), lat: float | None = Form(None), lon: float | None = Form(None)):
+async def upload(request: Request, bg: BackgroundTasks, file: UploadFile = File(...), lat: float | None = Form(None), lon: float | None = Form(None),
+                 t: str | None = Form(None), session: str | None = Form(None)):
     limit(request, "upload", 5, 600)
     raw = await file.read(MAX_BYTES + 1)
     if len(raw) > MAX_BYTES:
@@ -219,13 +262,58 @@ async def upload(request: Request, bg: BackgroundTasks, file: UploadFile = File(
     body = depth.prepare_image(raw) if mime.startswith("image") else raw  # images: EXIF stripped here
     name = f"{obs_id}.{'jpg' if mime.startswith('image') else 'mp4'}"
     (UPLOADS / name).write_bytes(body)
-    now = datetime.now(timezone.utc)
-    store.put({"obs_id": obs_id, "edge_id": eid, "time": now, "lat": loc[0], "lon": loc[1], "status": "unknown",
+    when, sid = _ingest(t, session)
+    store.put({"obs_id": obs_id, "edge_id": eid, "time": when, "lat": loc[0], "lon": loc[1], "status": "unknown",
                "credit": "Community upload", "image_url": None, "queue_state": "queued", "media_path": name,
+               "session_id": sid, "kind": "photo",
                "mime": "image/jpeg" if mime.startswith("image") else mime})
     for q in store.queued():
         bg.add_task(_process, q["obs_id"])
     return _upload_view(store.get(obs_id))
+
+
+DASHCAM_BYTES = 3 * 1024 * 1024
+_dash_recent = {}  # (session or client, street) -> last filed epoch s. ponytail: in-memory, fine for one instance
+
+
+def _speak_dash(street, ev, vehicle, over):
+    v = P.VEHICLES[vehicle]
+    msg = (f"Water reported ahead on {street}, about {ev['depth_cm']:.0f} centimetres, possibly up to {ev['high_cm']:.0f}. "
+           f"Your {v['label'].lower()}'s limit is {v['limit_cm']}.")
+    return msg + (" Rerouting." if over else " Estimates can be wrong. If it looks deeper, turn around.")
+
+
+@app.post("/dashcam")
+async def dashcam(request: Request, frame: UploadFile = File(...), lat: float = Form(...), lon: float = Form(...),
+                  vehicle: str = Form("sedan"), t: str | None = Form(None), session: str | None = Form(None)):
+    limit(request, "dashcam", 40, 60)
+    if vehicle not in P.VEHICLES:
+        raise HTTPException(400, f"vehicle must be one of {list(P.VEHICLES)}")
+    raw = await frame.read(DASHCAM_BYTES + 1)
+    if len(raw) > DASHCAM_BYTES or _sniff(raw) != "image/jpeg":
+        raise HTTPException(415, "Send one JPEG frame under 3 MB.")
+    try:
+        est = depth.estimate(depth.prepare_image(raw, max_px=1024))  # frame stays in memory; never written to disk
+    except Exception:
+        raise HTTPException(503, "Depth model offline. No warnings until it's back.")
+    if est["status"] != "ok" or not est.get("water_visible") or (est["high_cm"] or 0) < 5:
+        # an unreadable or dry frame files nothing: it is not evidence that the road is clear
+        return {"water": False, "filed": False, "speak": None}
+    eid = roads().snap(lat, lon)
+    street = roads().edges[eid][4] if eid else None
+    over = est["high_cm"] > P.VEHICLES[vehicle]["limit_cm"]
+    key, now = (_session(session) or (request.client.host if request.client else "?"), street), time.time()
+    if not eid or now - _dash_recent.get(key, 0) < 120:
+        return {"water": True, "filed": False, "street": street, "over_limit": over, "evidence": None,
+                "speak": None if eid else "Water ahead. Location unclear, so no report was filed."}
+    _dash_recent[key] = now
+    fields = {k: est[k] for k in ("depth_cm", "low_cm", "high_cm", "reference", "rationale")}
+    ev = _file_report(lat, lon, t, session, "dashcam", {**fields, "confidence": round((est["confidence"] or 0.5) * 0.8, 2),
+                                                        "precision": "street", "street": street})
+    if "error" in ev:
+        return {"water": True, "filed": False, "street": street, "over_limit": over, "evidence": None, "speak": None}
+    return {"water": True, "filed": True, "edge_id": eid, "street": street, "over_limit": over, "evidence": ev,
+            "speak": _speak_dash(street, ev, vehicle, over)}
 
 
 @app.get("/upload/{obs_id}")

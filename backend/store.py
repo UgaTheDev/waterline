@@ -4,7 +4,8 @@ from datetime import datetime
 from .profiles import CACHE, DB_PATH
 
 COLS = ["obs_id", "edge_id", "time", "lat", "lon", "status", "depth_cm", "low_cm", "high_cm", "confidence",
-        "reference", "rationale", "credit", "image_url", "queue_state", "media_path", "mime"]
+        "reference", "rationale", "credit", "image_url", "queue_state", "media_path", "mime", "session_id", "kind", "street"]
+REAL = ("depth_cm", "low_cm", "high_cm", "confidence", "lat", "lon")
 
 
 def ts(s):
@@ -20,7 +21,11 @@ class Store:
         self.db = sqlite3.connect(DB_PATH, check_same_thread=False)
         self.db.row_factory = sqlite3.Row
         self.lock = threading.Lock()  # ponytail: one writer lock, fine at demo scale
-        self.db.execute(f"CREATE TABLE IF NOT EXISTS obs ({', '.join(c + ' TEXT' if c not in ('depth_cm','low_cm','high_cm','confidence','lat','lon') else c + ' REAL' for c in COLS)}, PRIMARY KEY(obs_id))")
+        self.db.execute(f"CREATE TABLE IF NOT EXISTS obs ({', '.join(c + (' REAL' if c in REAL else ' TEXT') for c in COLS)}, PRIMARY KEY(obs_id))")
+        have = {r[1] for r in self.db.execute("PRAGMA table_info(obs)")}
+        for c in COLS:  # additive migration for databases made by older versions
+            if c not in have:
+                self.db.execute(f"ALTER TABLE obs ADD COLUMN {c} {'REAL' if c in REAL else 'TEXT'}")
 
     def put(self, o):
         row = {c: o.get(c) for c in COLS}
@@ -35,6 +40,7 @@ class Store:
     def queued(self):
         return [dict(r, time=ts(r["time"])) for r in self.db.execute("SELECT * FROM obs WHERE queue_state='queued'")]
 
-    def all(self):
-        live = [dict(r, time=ts(r["time"])) for r in self.db.execute("SELECT * FROM obs WHERE queue_state='done'")]
-        return self.replay + live
+    def all(self, session=None):
+        """Replay cache + global live reports + reports sandboxed to this session (filed while viewing the replay)."""
+        q = "SELECT * FROM obs WHERE queue_state='done' AND (session_id IS NULL OR session_id=?)"
+        return self.replay + [dict(r, time=ts(r["time"])) for r in self.db.execute(q, (session or "",))]

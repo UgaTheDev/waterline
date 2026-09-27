@@ -10,7 +10,9 @@ Use the tools; never guess road conditions. Rules you must follow:
 - Never say a road or route is "safe". Say "no deep water reported" and remind that unreported streets are unknown, not dry.
 - For every street the route avoids, name it and give the reported depth, the evidence time and the reference object.
 - If no route exists, say so plainly and advise not to drive: "Turn Around, Don't Drown."
-- Cite local news only as unverified context. Be brief: at most 6 sentences."""
+- Cite local news only as unverified context. Be brief: at most 6 sentences.
+- If the user describes water they see ("up to my knees at Main and 5th"), call file_report once with the place and
+  what the water reached, then thank them and remind them not to walk or drive into it."""
 
 TOOLS = [
     {"type": "function", "function": {"name": "route", "description": "Driving route that avoids water too deep for the vehicle.",
@@ -22,12 +24,28 @@ TOOLS = [
      "parameters": {"type": "object", "properties": {"place": {"type": "string"}}, "required": ["place"]}}},
     {"type": "function", "function": {"name": "active_alerts", "description": "NWS flood warnings active now.",
      "parameters": {"type": "object", "properties": {}}}},
+    {"type": "function", "function": {"name": "file_report", "description": "File the user's own eyewitness flood report.",
+     "parameters": {"type": "object", "properties": {
+         "place": {"type": "string", "description": "street, intersection or landmark, or 'here'"},
+         "reached": {"type": "string", "description": "what the water reached, e.g. ankles, knees, waist, curb, car doors, tire tops"}},
+         "required": ["place", "reached"]}}},
     {"type": "function", "function": {"name": "local_reports", "description": "Local news / road-closure reports (unverified).",
      "parameters": {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}}},
 ]
 
 # "safe" asserted about a road, not negated ("not safe", "unsafe")
 UNSAFE_CLAIM = re.compile(r"(?<!un)(?<!not )(?<!never )\bsafe(ly)?\b", re.I)
+
+
+# What the water reached -> depth (cm). Deterministic: the model picks the words, never the number.
+REACHED_CM = [("ankle", 10), ("curb", 15), ("shin", 30), ("door sill", 30), ("hubcap", 33), ("knee", 50),
+              ("tire top", 65), ("tyre top", 65), ("top of the tire", 65), ("thigh", 70), ("hood", 90), ("bonnet", 90),
+              ("waist", 100), ("hip", 90), ("chest", 130), ("door", 45), ("tire", 40), ("tyre", 40)]
+
+
+def reached_cm(text):
+    t = (text or "").lower()
+    return next((cm for k, cm in REACHED_CM if re.search(rf"\b{k}s?\b", t)), None)
 
 
 def violates(text):
@@ -42,7 +60,7 @@ class Tools:
     """ctx: route_fn(a, b, vehicle) -> RouteResponse, near_fn(lat, lon) -> list, alerts_fn() -> list, location, vehicle."""
 
     def __init__(self, ctx):
-        self.ctx, self.last_route, self.sources = ctx, None, []
+        self.ctx, self.last_route, self.sources, self.filed = ctx, None, [], []
 
     def _place(self, q):
         if q.strip().lower() in ("here", "my location", "current location"):
@@ -67,6 +85,20 @@ class Tools:
                 return {"error": "place not found"} if not p else {"place": p["label"], "streets": self.ctx["near_fn"](p["lat"], p["lon"])}
             if name == "active_alerts":
                 return {"alerts": [f["properties"] for f in self.ctx["alerts_fn"]()]}
+            if name == "file_report":
+                if self.filed:
+                    return {"error": "one report per message"}
+                cm = reached_cm(args.get("reached"))
+                if cm is None:
+                    return {"error": "ask what the water reached (ankles, knees, waist, curb, car doors)"}
+                p = self._place(args["place"])
+                if not p:
+                    return {"error": f"could not find that place in {P.CITY}; ask for a nearby street or intersection"}
+                ev = self.ctx["report_fn"](p["lat"], p["lon"], cm, args["reached"][:60])
+                if "error" in ev:
+                    return ev
+                self.filed.append(ev)
+                return {"filed": True, "street": ev.get("street"), "depth_cm": cm}
             if name == "local_reports":
                 out = local_reports(args["query"])
                 self.sources += [{"title": x["title"], "url": x["url"]} for x in out.get("results", [])]
@@ -89,10 +121,21 @@ def template(r):
     return " ".join(parts + r.get("warnings", []))
 
 
+def to_speech(text):
+    """Plain text for text-to-speech: no markdown, units spelled out."""
+    t = re.sub(r"[*_`#>]+", "", text or "")
+    t = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", t)
+    t = re.sub(r"(\d)\s*cm\b", r"\1 centimetres", t)
+    t = re.sub(r"(\d)\s*km\b", r"\1 kilometres", t)
+    t = re.sub(r"(\d)\s*m\b", r"\1 metres", t)
+    return " ".join(t.split())
+
+
 def chat(messages, ctx):
     tools = Tools(ctx)
     if not P.TF_KEY:
-        return {"reply": "The assistant is offline (no Token Factory key configured). Use the route panel.", "route": None, "sources": []}
+        msg = "The assistant is offline (no Token Factory key configured). Use the route panel."
+        return {"reply": msg, "speak": msg, "route": None, "sources": [], "filed": []}
     c = OpenAI(base_url=P.TF_URL, api_key=P.TF_KEY, timeout=60, max_retries=1)
     msgs = [{"role": "system", "content": SYSTEM}] + [{"role": m["role"], "content": m["content"][:2000]} for m in messages[-10:] if m["role"] in ("user", "assistant")]
     reply = None
@@ -115,4 +158,4 @@ def chat(messages, ctx):
     reply = re.sub(r"<think>.*?</think>", "", reply or "", flags=re.S).strip()
     if not reply or violates(reply):
         reply = template(tools.last_route)
-    return {"reply": reply, "route": tools.last_route, "sources": tools.sources[:5]}
+    return {"reply": reply, "speak": to_speech(reply), "route": tools.last_route, "sources": tools.sources[:5], "filed": tools.filed}

@@ -1,4 +1,6 @@
 """Safety invariants. Run: .venv/bin/python -m backend.test_core"""
+import os, tempfile
+os.environ["DB_PATH"] = os.path.join(tempfile.mkdtemp(), "test.db")  # never touch the real uploads db
 from datetime import datetime, timedelta, timezone
 import networkx as nx
 from .agent import violates, template
@@ -80,6 +82,44 @@ def test_eval_metrics():
     m = metrics([ok(40, 14), ok(40, 50), {"true_cm": 30, "status": "unknown"}, ok(5, 10)])
     assert m["misses"] == 1 and abs(m["miss_rate"] - 1 / 3) < 1e-9, "only a passable call on deep water is a miss; unknown is blocked"
     assert m["abstain_rate"] == 0.25 and m["false_block_rate"] == 0
+
+
+def test_voice_mapping():
+    from .agent import reached_cm, to_speech
+    assert reached_cm("up to my knees") == 50 and reached_cm("over the tire tops") == 65 and reached_cm("ankle deep") == 10
+    assert reached_cm("halfway up the car door") == 45 and reached_cm("it's a boat ship") is None and reached_cm("wet") is None
+    assert to_speech("**Avoid** Main St: 40 cm, 3.2 km") == "Avoid Main St: 40 centimetres, 3.2 kilometres"
+
+
+def test_api_sandbox_and_dashcam():
+    """Replay-time reports stay in the filer's session; dry or unreadable dashcam frames file nothing."""
+    import io
+    from fastapi.testclient import TestClient
+    from PIL import Image
+    from . import app as A
+    c = TestClient(A.app)
+    S1, S2, T = "aaaaaaaa-1111", "bbbbbbbb-2222", "2017-08-28T06:00:00Z"
+    ev = A._file_report(29.7780, -95.3990, T, S1, "voice", {"depth_cm": 50, "low_cm": 25, "high_cm": 75, "confidence": 0.35})
+    assert ev["street"] == "Yale Street", ev
+    seen = lambda s: any(f["properties"]["edge_id"] == ev["edge_id"] for f in c.get("/segments", params={"t": T, "session": s}).json()["features"])
+    assert seen(S1) and not seen(S2) and not seen(None), "a replay-time report must be visible only to its session"
+    buf = io.BytesIO(); Image.new("RGB", (64, 64)).save(buf, "JPEG"); jpg = buf.getvalue()
+    post = lambda: c.post("/dashcam", files={"frame": ("f.jpg", jpg, "image/jpeg")}, data={"lat": 29.7780, "lon": -95.3990, "t": T, "session": S1})
+    real = A.depth.estimate
+    try:
+        A.depth.estimate = lambda *a, **k: (_ for _ in ()).throw(ConnectionError())
+        assert post().status_code == 503, "model offline must be explicit, never silence"
+        A.depth.estimate = lambda *a, **k: {"status": "ok", "water_visible": False, "depth_cm": 0, "low_cm": 0, "high_cm": 3, "confidence": 0.9}
+        assert post().json() == {"water": False, "filed": False, "speak": None}, "a dry frame files nothing"
+        A.depth.estimate = lambda *a, **k: {"status": "unknown", "high_cm": None}
+        assert post().json()["filed"] is False, "an unreadable frame files nothing"
+        A.depth.estimate = lambda *a, **k: {"status": "ok", "water_visible": True, "depth_cm": 30, "low_cm": 20, "high_cm": 45,
+                                            "confidence": 0.8, "reference": "car tire", "rationale": "x"}
+        r = post().json()
+        assert r["filed"] and r["over_limit"] and "Rerouting" in r["speak"] and not violates(r["speak"]), r
+        assert post().json()["filed"] is False, "same street within 2 min is not re-filed"
+    finally:
+        A.depth.estimate = real
 
 
 if __name__ == "__main__":

@@ -54,3 +54,24 @@ Never display the word "safe". Shallow reports read "no deep water reported".
 `GET /eval` → `{"n":..,"n_dangerous":..,"split":"test","miss_rate":0.0,"misses":0,"false_block_rate":..,"abstain_rate":..,"mae_cm":..,"coverage":..,"by_reference":{"car tire":{"n":12,"mae_cm":9.1},...},"prompt_version":"..","model":"..","note":"..."}` or `{"n":0}` when not yet run.
 
 `GET /health` → `{"ok":true,"gpu":"up"|"down"|"unconfigured"}`
+
+## Sessions, dashcam, voice (added 2026-09-27)
+**Session sandbox.** The browser makes a random `session` id (uuid4, kept in sessionStorage) and sends it as the
+`session` query param on `GET /segments` and `GET /upload/{id}`, and as a `session` field on `POST /route`, `/chat`, `/upload`, `/dashcam`.
+A report filed while viewing the replay (`t` inside `/config.replay`) is stamped with that replay time and is visible
+**only to that session**, so visitors can't change the shared Harvey replay. Reports with no `t`, or with `t` outside the window, are
+live, stamped now, and visible to everyone. `session` must match `^[0-9a-f-]{8,40}$`, otherwise it is ignored.
+
+`POST /dashcam` multipart `frame` (JPEG ≤ 3 MB), `lat`, `lon`, `vehicle`, `t` (optional), `session` (optional) → 
+```json
+{"water": true, "filed": true, "edge_id": "...", "street": "Westheimer Rd", "over_limit": true,
+ "evidence": Evidence, "speak": "Water reported ahead on Westheimer Road, about 30 centimetres, possibly up to 45. Your sedan's limit is 15. Rerouting."}
+```
+`{"water": false, "filed": false, "speak": null}` when no flood water is visible. Nothing is filed for a dry frame. Dashcam frames are never stored.
+`filed:false` with `water:true` means the frame was a duplicate (same street already reported by this session in the last 2 minutes) or no road was within 30 m.
+503 `{"detail": "..."}` means the depth model is offline. Show it and keep driving without warnings. Never imply the road is clear.
+Rate limit: 40 frames/min per client. Recommended cadence: 1 frame every 4 s, skipped while a request is in flight.
+Evidence `kind` gains `"dashcam"` (no image) and `"voice"` (no image, low confidence).
+
+`POST /chat` also returns `"speak": "..."` (the reply, plain text for TTS: no markdown, units spelled out) and `"filed": [Evidence]`
+when the agent filed a voice report ("water's up to my knees at Main and 5th"). Speak `speak`, not `reply`.
