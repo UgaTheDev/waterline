@@ -2,12 +2,13 @@
 import { BRAND } from "@/lib/brand";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { api, parsePoint, type Alerts, type Config, type Point, type RouteResponse, type Segments } from "@/lib/api";
+import { api, parsePoint, type Alerts, type Config, type Point, type Risk, type RiskProps, type RouteResponse, type SegmentProps, type Segments } from "@/lib/api";
 import { LEGEND, PALETTE, bandFor, fmtClock, fmtTime } from "@/lib/depth";
 import { useReducedMotion, useTheme } from "@/lib/theme";
 import Chat from "./Chat";
 import EvidenceCard from "./EvidenceCard";
 import Hero from "./Hero";
+import RiskCard, { RISK_LABEL } from "./Risk";
 import RouteSummary, { type Selection } from "./Route";
 import Timeline from "./Timeline";
 import { VehiclePicker } from "./Vehicles";
@@ -22,7 +23,10 @@ const TICK_MS = 400;
 const TICK_STEP = 10 * 60_000; // 1x plays the whole event in about four minutes
 const HOUR = 3_600_000;
 
-function Legend({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+const toSel = (p: SegmentProps): Selection => ({ id: p.edge_id, name: p.name, state: p.state, low: p.low_cm, high: p.high_cm, evidence: p.evidence, basis: p.basis });
+const isInferred = (p: SegmentProps) => p.basis === "inferred";
+
+function Legend({ open, onToggle, risk }: { open: boolean; onToggle: () => void; risk: boolean }) {
   const theme = useTheme();
   return (
     <div className="glass rounded-xl border border-line shadow-[var(--shadow)] text-[12px] overflow-hidden">
@@ -55,6 +59,20 @@ function Legend({ open, onToggle }: { open: boolean; onToggle: () => void }) {
               );
             })}
           </ul>
+          <p className="mt-2 flex items-center gap-2.5 text-muted leading-snug">
+            <span
+              className="inline-block w-6 h-[5px] rounded-full shrink-0 opacity-60"
+              style={{ background: `repeating-linear-gradient(90deg, ${PALETTE[theme].float} 0 5px, transparent 5px 8px)` }}
+              aria-hidden
+            />
+            Inferred from nearby reports + terrain
+          </p>
+          {risk && (
+            <p className="mt-2 flex items-center gap-2.5 text-muted leading-snug">
+              <span className="inline-block w-6 h-[9px] rounded-full shrink-0 blur-[2px]" style={{ background: PALETTE[theme].risk, opacity: 0.45 }} aria-hidden />
+              Flood risk next hour. {RISK_LABEL}.
+            </p>
+          )}
           <p className="mt-2.5 pt-2.5 border-t border-line text-muted leading-snug">
             Uncoloured streets have <span className="text-text">no reports</span>. That does not mean they are dry.
           </p>
@@ -68,7 +86,7 @@ function ReportsFeed({ segments, onOpen }: { segments: Segments | null; onOpen: 
   const theme = useTheme();
   const seen = new Set<string>();
   const rows = (segments?.features ?? [])
-    .filter((f) => f.properties.state !== "unknown" && f.properties.evidence.length)
+    .filter((f) => f.properties.state !== "unknown" && !isInferred(f.properties) && f.properties.evidence.length)
     .sort((a, b) => b.properties.obs_time.localeCompare(a.properties.obs_time))
     .filter((f) => {
       const k = f.properties.name ?? f.properties.edge_id;
@@ -90,7 +108,7 @@ function ReportsFeed({ segments, onOpen }: { segments: Segments | null; onOpen: 
             return (
               <li key={p.edge_id + p.obs_time} className="fade">
                 <button
-                  onClick={() => onOpen({ id: p.edge_id, name: p.name, state: p.state, low: p.low_cm, high: p.high_cm, evidence: p.evidence })}
+                  onClick={() => onOpen(toSel(p))}
                   className="w-full flex items-center gap-3 py-2.5 text-left hover:bg-panel-2/60 transition-colors"
                 >
                   <span className="w-2 h-2 rounded-full shrink-0" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
@@ -126,6 +144,9 @@ export default function MapApp() {
   const [vehicle, setVehicle] = useState("sedan");
   const [legendOpen, setLegendOpen] = useState(true);
   const [reload, setReload] = useState(0); // bumped when a report is filed, so it appears on the map
+  const [riskOn, setRiskOn] = useState(false);
+  const [risk, setRisk] = useState<Risk | null>(null);
+  const [riskSel, setRiskSel] = useState<RiskProps | null>(null);
 
   const [fromText, setFromText] = useState("");
   const [toText, setToText] = useState("");
@@ -142,6 +163,7 @@ export default function MapApp() {
   // On phones the map sits above the panel; bring it into view so the report card is seen.
   const open = (sel: Selection) => {
     setSelected(sel);
+    setRiskSel(null);
     if (window.innerWidth < 768) mapBox.current?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
   };
 
@@ -151,7 +173,8 @@ export default function MapApp() {
       .then((c) => {
         setConfig(c);
         setT(new Date(c.replay.default_t || c.replay.start).getTime());
-        if (c.vehicles.length && !c.vehicles.some((v) => v.id === "sedan")) setVehicle(c.vehicles[0].id);
+        const pub = c.vehicles.filter((v) => !v.responder_only);
+        if (pub.length && !pub.some((v) => v.id === "sedan")) setVehicle(pub[0].id);
         // Sparkline: every observation the replay will ever show, bucketed by hour.
         const start = new Date(c.replay.start).getTime();
         const hours = Math.ceil((new Date(c.replay.end).getTime() - start) / HOUR);
@@ -162,7 +185,7 @@ export default function MapApp() {
             const ids = new Set<string>();
             for (const f of s.features)
               for (const e of f.properties.evidence) {
-                if (ids.has(e.obs_id)) continue; // both directions of a street share observations
+                if (ids.has(e.obs_id) || e.kind === "inferred") continue; // both directions of a street share observations
                 ids.add(e.obs_id);
                 const i = Math.floor((new Date(e.time).getTime() - start) / HOUR);
                 if (i >= 0 && i < h.length) h[i]++;
@@ -197,6 +220,24 @@ export default function MapApp() {
       ctrl.abort();
     };
   }, [iso, reload]);
+
+  // The risk layer is fetched only while it is switched on.
+  useEffect(() => {
+    if (!iso || !riskOn) return;
+    const ctrl = new AbortController();
+    const id = setTimeout(() => {
+      api
+        .risk(iso, ctrl.signal)
+        .then(setRisk)
+        .catch((e: Error) => {
+          if (e.name !== "AbortError") setLayerError(`risk layer: ${e.message}`);
+        });
+    }, 90);
+    return () => {
+      clearTimeout(id);
+      ctrl.abort();
+    };
+  }, [iso, riskOn]);
 
   useEffect(() => {
     if (!playing || !config) return;
@@ -260,7 +301,7 @@ export default function MapApp() {
 
   const stats = useMemo(() => {
     const f = segments?.features ?? [];
-    const live = f.filter((x) => x.properties.state === "reported" || x.properties.state === "reported_unknown");
+    const live = f.filter((x) => !isInferred(x.properties) && (x.properties.state === "reported" || x.properties.state === "reported_unknown"));
     const names = (xs: typeof f) => new Set(xs.map((x) => x.properties.name ?? x.properties.edge_id)).size;
     return {
       reported: names(live),
@@ -298,7 +339,12 @@ export default function MapApp() {
   const start = new Date(config.replay.start).getTime();
   const end = new Date(config.replay.end).getTime();
   const activeAlerts = alerts?.features ?? [];
-  const current = config.vehicles.find((v) => v.id === vehicle);
+  const vehicles = config.vehicles.filter((v) => !v.responder_only); // rescue is responder mode only
+  const current = vehicles.find((v) => v.id === vehicle);
+  const derived = selected?.evidence[0]?.provenance?.derived_from ?? [];
+  const sources = derived.length
+    ? (segments?.features ?? []).filter((f) => !isInferred(f.properties) && f.properties.evidence.some((e) => derived.includes(e.obs_id))).map((f) => toSel(f.properties))
+    : [];
 
   return (
     <div className="flex-1 flex flex-col md:flex-row min-h-0">
@@ -310,12 +356,20 @@ export default function MapApp() {
           reduced={reduced}
           segments={segments}
           alerts={alerts}
+          risk={riskOn ? risk : null}
           route={route?.found ? route.geometry : null}
           endpoints={route?.found && route.from && route.to ? { from: route.from, to: route.to } : { from: fromPt, to: toPt }}
           flash={flash}
           selectedId={selected?.id ?? null}
           picking={picking !== null}
-          onSegment={(p) => setSelected({ id: p.edge_id, name: p.name, state: p.state, low: p.low_cm, high: p.high_cm, evidence: p.evidence })}
+          onSegment={(p) => {
+            setSelected(toSel(p));
+            setRiskSel(null);
+          }}
+          onRisk={(p) => {
+            setRiskSel(p);
+            setSelected(null);
+          }}
           onPick={onPick}
         />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-bg/50 to-transparent" aria-hidden />
@@ -334,6 +388,20 @@ export default function MapApp() {
               {activeAlerts.length > 1 && <span className="text-muted">+{activeAlerts.length - 1}</span>}
             </span>
           ))}
+          <button
+            onClick={() => {
+              setRiskOn(!riskOn);
+              setRiskSel(null);
+            }}
+            aria-pressed={riskOn}
+            title={RISK_LABEL}
+            className={`pointer-events-auto glass rounded-full border px-3 py-1 text-[11.5px] flex items-center gap-2 transition-colors ${riskOn ? "border-text/50 text-text" : "border-line text-muted hover:text-text"}`}
+          >
+            <span className={`relative w-6 h-3.5 rounded-full border transition-colors ${riskOn ? "border-text/60 bg-text/20" : "border-line-strong"}`} aria-hidden>
+              <span className={`absolute left-0 top-[2px] w-2 h-2 rounded-full bg-current transition-transform ${riskOn ? "translate-x-[12px]" : "translate-x-[2px]"}`} />
+            </span>
+            Flood risk next hour
+          </button>
           {layerError && (
             <span className="pointer-events-auto glass rounded-full border border-warn/50 px-3 py-1 text-[11.5px] text-warn">Depth layer not updated: {layerError}</span>
           )}
@@ -351,13 +419,20 @@ export default function MapApp() {
         {selected && (
           <div className="absolute z-20 left-2 right-2 bottom-2 top-14 md:top-14 md:left-3 md:right-auto md:bottom-auto md:w-[360px] md:max-h-[calc(100%-13rem)] flex flex-col justify-end md:justify-start pointer-events-none">
             <div className="pointer-events-auto min-h-0 flex">
-              <EvidenceCard key={selected.id ?? selected.name} {...selected} vehicle={current} onClose={() => setSelected(null)} />
+              <EvidenceCard key={selected.id ?? selected.name} {...selected} vehicle={current} sources={sources} onOpen={open} onClose={() => setSelected(null)} />
+            </div>
+          </div>
+        )}
+        {!selected && riskSel && (
+          <div className="absolute z-20 left-2 right-2 bottom-2 top-14 md:top-14 md:left-3 md:right-auto md:bottom-auto md:w-[360px] md:max-h-[calc(100%-13rem)] flex flex-col justify-end md:justify-start pointer-events-none">
+            <div className="pointer-events-auto min-h-0 flex">
+              <RiskCard key={riskSel.edge_id} risk={riskSel} onClose={() => setRiskSel(null)} />
             </div>
           </div>
         )}
 
-        <div className={`hidden md:block absolute bottom-[6.75rem] left-3 w-[300px] transition-opacity ${selected ? "opacity-0 pointer-events-none" : ""}`}>
-          <Legend open={legendOpen} onToggle={() => setLegendOpen(!legendOpen)} />
+        <div className={`hidden md:block absolute bottom-[6.75rem] left-3 w-[300px] transition-opacity ${selected || riskSel ? "opacity-0 pointer-events-none" : ""}`}>
+          <Legend open={legendOpen} onToggle={() => setLegendOpen(!legendOpen)} risk={riskOn} />
         </div>
 
         <div className="absolute bottom-8 left-2 right-2 md:left-3 md:right-3">
@@ -406,7 +481,7 @@ export default function MapApp() {
 
         <div className="px-4 py-3 border-b border-line">
           <p className="eyebrow mb-2">Your vehicle</p>
-          <VehiclePicker vehicles={config.vehicles} value={vehicle} onChange={chooseVehicle} />
+          <VehiclePicker vehicles={vehicles} value={vehicle} onChange={chooseVehicle} />
           <p className="text-[12px] text-muted mt-2 leading-snug">
             Routes avoid streets reported deeper than your vehicle&apos;s limit, and any water of unknown depth.
           </p>
@@ -492,7 +567,7 @@ export default function MapApp() {
           )}
 
           <div className="md:hidden">
-            <Legend open={legendOpen} onToggle={() => setLegendOpen(!legendOpen)} />
+            <Legend open={legendOpen} onToggle={() => setLegendOpen(!legendOpen)} risk={riskOn} />
           </div>
 
           <p className="text-[11.5px] text-faint border-t border-line pt-3 leading-relaxed">

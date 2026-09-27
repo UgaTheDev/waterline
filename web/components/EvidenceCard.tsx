@@ -3,6 +3,8 @@ import { useState } from "react";
 import { mediaUrl, type Evidence, type SegmentState, type Vehicle } from "@/lib/api";
 import { PALETTE, THRESHOLDS, bandFor, describe, fmtTime, inches, range } from "@/lib/depth";
 import { useTheme } from "@/lib/theme";
+import type { Selection } from "./Route";
+import { SimulationPlayer, useSimulations } from "./Simulation";
 import { VehicleSilhouette } from "./Vehicles";
 
 const SOURCE: Record<NonNullable<Evidence["kind"]>, string> = {
@@ -10,7 +12,15 @@ const SOURCE: Record<NonNullable<Evidence["kind"]>, string> = {
   survey: "USGS survey · estimated peak depth, surveyed after the flood",
   dashcam: "Dashcam frame · not stored",
   voice: "Voice report · low confidence",
+  inferred: "Inferred · from nearby reports + ground elevation",
+  report311: "311 report · text only",
 };
+
+const nReports = (ev: Evidence) => ev.provenance?.derived_from.length ?? 0;
+export const sourceLabel = (ev: Evidence) =>
+  ev.kind === "inferred" && nReports(ev)
+    ? `Inferred · from ${nReports(ev)} nearby report${nReports(ev) === 1 ? "" : "s"} + ground elevation`
+    : (SOURCE[ev.kind ?? "photo"] ?? SOURCE.photo);
 
 function DepthGauge({ low, high, color }: { low: number | null; high: number | null; color: string }) {
   const H = 132;
@@ -81,17 +91,17 @@ export function EvidenceItem({
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-[13px]">
             <dt className="eyebrow self-center">Source</dt>
             <dd className="text-[12.5px] text-text">
-              {SOURCE[ev.kind ?? "photo"]}
+              {sourceLabel(ev)}
             </dd>
             <dt className="eyebrow self-center">Depth</dt>
             <dd className="font-mono text-text tabular-nums">{range(ev.low_cm, ev.high_cm)}</dd>
-            {ev.kind !== "voice" && (
+            {ev.kind !== "voice" && ev.kind !== "inferred" && ev.kind !== "report311" && (
               <>
                 <dt className="eyebrow self-center">Measured on</dt>
                 <dd className="text-text">{ev.reference ?? "No reference object in frame"}</dd>
               </>
             )}
-            <dt className="eyebrow self-center">Observed</dt>
+            <dt className="eyebrow self-center">{ev.kind === "inferred" ? "As of" : "Observed"}</dt>
             <dd className="font-mono text-[12px] text-text">{fmtTime(ev.time)}</dd>
             {ev.location_precision && ev.location_precision !== "exact" && (
               <>
@@ -135,15 +145,22 @@ export default function EvidenceCard(props: {
   low: number | null;
   high: number | null;
   evidence: Evidence[];
+  basis?: "observed" | "inferred";
   vehicle: Vehicle | undefined;
+  sources?: Selection[]; // the reports an inferred street was interpolated from, when they're on the map
+  onOpen?: (s: Selection) => void;
   onClose: () => void;
 }) {
-  const { name, state, low, high, evidence, vehicle, onClose } = props;
+  const { name, state, low, high, evidence, vehicle, sources = [], onOpen, onClose } = props;
+  const sims = useSimulations();
+  const sim = name ? sims.find((s) => s.street === name) : undefined;
+  const [showSim, setShowSim] = useState(false);
   const theme = useTheme();
   const band = bandFor(state, high);
   const color = PALETTE[theme][band];
   const [latest, ...earlier] = evidence;
   const unknown = state === "reported_unknown" || high === null;
+  const inferred = props.basis === "inferred" || latest?.kind === "inferred";
   const verdict = !vehicle
     ? null
     : unknown
@@ -159,11 +176,14 @@ export default function EvidenceCard(props: {
       className="rise bg-panel rounded-xl border border-line shadow-[var(--shadow)] w-full max-h-full overflow-y-auto"
       aria-label={`Report for ${name ?? "street"}`}
     >
-      <div className="h-1 rounded-t-xl" style={{ background: color }} />
+      <div
+        className="h-1 rounded-t-xl"
+        style={{ background: inferred ? `repeating-linear-gradient(90deg, ${color} 0 6px, transparent 6px 10px)` : color }}
+      />
       <div className="p-4 space-y-4">
         <header className="flex items-start justify-between gap-3">
           <div>
-            <p className="eyebrow">Street report</p>
+            <p className="eyebrow">{inferred ? "Inferred, not a direct report" : "Street report"}</p>
             <h3 className="font-display text-[26px] leading-tight text-text">{name ?? "Unnamed street"}</h3>
             <p className="text-[13px] mt-0.5 flex items-center gap-2" style={{ color }}>
               <span className="inline-block w-2 h-2 rounded-full" style={{ background: color }} />
@@ -202,6 +222,24 @@ export default function EvidenceCard(props: {
 
         {latest ? <EvidenceItem ev={latest} noPhoto /> : <p className="text-sm text-muted">No evidence attached.</p>}
 
+        {inferred && sources.length > 0 && (
+          <div>
+            <p className="eyebrow mb-1.5">Source reports</p>
+            <ul className="flex flex-wrap gap-1.5">
+              {sources.map((s) => (
+                <li key={s.id ?? s.name}>
+                  <button
+                    onClick={() => onOpen?.(s)}
+                    className="rounded-full border border-line px-2.5 py-1 text-[12px] text-text hover:border-line-strong hover:bg-panel-2 transition-colors"
+                  >
+                    {s.name ?? "Unnamed street"} <span className="text-faint">&rarr;</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {earlier.length > 0 && (
           <details className="group">
             <summary className="eyebrow cursor-pointer list-none flex items-center gap-1.5 hover:text-muted">
@@ -218,6 +256,22 @@ export default function EvidenceCard(props: {
           </details>
         )}
       </div>
+
+      {sim && (
+        <section className="border-t-2 border-dashed border-warn/40 bg-warn-soft p-4 space-y-2.5 rounded-b-xl" aria-label="Simulation, not evidence">
+          <div className="flex items-center justify-between gap-3">
+            <p className="eyebrow text-warn!">Simulation · not evidence</p>
+            <button
+              onClick={() => setShowSim(!showSim)}
+              aria-expanded={showSim}
+              className="rounded-full border border-warn/50 px-3 py-1 text-[12px] text-text hover:bg-warn-soft transition-colors"
+            >
+              {showSim ? "Hide simulation" : "See it flooded"}
+            </button>
+          </div>
+          {showSim && <SimulationPlayer sim={sim} />}
+        </section>
+      )}
     </article>
   );
 }

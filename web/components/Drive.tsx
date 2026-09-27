@@ -304,7 +304,7 @@ export default function Drive() {
               {config && (
                 <div>
                   <p className="eyebrow mb-2">Your vehicle</p>
-                  <VehiclePicker vehicles={config.vehicles} value={vehicle} onChange={setVehicle} />
+                  <VehiclePicker vehicles={config.vehicles.filter((v) => !v.responder_only)} value={vehicle} onChange={setVehicle} />
                 </div>
               )}
 
