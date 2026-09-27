@@ -6,6 +6,7 @@ from functools import lru_cache
 import httpx
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from shapely.geometry import Point
@@ -16,6 +17,7 @@ from .router import Roads
 from .store import Store, ts
 
 app = FastAPI(title="Waterline")
+app.add_middleware(GZipMiddleware, minimum_size=1024)  # /segments at the survey peak: 4.4 MB -> 166 KB
 app.add_middleware(CORSMiddleware, allow_origins=P.ALLOWED_ORIGINS, allow_methods=["GET", "POST"], allow_headers=["*"])
 store = Store()
 for r in (nowcast.router, responder.router, simulate.router):  # v2 streams own these modules (frozen contracts)
@@ -85,6 +87,21 @@ def limit(req: Request, key: str, n: int, per_s: int):
         q.popleft()
     if len(q) >= n:
         raise HTTPException(429, "Too many requests, try again shortly.")
+    q.append(now)
+    if len(_hits) > 20000:  # bound memory under a crowd of one-off clients; ponytail: coarse reset, fine at demo scale
+        _hits.clear()
+
+
+_spend = defaultdict(deque)
+
+
+def budget(key: str):
+    """Site-wide hourly cap on calls that cost money. Over budget is an explicit 503, never a silent pass."""
+    q, now = _spend[key], time.time()
+    while q and now - q[0] > 3600:
+        q.popleft()
+    if len(q) >= P.BUDGET_PER_HOUR[key]:
+        raise HTTPException(503, "Waterline is at its hourly capacity for this feature. No warnings until it resets; if water covers the road, turn around.")
     q.append(now)
 
 
@@ -187,6 +204,7 @@ def _file_report(lat, lon, t, session, kind, fields):
 @app.post("/chat")
 def chat(req: ChatReq, request: Request):
     limit(request, "chat", 10, 60)
+    budget("chat")
     t = _t(req.t)
     R = roads()
 
@@ -251,6 +269,7 @@ def _upload_view(o):
 async def upload(request: Request, bg: BackgroundTasks, file: UploadFile = File(...), lat: float | None = Form(None), lon: float | None = Form(None),
                  t: str | None = Form(None), session: str | None = Form(None)):
     limit(request, "upload", 5, 600)
+    budget("upload")
     raw = await file.read(MAX_BYTES + 1)
     if len(raw) > MAX_BYTES:
         raise HTTPException(413, "File is larger than 15 MB.")
@@ -296,6 +315,7 @@ def _speak_dash(street, ev, vehicle, over):
 async def dashcam(request: Request, frame: UploadFile = File(...), lat: float = Form(...), lon: float = Form(...),
                   vehicle: str = Form("sedan"), t: str | None = Form(None), session: str | None = Form(None)):
     limit(request, "dashcam", 40, 60)
+    budget("dashcam")
     if vehicle not in P.VEHICLES:
         raise HTTPException(400, f"vehicle must be one of {list(P.VEHICLES)}")
     raw = await frame.read(DASHCAM_BYTES + 1)

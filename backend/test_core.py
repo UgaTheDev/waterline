@@ -122,6 +122,23 @@ def test_api_sandbox_and_dashcam():
         A.depth.estimate = real
 
 
+def test_global_budget():
+    from fastapi import HTTPException
+    from . import app as A
+    A._spend.clear()
+    old = A.P.BUDGET_PER_HOUR["chat"]
+    A.P.BUDGET_PER_HOUR["chat"] = 2
+    try:
+        A.budget("chat"); A.budget("chat")
+        try:
+            A.budget("chat"); raise AssertionError("third call must be refused")
+        except HTTPException as e:
+            assert e.status_code == 503 and "turn around" in e.detail
+    finally:
+        A.P.BUDGET_PER_HOUR["chat"] = old
+        A._spend.clear()
+
+
 def test_inferred_is_display_only():
     """An inferred-only deep street shows on the map (basis inferred) but never blocks or reroutes."""
     from fastapi.testclient import TestClient
