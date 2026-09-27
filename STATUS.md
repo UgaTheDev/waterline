@@ -2,7 +2,7 @@
 
 <!-- Worker-owned. Update at every checkpoint, blocker, or decision. The orchestrator reads this file; keep the headings exactly. -->
 
-**Updated:** 2026-09-27 16:40  ·  **Stage:** building  ·  **Health:** 🟡 at risk
+**Updated:** 2026-09-27 16:50  ·  **Stage:** building  ·  **Health:** 🟡 at risk
 
 ## Needs Kush
 - **Token Factory key** (blocks the live depth model, the agent and latency/cost numbers): join https://dev.nebius.com/builders, create a key, add `TF_KEY=...` to `.env` in this repo (never paste it in chat).
@@ -20,7 +20,7 @@
 - v2 plan approved; v2 contracts frozen (backend/API.md) with stub routers for risk, responder and simulations.
 - Stream C merged: voice chat (push-to-talk, spoken replies) + /drive dashcam HUD, live on Vercel (sample mode).
 - Stream A merged: 5 m DEM + terrain inference (4,248 inferred obs on 2,153 streets). Leave-one-out: errors lean high (median +15 cm), 0 reached marks under-called for a sedan, but coverage 30-60%, so inferred depths are display-only (hatched), never used for routing.
-- Stream R done: Harvey hourly rain via IEM point API (works); PD Texas National Guard clip (610 at Braeswood) added as the Drive-mode demo footage; Houston 311 dropped ("All rights reserved", no open license). Decision (Kush): ship without it; add it only if written permission from the City arrives by about Oct 20. The parser is ready (backend/ingest311.py).
+- Stream R done: Harvey hourly rain via IEM point API (works); PD Texas National Guard clip (610 at Braeswood) added as the Drive-mode demo footage; Houston 311 on hold: no license is stated for the hfdapp-hosted 311 extracts (the "All rights reserved" is only the site footer, and the data.houstontx.gov open terms cover portal-hosted data). Kush is emailing the City to confirm; a dedicated Harvey 311 file exists. The data contains PII (addresses, TaxID, names in descriptions): if used, keep only street segment + derived depth + time. Decision (Kush): ship without it; add it only if written permission from the City arrives by about Oct 20. The parser is ready (backend/ingest311.py).
 - Stream E merged: depth-model danger flags, token-guarded responder queue/review/media, 311 text parser (12 tests pass).
 
 ## In progress (streams)
