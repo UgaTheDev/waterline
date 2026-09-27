@@ -1,0 +1,451 @@
+{
+ "method": "risk = percentile(fitted terrain logistic: log1p(depression_cm), hand_m) * clip(max(rain_1h/25, rain_3h/50, rain_6h/75 mm), 0, 1)",
+ "deep_cm": 15,
+ "times": [
+  "2017-08-26T00:00:00+00:00",
+  "2017-08-31T00:00:00+00:00",
+  "every 6 h"
+ ],
+ "wet_times": [
+  "2017-08-26T00:00:00+00:00",
+  "2017-08-26T06:00:00+00:00",
+  "2017-08-26T12:00:00+00:00",
+  "2017-08-26T18:00:00+00:00",
+  "2017-08-27T06:00:00+00:00",
+  "2017-08-27T12:00:00+00:00",
+  "2017-08-27T18:00:00+00:00",
+  "2017-08-28T00:00:00+00:00",
+  "2017-08-28T06:00:00+00:00",
+  "2017-08-28T12:00:00+00:00",
+  "2017-08-28T18:00:00+00:00",
+  "2017-08-29T00:00:00+00:00",
+  "2017-08-29T06:00:00+00:00",
+  "2017-08-29T12:00:00+00:00",
+  "2017-08-29T18:00:00+00:00"
+ ],
+ "edges_valid": 47939,
+ "positives_survey_or_inferred": 2074,
+ "positives_survey_only": 218,
+ "metrics": "AUC and precision@k over held-out edges, averaged over the listed times; base rate = precision of a random pick",
+ "labels_survey_or_inferred": {
+  "split_lon": -95.3985,
+  "fit_west_test_east": {
+   "n_train": 22557,
+   "n_test": 22506,
+   "test_base_rate": 0.0303,
+   "logistic_with_rain_terms_weights": {
+    "bias": -2.3913,
+    "rain_1h": 0.0014,
+    "rain_3h": 0.0015,
+    "rain_6h": 0.0,
+    "depression": 0.0579,
+    "hand": -0.0701
+   },
+   "model": {
+    "terrain_weights": {
+     "bias": -2.3859,
+     "depression": 0.0578,
+     "hand": -0.0701
+    },
+    "all_times": {
+     "auc_mean": 0.431,
+     "auc_min": 0.407,
+     "auc_max": 0.5,
+     "p_at_100": 0.002,
+     "p_at_500": 0.011
+    },
+    "wet_times": {
+     "auc_mean": 0.426,
+     "auc_min": 0.416,
+     "auc_max": 0.432,
+     "p_at_100": 0.0,
+     "p_at_500": 0.009
+    }
+   },
+   "terrain_only": {
+    "auc_mean": 0.426,
+    "auc_min": 0.426,
+    "auc_max": 0.426,
+    "p_at_100": 0.0,
+    "p_at_500": 0.008
+   },
+   "rain_only_6h": {
+    "all_times": {
+     "auc_mean": 0.483,
+     "auc_min": 0.456,
+     "auc_max": 0.528,
+     "p_at_100": 0.002,
+     "p_at_500": 0.011
+    },
+    "wet_times": {
+     "auc_mean": 0.485,
+     "auc_min": 0.456,
+     "auc_max": 0.528,
+     "p_at_100": 0.0,
+     "p_at_500": 0.008
+    }
+   },
+   "hand_unfitted": {
+    "auc_mean": 0.4,
+    "auc_min": 0.4,
+    "auc_max": 0.4,
+    "p_at_100": 0.01,
+    "p_at_500": 0.006
+   },
+   "depression_unfitted": {
+    "auc_mean": 0.528,
+    "auc_min": 0.528,
+    "auc_max": 0.528,
+    "p_at_100": 0.0,
+    "p_at_500": 0.016
+   },
+   "shipped_bands": {
+    "precision_when_flagged_mean": 0.0083,
+    "times_with_flags": 5,
+    "labelled_edges_ever_flagged": 0.02,
+    "unlabelled_edges_ever_flagged": 0.088
+   }
+  },
+  "fit_east_test_west": {
+   "n_train": 22506,
+   "n_test": 22557,
+   "test_base_rate": 0.0617,
+   "logistic_with_rain_terms_weights": {
+    "bias": -3.54,
+    "rain_1h": 0.0,
+    "rain_3h": 0.0,
+    "rain_6h": 0.0,
+    "depression": 0.0401,
+    "hand": 0.0
+   },
+   "model": {
+    "terrain_weights": {
+     "bias": -3.5399,
+     "depression": 0.0401,
+     "hand": 0.0
+    },
+    "all_times": {
+     "auc_mean": 0.545,
+     "auc_min": 0.5,
+     "auc_max": 0.616,
+     "p_at_100": 0.018,
+     "p_at_500": 0.032
+    },
+    "wet_times": {
+     "auc_mean": 0.548,
+     "auc_min": 0.515,
+     "auc_max": 0.584,
+     "p_at_100": 0.019,
+     "p_at_500": 0.031
+    }
+   },
+   "terrain_only": {
+    "auc_mean": 0.537,
+    "auc_min": 0.537,
+    "auc_max": 0.537,
+    "p_at_100": 0.05,
+    "p_at_500": 0.038
+   },
+   "rain_only_6h": {
+    "all_times": {
+     "auc_mean": 0.533,
+     "auc_min": 0.394,
+     "auc_max": 0.624,
+     "p_at_100": 0.01,
+     "p_at_500": 0.017
+    },
+    "wet_times": {
+     "auc_mean": 0.537,
+     "auc_min": 0.394,
+     "auc_max": 0.624,
+     "p_at_100": 0.003,
+     "p_at_500": 0.011
+    }
+   },
+   "hand_unfitted": {
+    "auc_mean": 0.656,
+    "auc_min": 0.656,
+    "auc_max": 0.656,
+    "p_at_100": 0.15,
+    "p_at_500": 0.064
+   },
+   "depression_unfitted": {
+    "auc_mean": 0.537,
+    "auc_min": 0.537,
+    "auc_max": 0.537,
+    "p_at_100": 0.05,
+    "p_at_500": 0.038
+   },
+   "shipped_bands": {
+    "precision_when_flagged_mean": 0.0513,
+    "times_with_flags": 7,
+    "labelled_edges_ever_flagged": 0.095,
+    "unlabelled_edges_ever_flagged": 0.102
+   }
+  }
+ },
+ "labels_survey_only": {
+  "split_lon": -95.3985,
+  "fit_west_test_east": {
+   "n_train": 22557,
+   "n_test": 22506,
+   "test_base_rate": 0.0026,
+   "logistic_with_rain_terms_weights": {
+    "bias": -4.4551,
+    "rain_1h": 0.0024,
+    "rain_3h": 0.0015,
+    "rain_6h": 0.0002,
+    "depression": 0.0,
+    "hand": -0.0869
+   },
+   "model": {
+    "terrain_weights": {
+     "bias": -4.4483,
+     "depression": 0.0,
+     "hand": -0.0868
+    },
+    "all_times": {
+     "auc_mean": 0.513,
+     "auc_min": 0.5,
+     "auc_max": 0.531,
+     "p_at_100": 0.0,
+     "p_at_500": 0.004
+    },
+    "wet_times": {
+     "auc_mean": 0.515,
+     "auc_min": 0.507,
+     "auc_max": 0.531,
+     "p_at_100": 0.0,
+     "p_at_500": 0.004
+    }
+   },
+   "terrain_only": {
+    "auc_mean": 0.514,
+    "auc_min": 0.514,
+    "auc_max": 0.514,
+    "p_at_100": 0.0,
+    "p_at_500": 0.004
+   },
+   "rain_only_6h": {
+    "all_times": {
+     "auc_mean": 0.508,
+     "auc_min": 0.458,
+     "auc_max": 0.535,
+     "p_at_100": 0.0,
+     "p_at_500": 0.001
+    },
+    "wet_times": {
+     "auc_mean": 0.504,
+     "auc_min": 0.458,
+     "auc_max": 0.535,
+     "p_at_100": 0.0,
+     "p_at_500": 0.001
+    }
+   },
+   "hand_unfitted": {
+    "auc_mean": 0.514,
+    "auc_min": 0.514,
+    "auc_max": 0.514,
+    "p_at_100": 0.0,
+    "p_at_500": 0.004
+   },
+   "depression_unfitted": {
+    "auc_mean": 0.523,
+    "auc_min": 0.523,
+    "auc_max": 0.523,
+    "p_at_100": 0.0,
+    "p_at_500": 0.002
+   },
+   "shipped_bands": {
+    "precision_when_flagged_mean": 0.0025,
+    "times_with_flags": 5,
+    "labelled_edges_ever_flagged": 0.068,
+    "unlabelled_edges_ever_flagged": 0.083
+   }
+  },
+  "fit_east_test_west": {
+   "n_train": 22506,
+   "n_test": 22557,
+   "test_base_rate": 0.007,
+   "logistic_with_rain_terms_weights": {
+    "bias": -5.6934,
+    "rain_1h": 0.0,
+    "rain_3h": 0.0,
+    "rain_6h": 0.0,
+    "depression": 0.0323,
+    "hand": -0.0506
+   },
+   "model": {
+    "terrain_weights": {
+     "bias": -5.6952,
+     "depression": 0.033,
+     "hand": -0.0506
+    },
+    "all_times": {
+     "auc_mean": 0.66,
+     "auc_min": 0.5,
+     "auc_max": 0.696,
+     "p_at_100": 0.005,
+     "p_at_500": 0.005
+    },
+    "wet_times": {
+     "auc_mean": 0.679,
+     "auc_min": 0.665,
+     "auc_max": 0.696,
+     "p_at_100": 0.005,
+     "p_at_500": 0.005
+    }
+   },
+   "terrain_only": {
+    "auc_mean": 0.678,
+    "auc_min": 0.678,
+    "auc_max": 0.678,
+    "p_at_100": 0.01,
+    "p_at_500": 0.008
+   },
+   "rain_only_6h": {
+    "all_times": {
+     "auc_mean": 0.548,
+     "auc_min": 0.351,
+     "auc_max": 0.712,
+     "p_at_100": 0.002,
+     "p_at_500": 0.002
+    },
+    "wet_times": {
+     "auc_mean": 0.553,
+     "auc_min": 0.351,
+     "auc_max": 0.712,
+     "p_at_100": 0.0,
+     "p_at_500": 0.001
+    }
+   },
+   "hand_unfitted": {
+    "auc_mean": 0.684,
+    "auc_min": 0.684,
+    "auc_max": 0.684,
+    "p_at_100": 0.08,
+    "p_at_500": 0.022
+   },
+   "depression_unfitted": {
+    "auc_mean": 0.462,
+    "auc_min": 0.462,
+    "auc_max": 0.462,
+    "p_at_100": 0.01,
+    "p_at_500": 0.008
+   },
+   "shipped_bands": {
+    "precision_when_flagged_mean": 0.014,
+    "times_with_flags": 6,
+    "labelled_edges_ever_flagged": 0.208,
+    "unlabelled_edges_ever_flagged": 0.11
+   }
+  }
+ },
+ "production": {
+  "terrain_weights": {
+   "bias": -2.9781,
+   "depression": 0.0632,
+   "hand": -0.0346
+  },
+  "in_backend": {
+   "bias": -2.9781,
+   "depression": 0.0632,
+   "hand": -0.0346
+  },
+  "fit_on": "all valid edges, survey+inferred labels",
+  "elevated": 0.9,
+  "high": 0.98,
+  "rain_ref_mm": {
+   "1": 25.0,
+   "3": 50.0,
+   "6": 75.0
+  },
+  "flagged_edges_by_time_[elevated, high]": {
+   "08-26T00Z": [
+    0,
+    0
+   ],
+   "08-26T06Z": [
+    0,
+    0
+   ],
+   "08-26T12Z": [
+    3827,
+    947
+   ],
+   "08-26T18Z": [
+    0,
+    0
+   ],
+   "08-27T00Z": [
+    0,
+    0
+   ],
+   "08-27T06Z": [
+    3836,
+    959
+   ],
+   "08-27T12Z": [
+    3836,
+    959
+   ],
+   "08-27T18Z": [
+    1621,
+    229
+   ],
+   "08-28T00Z": [
+    0,
+    0
+   ],
+   "08-28T06Z": [
+    3838,
+    949
+   ],
+   "08-28T12Z": [
+    0,
+    0
+   ],
+   "08-28T18Z": [
+    0,
+    0
+   ],
+   "08-29T00Z": [
+    2602,
+    65
+   ],
+   "08-29T06Z": [
+    0,
+    0
+   ],
+   "08-29T12Z": [
+    0,
+    0
+   ],
+   "08-29T18Z": [
+    0,
+    0
+   ],
+   "08-30T00Z": [
+    0,
+    0
+   ],
+   "08-30T06Z": [
+    0,
+    0
+   ],
+   "08-30T12Z": [
+    0,
+    0
+   ],
+   "08-30T18Z": [
+    0,
+    0
+   ],
+   "08-31T00Z": [
+    0,
+    0
+   ]
+  }
+ },
+ "note": "RESULT: no useful skill. On held-out geography the nowcast ranks deep-water streets about as well as chance (AUC 0.43 fit-west/test-east, 0.55 fit-east/test-west, survey+inferred labels; 0.52 / 0.68 survey-only) and does NOT beat the terrain-only baseline (it is the terrain percentile times a rain factor, so within one time step it ranks like terrain-only; differences are within +-0.01 AUC). Unfitted -HAND alone does better in one direction (0.66 / 0.68 fit-east/test-west) and worse in the other (0.40), so the terrain signal is not stable across the bbox. Precision of flagged edges is at or below the base rate. Rain cannot be fitted from these labels: fitting rain terms gives weights ~0, so rain enters as an unfitted intensity rule. LIMITATIONS: (1) timing: every label carries a USGS-estimated peak time of Sep 1-2 17Z, days after the Aug 26-29 rain, and much of that flooding was Addicks/Barker reservoir release along Buffalo Bayou, not local rain; so this measures spatial ranking only, never lead time. (2) labels: 218 of 2074 positive edges are survey-derived (USGS high-water marks minus 3DEP ground); the rest are terrain-v1 inferences spread from those marks, so they encode terrain and clustering near surveyed sites. (3) negatives are 'no deep-water evidence', not dry: most of the city was never surveyed, so AUC largely measures 'near where USGS surveyed'. (4) rain is the IEMRE reanalysis on a ~0.125 deg (~12 km) grid: the 5x5 fetch grid holds ~4 distinct series, so rain barely varies across the bbox and cannot rank streets. (5) HAND references OSM river|canal lines; that choice (over all waterways incl. drains) was made looking at all labels, so it is not held out. (6) bare-earth DEM depressions include road embankments over culverts. Treat /risk as an experimental susceptibility layer during heavy rain, never as evidence."
+}
