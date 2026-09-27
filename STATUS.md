@@ -2,13 +2,13 @@
 
 <!-- Worker-owned. Update at every checkpoint, blocker, or decision. The orchestrator reads this file; keep the headings exactly. -->
 
-**Updated:** 2026-09-27 16:45  ·  **Stage:** building  ·  **Health:** 🟡 at risk
+**Updated:** 2026-09-27 17:00  ·  **Stage:** building  ·  **Health:** 🟡 at risk
 
 ## Needs Kush
-- **Token Factory key** (blocks the live depth model, the agent and latency/cost numbers): join https://dev.nebius.com/builders, create a key, add `TF_KEY=...` to `.env` in this repo (never paste it in chat).
-- **Tavily key** (blocks local_reports and the $3K bonus): claim it via the Builder Program, then add `TAVILY_KEY=...` to `.env`.
+- **Token Factory key: $50 free credit, no paid plan needed** (blocks the live depth model, the agent and latency/cost numbers): (1) redeem the hackathon promo form https://nebius.com/promo-code?utm_promo_event_code=2026-devpost-global-ai-hack&utm_promo_code_type=Token_Factory&utm_promo_activation_code=NEBIUS-DEVPOST-GLOBAL26 with code `NEBIUS-DEVPOST-GLOBAL26` ($25); (2) join https://dev.nebius.com/builders and claim another $25; (3) create an API key and add `TF_KEY=...` to `.env` in this repo (never paste it in chat).
+- **Tavily key** ($25 free via the same Builder Program): claim it there, then add `TAVILY_KEY=...` to `.env`.
 - **Label the eval set (~45 min)** (blocks the headline miss-rate number): run `python3 eval/label.py`, open http://localhost:8766, and press 1-5 per photo.
-- **Nebius AI Cloud + $25 deposit** (blocks backend hosting on a CPU VM, the Cosmos Reason 2 benchmark and the Cosmos Transfer spike): create the account and deposit, then tell this session so it can set up the VMs with you watching.
+- **Nebius AI Cloud + $25 deposit** (no free AI Cloud credits for remote participants; only in-person Builders & Brews events get them) (blocks backend hosting on a CPU VM, the Cosmos Reason 2 benchmark and the Cosmos Transfer spike): create the account and deposit, then tell this session so it can set up the VMs with you watching.
 - **Hugging Face read token** (needed for the Cosmos weights on the GPU VM): create it at https://huggingface.co/settings/tokens and add `HF_TOKEN=...` to `.env`.
 - **Film a 5-15 s dry street clip** (daylight, steady, cars and curb in frame, no readable plates or close faces, not your own building) (blocks the Cosmos Transfer "see your street flooded" spike; no clean PD/CC-BY clip exists): phone held steady at eye level on an ordinary street, no faces or plates up close, then drop it in `data/raw/recon/street.mp4`.
 - **Oct 28: make the repo public** (Nebius requires public + license): `gh repo edit UgaTheDev/waterline --visibility public --accept-visibility-change-consequences`
