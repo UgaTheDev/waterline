@@ -11,10 +11,13 @@ import type {
   Evidence,
   LngLat,
   Point,
+  QueueItem,
+  Risk,
   RouteRequest,
   RouteResponse,
   Segments,
   SegmentProps,
+  Simulation,
   UploadStatus,
 } from "./api";
 
@@ -29,6 +32,7 @@ const config: Config = {
     { id: "sedan", label: "Sedan", limit_cm: 15 },
     { id: "suv", label: "SUV", limit_cm: 30 },
     { id: "truck", label: "Pickup truck", limit_cm: 45 },
+    { id: "rescue", label: "High-water rescue truck", limit_cm: 90, responder_only: true },
   ],
   thresholds: [
     { cm: 15, text: "6 in (15 cm) reaches the bottom of most cars and can cause loss of control or stalling." },
@@ -119,14 +123,75 @@ function segmentAt(s: Seed, t: number): SegmentProps | null {
     confidence: latest.confidence,
     obs_time: latest.time,
     evidence: obs,
+    basis: "observed",
   };
+}
+
+// Inferred streets: interpolated from nearby live reports plus ground elevation. They only ever add water
+// (never 0, never lower than a report), and the range widens with distance from the sources.
+const inferredSeeds: { id: string; name: string; coords: LngLat[]; from: string[]; terrain_cm: number; dist_m: number }[] = [
+  { id: "2001-2002-0", name: "Crockett St", coords: [[-95.395, 29.7665], [-95.386, 29.766], [-95.378, 29.7652]], from: ["1017-1018-0", "1001-1002-0"], terrain_cm: 6, dist_m: 330 },
+  { id: "2003-2004-0", name: "Taft St", coords: [[-95.3875, 29.7536], [-95.3876, 29.7565], [-95.3878, 29.7594]], from: ["1003-1004-0", "1009-1010-0"], terrain_cm: -4, dist_m: 420 },
+  { id: "2005-2006-0", name: "Houston Ave", coords: [[-95.3795, 29.7674], [-95.3797, 29.7715], [-95.3799, 29.7752]], from: ["1019-1020-0", "1017-1018-0"], terrain_cm: 0, dist_m: 380 },
+];
+
+function inferredAt(s: (typeof inferredSeeds)[number], t: number): SegmentProps | null {
+  const src = s.from.flatMap((id) => {
+    const p = segmentAt(seeds.find((x) => x.id === id)!, t);
+    return p && p.state === "reported" && p.high_cm !== null ? [p] : [];
+  });
+  if (!src.length) return null; // no live source reports: unknown, not dry
+  const depth = Math.max(5, Math.round(src.reduce((a, p) => a + (p.depth_cm ?? 0), 0) / src.length + s.terrain_cm));
+  const low = Math.max(0, depth - Math.round(8 + s.dist_m / 50));
+  const high = depth + Math.round(10 + s.dist_m / 40);
+  const time = src.map((p) => p.obs_time).sort()[src.length - 1];
+  const ev: Evidence = {
+    obs_id: `obs-inferred-${s.id}-${time}`,
+    image_url: null,
+    reference: null,
+    depth_cm: depth,
+    low_cm: low,
+    high_cm: high,
+    confidence: 0.35,
+    time,
+    rationale: `Interpolated from ${src.length} report${src.length > 1 ? "s" : ""} within about ${s.dist_m} m, adjusted for ground ${Math.abs(s.terrain_cm)} cm ${s.terrain_cm >= 0 ? "lower" : "higher"} here (USGS 3DEP). The range widens with distance.`,
+    credit: "Inferred by Waterline from nearby reports + USGS 3DEP elevation",
+    kind: "inferred",
+    provenance: { method: "idw+3dep", derived_from: src.map((p) => p.evidence[0].obs_id) },
+  };
+  return { edge_id: s.id, name: s.name, state: "reported", depth_cm: depth, low_cm: low, high_cm: high, confidence: 0.35, obs_time: time, evidence: [ev], basis: "inferred" };
 }
 
 function segments(t: string): Segments {
   const tm = ms(t);
-  const features = seeds.flatMap((s) => {
-    const p = segmentAt(s, tm);
-    return p ? [{ type: "Feature" as const, geometry: { type: "LineString" as const, coordinates: s.coords }, properties: p }] : [];
+  const all = [...seeds.map((s) => [s.coords, segmentAt(s, tm)] as const), ...inferredSeeds.map((s) => [s.coords, inferredAt(s, tm)] as const)];
+  const features = all.flatMap(([coords, p]) => (p ? [{ type: "Feature" as const, geometry: { type: "LineString" as const, coordinates: coords }, properties: p }] : []));
+  return { type: "FeatureCollection", features };
+}
+
+// Next-hour risk: rain over the last 3 h times terrain (depressions, height above the nearest bayou). Not a depth.
+const riskSeeds: { id: string; name: string; coords: LngLat[]; depression_cm: number; hand_m: number }[] = [
+  ...seeds.slice(0, 8).map((s, i) => ({ id: s.id, name: s.name, coords: s.coords, depression_cm: 20 + ((i * 17) % 60), hand_m: 0.8 + ((i * 7) % 5) * 0.6 })),
+  ...inferredSeeds.map((s, i) => ({ id: s.id, name: s.name, coords: s.coords, depression_cm: 35 + i * 12, hand_m: 1.4 + i * 0.5 })),
+  { id: "3001-3002-0", name: "Sawyer St", coords: [[-95.3815, 29.7635], [-95.3817, 29.7662], [-95.3818, 29.769]], depression_cm: 55, hand_m: 1.1 },
+  { id: "3003-3004-0", name: "Durham Dr", coords: [[-95.4035, 29.771], [-95.4034, 29.777], [-95.4032, 29.783]], depression_cm: 40, hand_m: 2.2 },
+  { id: "3005-3006-0", name: "Taylor St", coords: [[-95.3862, 29.7635], [-95.3863, 29.7662], [-95.3864, 29.7688]], depression_cm: 30, hand_m: 1.6 },
+];
+
+// Harvey's heaviest bands over downtown: the night of Aug 26-27 and again on Aug 28 (UTC).
+const gauss = (t: number, at: string, width_h: number) => Math.exp(-(((t - ms(at)) / (width_h * H)) ** 2));
+const rain3h = (t: number) => Math.round(18 + 150 * gauss(t, "2017-08-27T06:00:00Z", 10) + 90 * gauss(t, "2017-08-28T12:00:00Z", 12));
+
+function risk(t: string): Risk {
+  const tm = ms(t);
+  const rain = rain3h(tm);
+  const features = riskSeeds.flatMap((s, i) => {
+    const terrain = Math.min(1, s.depression_cm / 80) * 0.5 + Math.max(0, 1 - s.hand_m / 4) * 0.5;
+    const r = Math.min(0.97, (rain / 120) * (0.55 + 0.6 * terrain) + ((i * 11) % 7) / 100);
+    if (r < 0.3) return [];
+    const band = r >= 0.65 ? ("high" as const) : ("elevated" as const);
+    const props = { edge_id: s.id, name: s.name, risk: Math.round(r * 100) / 100, band, drivers: { rain_3h_mm: rain, depression_cm: s.depression_cm, hand_m: s.hand_m } };
+    return [{ type: "Feature" as const, geometry: { type: "LineString" as const, coordinates: s.coords }, properties: props }];
   });
   return { type: "FeatureCollection", features };
 }
@@ -307,6 +372,57 @@ function dashcam(form: FormData): DashcamResponse {
   };
 }
 
+// Responder queue: flags from the depth model's person/vehicle check. Sample frames are drawn placeholders, not real photos.
+export const MOCK_TOKEN = "responder-demo";
+const reviews = new Map<string, "seen" | "dismissed">();
+const queueSeed: { flags: QueueItem["flags"]; street: string; at: string; low: number; high: number; ref: string; why: string }[] = [
+  { flags: ["person_in_water"], street: "White Oak Dr", at: "2017-08-28T04:40:00Z", low: 70, high: 95, ref: "stop-sign post", why: "A person appears to be standing in water to about the waist near the stop sign." },
+  { flags: ["occupied_vehicle"], street: "Allen Pkwy", at: "2017-08-28T03:15:00Z", low: 55, high: 80, ref: "car door sill", why: "Water is above the door sill of a car; someone may be inside (interior light on)." },
+  { flags: ["person_in_water", "occupied_vehicle"], street: "Memorial Dr", at: "2017-08-27T23:50:00Z", low: 45, high: 65, ref: "car tire", why: "A stalled car with a figure on the roof; water covers the tires." },
+];
+const queue = (): QueueItem[] =>
+  queueSeed.map((q, i) => {
+    const obs_id = `obs-flag-${i + 1}`;
+    return {
+      obs_id,
+      flags: q.flags,
+      reviewed: reviews.has(obs_id),
+      label: "Needs human review",
+      evidence: {
+        obs_id,
+        image_url: `/responder/media/${obs_id}`,
+        reference: q.ref,
+        depth_cm: Math.round((q.low + q.high) / 2),
+        low_cm: q.low,
+        high_cm: q.high,
+        confidence: 0.55,
+        time: q.at,
+        rationale: q.why,
+        credit: "Sample data, not a real report",
+        location_precision: "street",
+        kind: "photo",
+        street: q.street,
+      },
+    };
+  });
+const checkToken = (token: string) => {
+  if (token !== MOCK_TOKEN) throw Object.assign(new Error("Responder access needs a token."), { status: 401 });
+};
+const sampleFrame = (obs_id: string) =>
+  new Blob(
+    [
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360"><defs><linearGradient id="w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1e3a4a"/><stop offset="1" stop-color="#0b1a22"/></linearGradient></defs><rect width="640" height="360" fill="#101820"/><rect y="200" width="640" height="160" fill="url(#w)"/><path d="M0 200 Q160 190 320 200 T640 200" stroke="#7dd3fc" stroke-width="2" fill="none"/><text x="320" y="120" text-anchor="middle" font-family="monospace" font-size="22" fill="#8c99a8">SAMPLE FRAME</text><text x="320" y="150" text-anchor="middle" font-family="monospace" font-size="14" fill="#5a6878">${obs_id} · placeholder, not a real photo</text></svg>`,
+    ],
+    { type: "image/svg+xml" },
+  );
+
+// No video files ship with the mock; the player shows its drawn poster and says the clip is unavailable.
+const SIM_LABEL = "SIMULATION: generated by NVIDIA Cosmos Transfer, not a real photo";
+const simulations: Simulation[] = [
+  { id: "sim-allen-pkwy-60", street: "Allen Pkwy", depth_cm: 60, video_url: "/mock/sim-allen-pkwy-60.mp4", label: SIM_LABEL },
+  { id: "sim-memorial-dr-45", street: "Memorial Dr", depth_cm: 45, video_url: "/mock/sim-memorial-dr-45.mp4", label: SIM_LABEL },
+];
+
 const uploads = new Map<string, number>();
 const wait = (n: number) => new Promise((r) => setTimeout(r, n));
 
@@ -354,4 +470,20 @@ export const api = {
     return dashcam(form);
   },
   eval: async (): Promise<EvalResult> => ({ n: 0 }),
+  risk: async (t: string) => risk(t),
+  simulations: async () => simulations,
+  responderQueue: async (token: string) => {
+    await wait(300);
+    checkToken(token);
+    return queue();
+  },
+  responderReview: async (token: string, obs_id: string, action: "seen" | "dismissed") => {
+    checkToken(token);
+    reviews.set(obs_id, action);
+    return { ok: true };
+  },
+  responderMedia: async (token: string, obs_id: string) => {
+    checkToken(token);
+    return sampleFrame(obs_id);
+  },
 };

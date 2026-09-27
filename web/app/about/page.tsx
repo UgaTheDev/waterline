@@ -2,6 +2,7 @@ import { BRAND } from "@/lib/brand";
 import type { Metadata } from "next";
 import Link from "next/link";
 import EvalStats from "@/components/EvalStats";
+import { SimulationGallery } from "@/components/Simulation";
 
 export const metadata: Metadata = { title: `How it works · ${BRAND}` };
 
@@ -25,6 +26,12 @@ const steps = [
     title: "An agent explains the route",
     text: "An NVIDIA Nemotron agent on Nebius Token Factory plans trips and cites the photo, depth and time behind every avoided street. Tavily brings in local reports; flood warnings come from the NWS.",
   },
+];
+
+const inferRules = [
+  ["Additive only", "An inferred street only ever adds water. It is never 0 cm, never dry, and never lowers a real report."],
+  ["Always labeled", "Inferred streets are dashed and dimmer than observed ones, and their report card says which reports they came from."],
+  ["Uncertainty grows", "The further a street is from the reports behind it, the wider its range. Routing uses the upper bound."],
 ];
 
 const credits = [
@@ -89,6 +96,61 @@ export default function About() {
         </ol>
       </section>
 
+      <section className="border-y border-line bg-panel">
+        <div className="max-w-4xl mx-auto px-5 py-14">
+          <h2 className="font-display text-[36px] text-text">How the map fills in</h2>
+          <p className="text-[14px] text-muted mt-2 max-w-2xl leading-relaxed">
+            Reports are sparse, and a street nobody photographed is not a dry street. So next to <span className="text-text">observed</span> streets, the
+            map draws <span className="text-text">inferred</span> ones: depth carried over from nearby reports and adjusted for ground elevation (USGS 3DEP).
+          </p>
+          <div className="mt-6 flex flex-wrap gap-6 font-mono text-[11.5px] text-muted">
+            <span className="flex items-center gap-2.5">
+              <span className="inline-block w-8 h-[5px] rounded-full" style={{ background: "var(--danger)" }} aria-hidden /> observed: a photo, dashcam or voice report
+            </span>
+            <span className="flex items-center gap-2.5">
+              <span className="inline-block w-8 h-[5px] rounded-full opacity-60" style={{ background: "repeating-linear-gradient(90deg, var(--danger) 0 5px, transparent 5px 8px)" }} aria-hidden />{" "}
+              inferred from nearby reports + terrain
+            </span>
+          </div>
+          <ul className="mt-6 grid md:grid-cols-3 gap-3">
+            {inferRules.map(([k, v]) => (
+              <li key={k} className="rounded-xl border border-line bg-bg/40 p-4">
+                <p className="text-[15px] text-text">{k}</p>
+                <p className="text-[13px] text-muted mt-1 leading-relaxed">{v}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section className="max-w-4xl mx-auto px-5 py-16 grid md:grid-cols-2 gap-10">
+        <div>
+          <h2 className="font-display text-[32px] text-text">Flood risk</h2>
+          <p className="text-[14px] text-muted mt-2 leading-relaxed">
+            The &ldquo;Flood risk next hour&rdquo; layer flags streets where water is likely to collect soon: heavy rain over the last three hours, low ground
+            that holds water, and little height above the nearest bayou. It draws as a soft haze, never in depth colours, because it is a risk estimate, not a
+            depth report. It never blocks a route and never marks a street dry; at most it adds a warning.
+          </p>
+        </div>
+        <div>
+          <h2 className="font-display text-[32px] text-text">Voice &amp; drive mode</h2>
+          <p className="text-[14px] text-muted mt-2 leading-relaxed">
+            Ask the agent out loud, or tell it what you see (&ldquo;water&apos;s up to my knees at Main and 5th&rdquo;) and it files a low-confidence voice
+            report. Drive mode reads a dashcam frame every few seconds; when it sees water ahead it files a report, speaks the depth against your vehicle&apos;s
+            limit, and reroutes. Dashcam frames are never stored, and silence never means the road is clear.
+          </p>
+        </div>
+      </section>
+
+      <section className="max-w-4xl mx-auto px-5 pb-16">
+        <h2 className="font-display text-[36px] text-text">Simulations</h2>
+        <p className="text-[14px] text-muted mt-2 mb-6 max-w-2xl leading-relaxed">
+          To show what a depth means, NVIDIA Cosmos Transfer renders a street at a given depth. These clips are generated, labeled on every frame, and never
+          used as evidence or for routing.
+        </p>
+        <SimulationGallery />
+      </section>
+
       <section className="max-w-4xl mx-auto px-5 pb-16">
         <h2 className="font-display text-[36px] text-text">How well it works</h2>
         <p className="text-[14px] text-muted mt-2 mb-6 max-w-2xl">
@@ -108,6 +170,18 @@ export default function About() {
             </div>
           ))}
         </dl>
+      </section>
+
+      <section className="max-w-4xl mx-auto px-5 pb-16">
+        <h2 className="font-display text-[36px] text-text">For responders</h2>
+        <p className="text-[14px] text-muted mt-2 max-w-2xl leading-relaxed">
+          Responder mode needs a token. It lists photos the depth model flagged for a possible person in the water or an occupied vehicle, for a person to
+          review, and routes a high-water rescue truck (90 cm). Flags never appear on the public map. Flags come from an AI model and can be wrong both ways.
+          Never assume no one needs help.
+        </p>
+        <Link href="/responder" className="inline-block mt-4 text-[14px] text-accent hover:underline">
+          Open responder mode →
+        </Link>
       </section>
 
       <section className="max-w-4xl mx-auto px-5 pb-20">

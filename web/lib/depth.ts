@@ -4,7 +4,7 @@ import type { Theme } from "./theme";
 // Bands and wording per backend/API.md. Never say "safe": shallow reads "No deep water reported".
 export type Band = "shallow" | "stall" | "float" | "sweep" | "unknownDepth" | "stale";
 
-export const PALETTE: Record<Theme, Record<Band | "route" | "routeCasing" | "alert", string>> = {
+export const PALETTE: Record<Theme, Record<Band | "route" | "routeCasing" | "alert" | "risk", string>> = {
   dark: {
     shallow: "#facc15",
     stall: "#fb923c",
@@ -15,6 +15,7 @@ export const PALETTE: Record<Theme, Record<Band | "route" | "routeCasing" | "ale
     route: "#67e8f9",
     routeCasing: "#04151b",
     alert: "#fb7185",
+    risk: "#e2e8f0", // a neutral haze: never a depth colour, never green
   },
   light: {
     shallow: "#ca8a04",
@@ -26,6 +27,7 @@ export const PALETTE: Record<Theme, Record<Band | "route" | "routeCasing" | "ale
     route: "#0e7490",
     routeCasing: "#ffffff",
     alert: "#be123c",
+    risk: "#334155",
   },
 };
 

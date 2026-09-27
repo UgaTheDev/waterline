@@ -3,7 +3,15 @@ import type { Avoided, RouteResponse } from "@/lib/api";
 import { PALETTE, bandFor, fmtDistance } from "@/lib/depth";
 import { useTheme } from "@/lib/theme";
 
-export type Selection = { id?: string; name: string | null; state: Avoided["state"]; low: number | null; high: number | null; evidence: Avoided["evidence"] };
+export type Selection = {
+  id?: string;
+  name: string | null;
+  state: Avoided["state"];
+  low: number | null;
+  high: number | null;
+  evidence: Avoided["evidence"];
+  basis?: "observed" | "inferred";
+};
 
 function AvoidedList({ items, onEvidence }: { items: Avoided[]; onEvidence: (s: Selection) => void }) {
   const theme = useTheme();

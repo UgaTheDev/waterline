@@ -22,6 +22,12 @@ const SHAPES: Record<string, Shape> = {
     glass: "M73 32 L112 32 L112 50 L61 50 Z",
     wheels: [[50, 81, 15], [172, 81, 15]],
   },
+  // Lifted high-water truck (responder mode only): the pickup raised on tall tyres.
+  rescue: {
+    body: "M6 66 L8 47 Q10 40 19 40 L54 38 L68 15 Q71 12 78 12 L112 12 Q118 12 118 18 L118 38 L208 38 Q212 38 212 42 L212 66 Q212 70 208 70 L10 70 Q6 70 6 66 Z",
+    glass: "M73 18 L112 18 L112 36 L61 36 Z",
+    wheels: [[50, 78, 18], [172, 78, 18]],
+  },
 };
 export const shapeFor = (id: string) => SHAPES[id] ?? SHAPES.sedan;
 
@@ -95,7 +101,7 @@ export function VehicleSilhouette({
 
 export function VehiclePicker({ vehicles, value, onChange }: { vehicles: Vehicle[]; value: string; onChange: (id: string) => void }) {
   return (
-    <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Vehicle">
+    <div className={`grid gap-2 ${vehicles.length > 3 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`} role="radiogroup" aria-label="Vehicle">
       {vehicles.map((v) => {
         const on = v.id === value;
         return (
