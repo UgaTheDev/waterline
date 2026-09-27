@@ -2,7 +2,7 @@
 
 <!-- Worker-owned. Update at every checkpoint, blocker, or decision. The orchestrator reads this file; keep the headings exactly. -->
 
-**Updated:** 2026-09-27 15:25  ·  **Stage:** building  ·  **Health:** 🟡 at risk
+**Updated:** 2026-09-27 15:55  ·  **Stage:** building  ·  **Health:** 🟡 at risk
 
 ## Needs Kush
 - **Token Factory key** (blocks the live depth model, the agent and latency/cost numbers): join https://dev.nebius.com/builders, create a key, add `TF_KEY=...` to `.env` in this repo (never paste it in chat).
@@ -17,18 +17,20 @@
 - Voice reports, dashcam endpoint, session-sandboxed replay reports (backend, tested).
 - Depth default switched to Nemotron Nano 2 VL on Token Factory; Cosmos Reason 2 kept as a benchmark.
 - v2 plan approved; v2 contracts frozen (backend/API.md) with stub routers for risk, responder and simulations.
+- Stream C merged: voice chat (push-to-talk, spoken replies) + /drive dashcam HUD, live on Vercel (sample mode).
+- Stream E merged: depth-model danger flags, token-guarded responder queue/review/media, 311 text parser (12 tests pass).
 
 ## In progress (streams)
 | Stream | Owner/worktree | State | Next |
 |---|---|---|---|
-| C voice + dashcam UI | agent web-voice (web/) | building | review + merge |
-| R recon (MRMS, 311, PD dashcam footage, street clip) | worktree agent (sonnet) | starting | sources + licenses |
-| A terrain inference | worktree agent (opus) | starting | DEM + infer() + leave-one-out eval |
-| E responder + 311 ingest | worktree agent (sonnet) | starting | queue + flags; 311 once R confirms |
+| C voice + dashcam UI | web-voice | ✅ merged 66c79af | real mic/camera test on a phone |
+| R recon (MRMS, 311, PD dashcam footage, street clip) | stream-r-recon (sonnet) | running | sources + licenses |
+| A terrain inference | worktree (opus) | running | DEM + infer() + leave-one-out eval |
+| E responder + 311 ingest | worktree (sonnet) | ✅ merged 458dbae | wire real 311 data once R confirms |
 | B nowcast | after R + A | queued | — |
 | D Cosmos Transfer spike | after R + Nebius deposit | queued | — |
 | F eval | Kush labels + keys | blocked | see Needs Kush |
-| G web integration + hosting | after web-voice | queued | — |
+| G web integration | worktree stream-g-web (opus) | running | inferred hatching, risk layer, /responder, simulations |
 
 ## Blockers (not Kush)
 - none
