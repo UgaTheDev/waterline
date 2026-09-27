@@ -1,0 +1,1042 @@
+{
+ "method": "terrain-v1",
+ "radius_m": 800,
+ "sigma0_cm": 10,
+ "slope_cm_per_m": 0.05,
+ "exclude_self": {
+  "marks": 51,
+  "reached": 23,
+  "median_error_cm": 15.2,
+  "mae_cm": 47.7,
+  "underestimate_gt20cm": 1,
+  "underestimate_rate": 0.043,
+  "deep_marks_gt15cm": 25,
+  "deep_reached": 14,
+  "deep_blocks_sedan": 14,
+  "deep_reached_but_missed": 0,
+  "deep_not_reached": 11,
+  "rows": [
+   {
+    "hwm_id": 22644,
+    "site_id": 21803,
+    "surveyed_cm": 1080.2,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 958.0,
+    "reached": true,
+    "inferred_cm": 1085.3,
+    "error_cm": 5.1,
+    "high_depth_cm": 154.3,
+    "from_hwm": 22642,
+    "dist_m": 79
+   },
+   {
+    "hwm_id": 22857,
+    "site_id": 21905,
+    "surveyed_cm": 1537.9,
+    "height_above_gnd_cm": 65.2,
+    "dem_ground_cm": 1451.0,
+    "reached": true,
+    "inferred_cm": 1567.1,
+    "error_cm": 29.2,
+    "high_depth_cm": 153.7,
+    "from_hwm": 22842,
+    "dist_m": 291
+   },
+   {
+    "hwm_id": 22883,
+    "site_id": 21919,
+    "surveyed_cm": 1534.2,
+    "height_above_gnd_cm": 84.7,
+    "dem_ground_cm": 1470.0,
+    "reached": true,
+    "inferred_cm": 1567.1,
+    "error_cm": 32.8,
+    "high_depth_cm": 125.7,
+    "from_hwm": 22842,
+    "dist_m": 111
+   },
+   {
+    "hwm_id": 22884,
+    "site_id": 21919,
+    "surveyed_cm": 1528.7,
+    "height_above_gnd_cm": 68.6,
+    "dem_ground_cm": 1479.0,
+    "reached": true,
+    "inferred_cm": 1567.1,
+    "error_cm": 38.3,
+    "high_depth_cm": 111.1,
+    "from_hwm": 22842,
+    "dist_m": 0
+   },
+   {
+    "hwm_id": 22890,
+    "site_id": 21921,
+    "surveyed_cm": 1608.4,
+    "height_above_gnd_cm": 176.8,
+    "dem_ground_cm": 1490.0,
+    "reached": true,
+    "inferred_cm": 1628.6,
+    "error_cm": 20.2,
+    "high_depth_cm": 171.7,
+    "from_hwm": 22893,
+    "dist_m": 201
+   },
+   {
+    "hwm_id": 22892,
+    "site_id": 21921,
+    "surveyed_cm": 1612.4,
+    "height_above_gnd_cm": 114.9,
+    "dem_ground_cm": 1610.0,
+    "reached": true,
+    "inferred_cm": 1628.6,
+    "error_cm": 16.2,
+    "high_depth_cm": 49.3,
+    "from_hwm": 22893,
+    "dist_m": 152
+   },
+   {
+    "hwm_id": 22893,
+    "site_id": 21922,
+    "surveyed_cm": 1628.6,
+    "height_above_gnd_cm": 139.3,
+    "dem_ground_cm": 1565.0,
+    "reached": true,
+    "inferred_cm": 1612.4,
+    "error_cm": -16.2,
+    "high_depth_cm": 87.2,
+    "from_hwm": 22892,
+    "dist_m": 152
+   },
+   {
+    "hwm_id": 22894,
+    "site_id": 21922,
+    "surveyed_cm": 1589.0,
+    "height_above_gnd_cm": 83.8,
+    "dem_ground_cm": 1528.0,
+    "reached": true,
+    "inferred_cm": 1612.4,
+    "error_cm": 23.4,
+    "high_depth_cm": 130.1,
+    "from_hwm": 22892,
+    "dist_m": 270
+   },
+   {
+    "hwm_id": 23413,
+    "site_id": 22196,
+    "surveyed_cm": 1164.9,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1013.0,
+    "reached": true,
+    "inferred_cm": 1153.4,
+    "error_cm": -11.6,
+    "high_depth_cm": 173.6,
+    "from_hwm": 23414,
+    "dist_m": 21
+   },
+   {
+    "hwm_id": 23414,
+    "site_id": 22196,
+    "surveyed_cm": 1153.4,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1189.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 25192,
+    "site_id": 23190,
+    "surveyed_cm": 1751.4,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1751.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 25193,
+    "site_id": 23191,
+    "surveyed_cm": 1610.0,
+    "height_above_gnd_cm": 33.5,
+    "dem_ground_cm": 1567.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 25194,
+    "site_id": 23192,
+    "surveyed_cm": 1258.8,
+    "height_above_gnd_cm": 30.5,
+    "dem_ground_cm": 644.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 25201,
+    "site_id": 23196,
+    "surveyed_cm": 1672.4,
+    "height_above_gnd_cm": 57.9,
+    "dem_ground_cm": 1675.0,
+    "reached": true,
+    "inferred_cm": 2021.0,
+    "error_cm": 348.6,
+    "high_depth_cm": 405.2,
+    "from_hwm": 33439,
+    "dist_m": 662
+   },
+   {
+    "hwm_id": 25202,
+    "site_id": 23197,
+    "surveyed_cm": 1387.4,
+    "height_above_gnd_cm": 112.8,
+    "dem_ground_cm": 1666.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 25204,
+    "site_id": 23198,
+    "surveyed_cm": 1026.0,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1191.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 22629,
+    "site_id": 21797,
+    "surveyed_cm": 1086.0,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1251.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 22630,
+    "site_id": 21797,
+    "surveyed_cm": 1086.9,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1203.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 22642,
+    "site_id": 21803,
+    "surveyed_cm": 1085.3,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1071.0,
+    "reached": true,
+    "inferred_cm": 1080.2,
+    "error_cm": -5.1,
+    "high_depth_cm": 36.2,
+    "from_hwm": 22644,
+    "dist_m": 79
+   },
+   {
+    "hwm_id": 22646,
+    "site_id": 21805,
+    "surveyed_cm": 1619.6,
+    "height_above_gnd_cm": 12.2,
+    "dem_ground_cm": 1612.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 22652,
+    "site_id": 21807,
+    "surveyed_cm": 1086.9,
+    "height_above_gnd_cm": 41.1,
+    "dem_ground_cm": 1203.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 23813,
+    "site_id": 22410,
+    "surveyed_cm": 1122.3,
+    "height_above_gnd_cm": 231.6,
+    "dem_ground_cm": 928.0,
+    "reached": true,
+    "inferred_cm": 1107.0,
+    "error_cm": -15.2,
+    "high_depth_cm": 200.6,
+    "from_hwm": 23814,
+    "dist_m": 0
+   },
+   {
+    "hwm_id": 23814,
+    "site_id": 22410,
+    "surveyed_cm": 1107.0,
+    "height_above_gnd_cm": 87.2,
+    "dem_ground_cm": 928.0,
+    "reached": true,
+    "inferred_cm": 1122.3,
+    "error_cm": 15.2,
+    "high_depth_cm": 215.8,
+    "from_hwm": 23813,
+    "dist_m": 0
+   },
+   {
+    "hwm_id": 23816,
+    "site_id": 22411,
+    "surveyed_cm": 1351.2,
+    "height_above_gnd_cm": 51.5,
+    "dem_ground_cm": 1302.0,
+    "reached": true,
+    "inferred_cm": 1357.3,
+    "error_cm": 6.1,
+    "high_depth_cm": 78.2,
+    "from_hwm": 23817,
+    "dist_m": 28
+   },
+   {
+    "hwm_id": 23817,
+    "site_id": 22411,
+    "surveyed_cm": 1357.3,
+    "height_above_gnd_cm": 51.5,
+    "dem_ground_cm": 1306.0,
+    "reached": true,
+    "inferred_cm": 1351.2,
+    "error_cm": -6.1,
+    "high_depth_cm": 68.1,
+    "from_hwm": 23816,
+    "dist_m": 28
+   },
+   {
+    "hwm_id": 22840,
+    "site_id": 21898,
+    "surveyed_cm": 1558.5,
+    "height_above_gnd_cm": 66.4,
+    "dem_ground_cm": 1394.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 22754,
+    "site_id": 21876,
+    "surveyed_cm": 1055.2,
+    "height_above_gnd_cm": 37.8,
+    "dem_ground_cm": 1179.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 22768,
+    "site_id": 21876,
+    "surveyed_cm": 1056.2,
+    "height_above_gnd_cm": 25.9,
+    "dem_ground_cm": 1138.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 22809,
+    "site_id": 21891,
+    "surveyed_cm": 1432.1,
+    "height_above_gnd_cm": 68.3,
+    "dem_ground_cm": 1454.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 22810,
+    "site_id": 21891,
+    "surveyed_cm": 1431.9,
+    "height_above_gnd_cm": 55.5,
+    "dem_ground_cm": 1461.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 22842,
+    "site_id": 21898,
+    "surveyed_cm": 1567.1,
+    "height_above_gnd_cm": 61.9,
+    "dem_ground_cm": 1479.0,
+    "reached": true,
+    "inferred_cm": 1537.9,
+    "error_cm": -29.2,
+    "high_depth_cm": 96.5,
+    "from_hwm": 22857,
+    "dist_m": 291
+   },
+   {
+    "hwm_id": 22856,
+    "site_id": 21905,
+    "surveyed_cm": 1537.4,
+    "height_above_gnd_cm": 112.2,
+    "dem_ground_cm": 1465.0,
+    "reached": true,
+    "inferred_cm": 1567.1,
+    "error_cm": 29.7,
+    "high_depth_cm": 130.0,
+    "from_hwm": 22842,
+    "dist_m": 98
+   },
+   {
+    "hwm_id": 29154,
+    "site_id": 25070,
+    "surveyed_cm": 1303.1,
+    "height_above_gnd_cm": 91.4,
+    "dem_ground_cm": 1484.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 29153,
+    "site_id": 25070,
+    "surveyed_cm": 1271.5,
+    "height_above_gnd_cm": 76.2,
+    "dem_ground_cm": 1484.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 33446,
+    "site_id": 26446,
+    "surveyed_cm": 1717.7,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1802.0,
+    "reached": true,
+    "inferred_cm": 2021.0,
+    "error_cm": 303.3,
+    "high_depth_cm": 281.8,
+    "from_hwm": 33439,
+    "dist_m": 734
+   },
+   {
+    "hwm_id": 33487,
+    "site_id": 26197,
+    "surveyed_cm": 285.4,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 814.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 33469,
+    "site_id": 26469,
+    "surveyed_cm": 1245.5,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1349.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 33488,
+    "site_id": 26812,
+    "surveyed_cm": 499.1,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1268.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 33491,
+    "site_id": 26201,
+    "surveyed_cm": 167.2,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 979.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 33492,
+    "site_id": 26815,
+    "surveyed_cm": 289.0,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1371.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 33493,
+    "site_id": 26816,
+    "surveyed_cm": 237.2,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 389.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 34938,
+    "site_id": 27894,
+    "surveyed_cm": 1292.4,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1126.0,
+    "reached": true,
+    "inferred_cm": 1341.1,
+    "error_cm": 48.8,
+    "high_depth_cm": 259.7,
+    "from_hwm": 34939,
+    "dist_m": 371
+   },
+   {
+    "hwm_id": 34942,
+    "site_id": 27893,
+    "surveyed_cm": 1344.2,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1140.0,
+    "reached": true,
+    "inferred_cm": 1341.1,
+    "error_cm": -3.0,
+    "high_depth_cm": 244.3,
+    "from_hwm": 34939,
+    "dist_m": 341
+   },
+   {
+    "hwm_id": 34941,
+    "site_id": 27895,
+    "surveyed_cm": 1252.7,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 583.0,
+    "reached": true,
+    "inferred_cm": 1341.1,
+    "error_cm": 88.4,
+    "high_depth_cm": 785.8,
+    "from_hwm": 34939,
+    "dist_m": 32
+   },
+   {
+    "hwm_id": 34940,
+    "site_id": 27893,
+    "surveyed_cm": 1344.2,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1138.0,
+    "reached": true,
+    "inferred_cm": 1341.1,
+    "error_cm": -3.0,
+    "high_depth_cm": 245.3,
+    "from_hwm": 34939,
+    "dist_m": 321
+   },
+   {
+    "hwm_id": 34939,
+    "site_id": 27895,
+    "surveyed_cm": 1341.1,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 869.0,
+    "reached": true,
+    "inferred_cm": 1344.2,
+    "error_cm": 3.0,
+    "high_depth_cm": 518.3,
+    "from_hwm": 34942,
+    "dist_m": 341
+   },
+   {
+    "hwm_id": 33434,
+    "site_id": 25070,
+    "surveyed_cm": 1279.9,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1457.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 33439,
+    "site_id": 26439,
+    "surveyed_cm": 2021.0,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 694.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 33461,
+    "site_id": 26463,
+    "surveyed_cm": 1393.9,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1448.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 33468,
+    "site_id": 26470,
+    "surveyed_cm": 1193.1,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1305.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 33483,
+    "site_id": 26486,
+    "surveyed_cm": 1454.8,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1840.0,
+    "reached": false
+   }
+  ]
+ },
+ "exclude_site": {
+  "marks": 51,
+  "reached": 15,
+  "median_error_cm": 23.4,
+  "mae_cm": 63.0,
+  "underestimate_gt20cm": 1,
+  "underestimate_rate": 0.067,
+  "deep_marks_gt15cm": 25,
+  "deep_reached": 10,
+  "deep_blocks_sedan": 10,
+  "deep_reached_but_missed": 0,
+  "deep_not_reached": 15,
+  "rows": [
+   {
+    "hwm_id": 22644,
+    "site_id": 21803,
+    "surveyed_cm": 1080.2,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 958.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 22857,
+    "site_id": 21905,
+    "surveyed_cm": 1537.9,
+    "height_above_gnd_cm": 65.2,
+    "dem_ground_cm": 1451.0,
+    "reached": true,
+    "inferred_cm": 1567.1,
+    "error_cm": 29.2,
+    "high_depth_cm": 153.7,
+    "from_hwm": 22842,
+    "dist_m": 291
+   },
+   {
+    "hwm_id": 22883,
+    "site_id": 21919,
+    "surveyed_cm": 1534.2,
+    "height_above_gnd_cm": 84.7,
+    "dem_ground_cm": 1470.0,
+    "reached": true,
+    "inferred_cm": 1567.1,
+    "error_cm": 32.8,
+    "high_depth_cm": 125.7,
+    "from_hwm": 22842,
+    "dist_m": 111
+   },
+   {
+    "hwm_id": 22884,
+    "site_id": 21919,
+    "surveyed_cm": 1528.7,
+    "height_above_gnd_cm": 68.6,
+    "dem_ground_cm": 1479.0,
+    "reached": true,
+    "inferred_cm": 1567.1,
+    "error_cm": 38.3,
+    "high_depth_cm": 111.1,
+    "from_hwm": 22842,
+    "dist_m": 0
+   },
+   {
+    "hwm_id": 22890,
+    "site_id": 21921,
+    "surveyed_cm": 1608.4,
+    "height_above_gnd_cm": 176.8,
+    "dem_ground_cm": 1490.0,
+    "reached": true,
+    "inferred_cm": 1628.6,
+    "error_cm": 20.2,
+    "high_depth_cm": 171.7,
+    "from_hwm": 22893,
+    "dist_m": 201
+   },
+   {
+    "hwm_id": 22892,
+    "site_id": 21921,
+    "surveyed_cm": 1612.4,
+    "height_above_gnd_cm": 114.9,
+    "dem_ground_cm": 1610.0,
+    "reached": true,
+    "inferred_cm": 1628.6,
+    "error_cm": 16.2,
+    "high_depth_cm": 49.3,
+    "from_hwm": 22893,
+    "dist_m": 152
+   },
+   {
+    "hwm_id": 22893,
+    "site_id": 21922,
+    "surveyed_cm": 1628.6,
+    "height_above_gnd_cm": 139.3,
+    "dem_ground_cm": 1565.0,
+    "reached": true,
+    "inferred_cm": 1612.4,
+    "error_cm": -16.2,
+    "high_depth_cm": 87.2,
+    "from_hwm": 22892,
+    "dist_m": 152
+   },
+   {
+    "hwm_id": 22894,
+    "site_id": 21922,
+    "surveyed_cm": 1589.0,
+    "height_above_gnd_cm": 83.8,
+    "dem_ground_cm": 1528.0,
+    "reached": true,
+    "inferred_cm": 1612.4,
+    "error_cm": 23.4,
+    "high_depth_cm": 130.1,
+    "from_hwm": 22892,
+    "dist_m": 270
+   },
+   {
+    "hwm_id": 23413,
+    "site_id": 22196,
+    "surveyed_cm": 1164.9,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1013.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 23414,
+    "site_id": 22196,
+    "surveyed_cm": 1153.4,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1189.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 25192,
+    "site_id": 23190,
+    "surveyed_cm": 1751.4,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1751.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 25193,
+    "site_id": 23191,
+    "surveyed_cm": 1610.0,
+    "height_above_gnd_cm": 33.5,
+    "dem_ground_cm": 1567.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 25194,
+    "site_id": 23192,
+    "surveyed_cm": 1258.8,
+    "height_above_gnd_cm": 30.5,
+    "dem_ground_cm": 644.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 25201,
+    "site_id": 23196,
+    "surveyed_cm": 1672.4,
+    "height_above_gnd_cm": 57.9,
+    "dem_ground_cm": 1675.0,
+    "reached": true,
+    "inferred_cm": 2021.0,
+    "error_cm": 348.6,
+    "high_depth_cm": 405.2,
+    "from_hwm": 33439,
+    "dist_m": 662
+   },
+   {
+    "hwm_id": 25202,
+    "site_id": 23197,
+    "surveyed_cm": 1387.4,
+    "height_above_gnd_cm": 112.8,
+    "dem_ground_cm": 1666.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 25204,
+    "site_id": 23198,
+    "surveyed_cm": 1026.0,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1191.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 22629,
+    "site_id": 21797,
+    "surveyed_cm": 1086.0,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1251.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 22630,
+    "site_id": 21797,
+    "surveyed_cm": 1086.9,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1203.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 22642,
+    "site_id": 21803,
+    "surveyed_cm": 1085.3,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1071.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 22646,
+    "site_id": 21805,
+    "surveyed_cm": 1619.6,
+    "height_above_gnd_cm": 12.2,
+    "dem_ground_cm": 1612.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 22652,
+    "site_id": 21807,
+    "surveyed_cm": 1086.9,
+    "height_above_gnd_cm": 41.1,
+    "dem_ground_cm": 1203.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 23813,
+    "site_id": 22410,
+    "surveyed_cm": 1122.3,
+    "height_above_gnd_cm": 231.6,
+    "dem_ground_cm": 928.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 23814,
+    "site_id": 22410,
+    "surveyed_cm": 1107.0,
+    "height_above_gnd_cm": 87.2,
+    "dem_ground_cm": 928.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 23816,
+    "site_id": 22411,
+    "surveyed_cm": 1351.2,
+    "height_above_gnd_cm": 51.5,
+    "dem_ground_cm": 1302.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 23817,
+    "site_id": 22411,
+    "surveyed_cm": 1357.3,
+    "height_above_gnd_cm": 51.5,
+    "dem_ground_cm": 1306.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 22840,
+    "site_id": 21898,
+    "surveyed_cm": 1558.5,
+    "height_above_gnd_cm": 66.4,
+    "dem_ground_cm": 1394.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 22754,
+    "site_id": 21876,
+    "surveyed_cm": 1055.2,
+    "height_above_gnd_cm": 37.8,
+    "dem_ground_cm": 1179.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 22768,
+    "site_id": 21876,
+    "surveyed_cm": 1056.2,
+    "height_above_gnd_cm": 25.9,
+    "dem_ground_cm": 1138.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 22809,
+    "site_id": 21891,
+    "surveyed_cm": 1432.1,
+    "height_above_gnd_cm": 68.3,
+    "dem_ground_cm": 1454.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 22810,
+    "site_id": 21891,
+    "surveyed_cm": 1431.9,
+    "height_above_gnd_cm": 55.5,
+    "dem_ground_cm": 1461.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 22842,
+    "site_id": 21898,
+    "surveyed_cm": 1567.1,
+    "height_above_gnd_cm": 61.9,
+    "dem_ground_cm": 1479.0,
+    "reached": true,
+    "inferred_cm": 1537.9,
+    "error_cm": -29.2,
+    "high_depth_cm": 96.5,
+    "from_hwm": 22857,
+    "dist_m": 291
+   },
+   {
+    "hwm_id": 22856,
+    "site_id": 21905,
+    "surveyed_cm": 1537.4,
+    "height_above_gnd_cm": 112.2,
+    "dem_ground_cm": 1465.0,
+    "reached": true,
+    "inferred_cm": 1567.1,
+    "error_cm": 29.7,
+    "high_depth_cm": 130.0,
+    "from_hwm": 22842,
+    "dist_m": 98
+   },
+   {
+    "hwm_id": 29154,
+    "site_id": 25070,
+    "surveyed_cm": 1303.1,
+    "height_above_gnd_cm": 91.4,
+    "dem_ground_cm": 1484.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 29153,
+    "site_id": 25070,
+    "surveyed_cm": 1271.5,
+    "height_above_gnd_cm": 76.2,
+    "dem_ground_cm": 1484.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 33446,
+    "site_id": 26446,
+    "surveyed_cm": 1717.7,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1802.0,
+    "reached": true,
+    "inferred_cm": 2021.0,
+    "error_cm": 303.3,
+    "high_depth_cm": 281.8,
+    "from_hwm": 33439,
+    "dist_m": 734
+   },
+   {
+    "hwm_id": 33487,
+    "site_id": 26197,
+    "surveyed_cm": 285.4,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 814.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 33469,
+    "site_id": 26469,
+    "surveyed_cm": 1245.5,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1349.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 33488,
+    "site_id": 26812,
+    "surveyed_cm": 499.1,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1268.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 33491,
+    "site_id": 26201,
+    "surveyed_cm": 167.2,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 979.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 33492,
+    "site_id": 26815,
+    "surveyed_cm": 289.0,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1371.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 33493,
+    "site_id": 26816,
+    "surveyed_cm": 237.2,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 389.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 34938,
+    "site_id": 27894,
+    "surveyed_cm": 1292.4,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1126.0,
+    "reached": true,
+    "inferred_cm": 1341.1,
+    "error_cm": 48.8,
+    "high_depth_cm": 259.7,
+    "from_hwm": 34939,
+    "dist_m": 371
+   },
+   {
+    "hwm_id": 34942,
+    "site_id": 27893,
+    "surveyed_cm": 1344.2,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1140.0,
+    "reached": true,
+    "inferred_cm": 1341.1,
+    "error_cm": -3.0,
+    "high_depth_cm": 244.3,
+    "from_hwm": 34939,
+    "dist_m": 341
+   },
+   {
+    "hwm_id": 34941,
+    "site_id": 27895,
+    "surveyed_cm": 1252.7,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 583.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 34940,
+    "site_id": 27893,
+    "surveyed_cm": 1344.2,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1138.0,
+    "reached": true,
+    "inferred_cm": 1341.1,
+    "error_cm": -3.0,
+    "high_depth_cm": 245.3,
+    "from_hwm": 34939,
+    "dist_m": 321
+   },
+   {
+    "hwm_id": 34939,
+    "site_id": 27895,
+    "surveyed_cm": 1341.1,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 869.0,
+    "reached": true,
+    "inferred_cm": 1344.2,
+    "error_cm": 3.0,
+    "high_depth_cm": 518.3,
+    "from_hwm": 34942,
+    "dist_m": 341
+   },
+   {
+    "hwm_id": 33434,
+    "site_id": 25070,
+    "surveyed_cm": 1279.9,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1457.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 33439,
+    "site_id": 26439,
+    "surveyed_cm": 2021.0,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 694.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 33461,
+    "site_id": 26463,
+    "surveyed_cm": 1393.9,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1448.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 33468,
+    "site_id": 26470,
+    "surveyed_cm": 1193.1,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1305.0,
+    "reached": false
+   },
+   {
+    "hwm_id": 33483,
+    "site_id": 26486,
+    "surveyed_cm": 1454.8,
+    "height_above_gnd_cm": 0.0,
+    "dem_ground_cm": 1840.0,
+    "reached": false
+   }
+  ]
+ }
+}
