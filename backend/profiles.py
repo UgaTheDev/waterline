@@ -10,6 +10,8 @@ EVENT = "Hurricane Harvey (2017)"
 # [w, s, e, n]; downtown Houston + Buffalo Bayou + Meyerland
 BBOX = [float(x) for x in os.getenv("BBOX", "-95.50,29.66,-95.33,29.81").split(",")]
 # ends Sep 3: Buffalo Bayou peaked late (Addicks/Barker reservoir releases); USGS survey peaks are Sep 1-2
+# Opening view: frames where the replay data is (10-90% of survey + inferred obs), not the bbox centre
+MAP_VIEW = {"center": [-95.405, 29.715], "zoom": 11.8}  # MapLibre zoom (512 px tiles)
 REPLAY = {"start": "2017-08-26T12:00:00Z", "end": "2017-09-03T00:00:00Z", "default_t": "2017-09-01T20:00:00Z"}
 
 # Water depth (cm) at which each vehicle is blocked. ponytail: fixed table, per-model sill heights if asked.

@@ -36,6 +36,7 @@ function Legend({ open, onToggle, risk }: { open: boolean; onToggle: () => void;
           ⌃
         </span>
       </button>
+      {!open && <p className="px-3 pb-2 -mt-1 text-[11px] text-muted">Uncoloured streets have no reports. That does not mean dry.</p>}
       {open && (
         <div className="px-3 pb-3 fade">
           <ul className="grid grid-cols-2 md:grid-cols-1 gap-x-3 gap-y-1.5">
@@ -142,7 +143,7 @@ export default function MapApp() {
   const [selected, setSelected] = useState<Selection | null>(null);
   const [tab, setTab] = useState<"route" | "ask">("route");
   const [vehicle, setVehicle] = useState("sedan");
-  const [legendOpen, setLegendOpen] = useState(true);
+  const [legendOpen, setLegendOpen] = useState(false); // collapsed: the open legend covers the densest replay data
   const [reload, setReload] = useState(0); // bumped when a report is filed, so it appears on the map
   const [riskOn, setRiskOn] = useState(false);
   const [risk, setRisk] = useState<Risk | null>(null);

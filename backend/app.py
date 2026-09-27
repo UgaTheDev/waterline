@@ -121,7 +121,7 @@ def health():
 @app.get("/config")
 def config():
     w, s, e, n = P.BBOX
-    return {"city": P.CITY, "event": P.EVENT, "bbox": P.BBOX, "center": [(w + e) / 2, (s + n) / 2], "zoom": 12, "replay": P.REPLAY,
+    return {"city": P.CITY, "event": P.EVENT, "bbox": P.BBOX, "center": P.MAP_VIEW["center"], "zoom": P.MAP_VIEW["zoom"], "replay": P.REPLAY,
             "vehicles": [{"id": k, **v, "responder_only": k == "rescue"} for k, v in P.VEHICLES.items()], "thresholds": P.THRESHOLDS, "live": False,
             "features": {"risk": P.NOWCAST_ENABLED}}
 
