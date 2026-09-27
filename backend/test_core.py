@@ -122,6 +122,23 @@ def test_api_sandbox_and_dashcam():
         A.depth.estimate = real
 
 
+def test_inferred_is_display_only():
+    """An inferred-only deep street shows on the map (basis inferred) but never blocks or reroutes."""
+    from fastapi.testclient import TestClient
+    from . import app as A
+    c, S, T = TestClient(A.app), "cccccccc-3333", "2017-08-28T06:00:00Z"
+    eid = A.roads().snap(29.7780, -95.3990)
+    for tw in A.roads().twin_ids(eid):
+        A.store.put({"obs_id": f"inf-test-{tw}", "edge_id": tw, "time": A.ts(T), "lat": 29.778, "lon": -95.399, "status": "ok",
+                     "depth_cm": 80, "low_cm": 60, "high_cm": 100, "confidence": 0.3, "kind": "inferred",
+                     "provenance": {"method": "terrain-v1", "derived_from": ["x"]}, "queue_state": "done", "session_id": S})
+    f = [x for x in c.get("/segments", params={"t": T, "session": S}).json()["features"] if x["properties"]["edge_id"] == eid]
+    assert f and f[0]["properties"]["basis"] == "inferred"
+    r = c.post("/route", json={"from": {"lat": 29.7765, "lon": -95.3992}, "to": {"lat": 29.7795, "lon": -95.3992},
+                               "vehicle": "sedan", "t": T, "session": S}).json()
+    assert r["found"] and not any(a["name"] == "Yale Street" for a in r["avoided"]), "inferred depth must not decide routing"
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):

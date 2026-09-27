@@ -28,6 +28,8 @@ SIGMA0_CM = 10         # DEM error at the edge's low point (3DEP 1 m resampled t
 SLOPE_CM_PER_M = 0.05  # water-surface slope allowance: 50 cm per km from the source, see eval/results/terrain_loo.json
 CONF_FACTOR = 0.8      # at the source; halves every RADIUS_M, so always below the source's confidence
 SKIP_KINDS = {"inferred", "survey"}
+# Deeper than this, the "road" low point is a bayou channel bed under the edge (seen up to 9 m in the LOO run), not street water.
+MAX_INFERRED_CM = 300
 
 DEM = None    # lazily loaded; tests assign a synthetic Dem
 ROADS = None  # lazily resolved; tests assign a Roads
@@ -123,6 +125,8 @@ def spread(lon, lat, z_mid, z_high, z_low, src, reference, credit="USGS 3DEP ele
         depth = z_mid - g_edge
         if not depth > 0:
             continue  # above the water surface: skip, never claim dry
+        if depth > MAX_INFERRED_CM:
+            continue
         sigma = SIGMA0_CM + SLOPE_CM_PER_M * d
         conf = (src.get("confidence") or 0.5) * CONF_FACTOR * 0.5 ** (d / RADIUS_M)
         lo, la = p[inside][i]

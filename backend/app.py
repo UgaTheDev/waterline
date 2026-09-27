@@ -68,9 +68,12 @@ def _ingest(t, session):
     return datetime.now(timezone.utc), None
 
 
-def _states(t, session=None):
+def _states(t, session=None, routing=False):
+    """routing=True drops inferred observations: leave-one-out showed 30-60% coverage and implausible values near
+    channels (eval/results/terrain_loo.json), so inference is display-only context, never what blocks or clears a road."""
     R = roads()  # a report applies to both directions of the same street
-    return states_at([{**o, "edge_id": tw} for o in store.all(_session(session)) if o.get("edge_id") in R.edges for tw in R.twin_ids(o["edge_id"])], t)
+    obs = [o for o in store.all(_session(session)) if not (routing and o.get("kind") == "inferred")]
+    return states_at([{**o, "edge_id": tw} for o in obs if o.get("edge_id") in R.edges for tw in R.twin_ids(o["edge_id"])], t)
 
 
 _hits = defaultdict(deque)
@@ -135,7 +138,7 @@ def _loc(x):
 def _route(a, b, vehicle, t, session=None):
     if vehicle not in P.VEHICLES:
         raise HTTPException(400, f"vehicle must be one of {list(P.VEHICLES)}")
-    return roads().route(a, b, vehicle, _states(t, session), alerts.polygons(alerts.active(t)))
+    return roads().route(a, b, vehicle, _states(t, session, routing=True), alerts.polygons(alerts.active(t)))
 
 
 def _public_route(r):
@@ -194,7 +197,8 @@ def chat(req: ChatReq, request: Request):
             s = st.get(eid)
             if s and R.edges[eid][4] not in seen:
                 seen.add(R.edges[eid][4])
-                out.append({"name": R.edges[eid][4], "state": s["state"], "high_cm": s["high_cm"], "time": s["obs_time"].isoformat()})
+                out.append({"name": R.edges[eid][4], "state": s["state"], "basis": s.get("basis", "observed"), "high_cm": s["high_cm"],
+                            "time": s["obs_time"].isoformat()})
         return out[:10] or "no reports near here (unknown, not dry)"
 
     def report(lat, lon, cm, reached):
