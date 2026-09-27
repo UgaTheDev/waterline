@@ -2,7 +2,8 @@
 
 Reads eval/pool.csv (path,source,license,credit,lat,lon), appends to eval/labels.csv.
 Label by reference objects in the frame: curb 15 cm, door sill 30, tire top 65, knee 50, waist 100.
-Split is hash(path) -> dev (60%) / test (40%): fixed by construction, so it can't drift.
+Split is hash(group or path) -> dev (60%) / test (40%): fixed by construction, so it
+can't drift, and a dedupe cluster (see scripts/dedupe_pool.py) stays on one side.
 """
 import csv, hashlib, html, http.server, pathlib, urllib.parse
 
@@ -14,8 +15,11 @@ BANDS = [("No water on road", 0, 0, 0), ("Under 15 cm (below curb)", 1, 15, 8), 
          ("30-60 cm (sill to above tire middle)", 30, 60, 45), ("Over 60 cm (tire covered)", 60, 150, 80)]
 
 
-def split(path):
-    return "dev" if int(hashlib.sha1(path.encode()).hexdigest(), 16) % 10 < 6 else "test"
+def split(path, group=""):
+    # hash the group (a dedupe cluster id) when present, so a whole near-duplicate
+    # cluster lands on one side of dev/test instead of leaking across the split
+    key = group or path
+    return "dev" if int(hashlib.sha1(key.encode()).hexdigest(), 16) % 10 < 6 else "test"
 
 
 def todo():
@@ -67,7 +71,7 @@ class H(http.server.BaseHTTPRequestHandler):
                     w = csv.DictWriter(fh, fieldnames=FIELDS, extrasaction="ignore")
                     if new:
                         w.writeheader()
-                    w.writerow({**r, "true_cm": nominal, "band_low_cm": lo, "band_high_cm": hi, "split": split(r["path"])})
+                    w.writerow({**r, "true_cm": nominal, "band_low_cm": lo, "band_high_cm": hi, "split": split(r["path"], r.get("group", ""))})
         self.send_response(303); self.send_header("Location", "/"); self.end_headers()
 
     def log_message(self, *a):
