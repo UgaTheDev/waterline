@@ -37,6 +37,17 @@ photo / video ─▶ NVIDIA VLM (Token Factory / Cosmos) ─▶ depth + interval
 The hosted demo replays Hurricane Harvey in Houston (Aug 26 - Sep 3, 2017; Buffalo Bayou peaked late because of the reservoir releases). All replay inference is run once and
 cached, so the demo works with the GPU switched off. Live uploads queue until the model is online.
 
+## Features
+| | |
+|---|---|
+| **Depth map + vehicle routing** | Per-street fusion with decay (stale, never dry); sedan 15 / SUV 30 / pickup 45 cm limits on the upper bound |
+| **Voice agent** | Push-to-talk questions and spoken answers (browser speech engine) backed by the Nemotron agent; spoken eyewitness reports ("knee-deep at Main and 5th") become low-confidence reports |
+| **Drive mode** (`/drive`) | A mounted phone checks a frame every 4 s, files a report when water is ahead, speaks the depth against your limit, and reroutes. Frames are never stored |
+| **Terrain inference** | USGS high-water marks spread over connected low ground (5 m 3DEP). Hatched, labeled "inferred", **display-only**: never used for routing |
+| **Responder mode** (`/responder`, token) | Model flags for people in the water or occupied vehicles, human review queue, high-water rescue-truck routing |
+| **Replay sandbox** | Reports filed while viewing the Harvey replay are visible only to your browser session, so nobody can alter the shared demo |
+| **Flood-risk nowcast** | Built and evaluated, **switched off**: no better than terrain alone on held-out streets (`eval/results/nowcast.json`) |
+
 ## Evaluation
 The headline metric is the **dangerous-road miss rate**: the share of images with true depth over 15 cm
 that the system marks passable for a sedan. The target is 0, and a prompt change that improves MAE but
@@ -63,11 +74,21 @@ cd web && npm install && npm run dev            # http://localhost:3000
 The road graph (`data/cache/graph.graphml`) and Harvey warning polygons are committed. To rebuild them:
 `python -m scripts.build_graph`, `python -m scripts.fetch_alerts` and `python -m scripts.survey_layer` (add `--validate` to rerun the accuracy check).
 
+### When keys arrive
+```bash
+.venv/bin/python -m scripts.check_keys   # lists Token Factory models, one depth call, one agent call, Tavily, HF access
+```
+
+### Hosting the backend (Nebius CPU VM)
+See [deploy/README.md](deploy/README.md): Docker image, VM setup script, HTTPS via Caddy, and a warm-up so the first judge
+doesn't wait for the road graph to load.
+
 ### Deploying Cosmos Reason 2 on Nebius
 Follow NVIDIA's cookbook: [Cosmos Reason 2 on Nebius](https://nvidia-cosmos.github.io/cosmos-cookbook/getting_started/nebius/reason2/reason2_on_nebius.html)
 (Containers over VM, vLLM preset, `nvidia/Cosmos-Reason2-8B`, L40S or H100, port 8000). Set `COSMOS_URL` and `COSMOS_KEY`, then:
 ```bash
 python -m scripts.batch_replay          # replay photos -> data/cache/replay_observations.json
+python3 scripts/dedupe_pool.py          # once: collapse near-duplicate photos before labeling
 python -m eval.run_eval --split dev     # iterate
 python -m eval.run_eval --split test    # report; exits 1 on any missed dangerous road
 ```
