@@ -89,12 +89,38 @@ wired up by `vm-setup.sh` — add it by hand if you want it; losing this file du
 judging only loses the live-upload queue, not the replay demo, which is the cache
 committed to `data/cache/` and rebuilt from the repo on every deploy.
 
-## Weekly external uptime check (not built here — just the suggestion)
-A GitHub Actions workflow on a `schedule: cron` (e.g. weekly) that does
-`curl -f https://api.yourdomain.com/health` and fails the job (-> email/Slack via the
-Actions notification settings) if it doesn't return 200. Kush: add
-`.github/workflows/uptime.yml` yourself if you want this; not created here per the task
-scope (documentation only).
+## Uptime probe every 30 minutes (not built here — just the suggestion)
+`scripts/probe.py` hits `/health`, `/config` and `/segments` on a base URL and checks the
+response shapes (not just the HTTP status), exiting nonzero on any failure — catches a
+container that answers but is serving something broken, not just a dead port. A suggested
+`.github/workflows/uptime.yml` (Kush: add this yourself; not created here per the task scope):
+```yaml
+name: uptime
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch: {}
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.13" }
+      - run: pip install httpx
+      - run: python -m scripts.probe https://api.yourdomain.com --json
+      - if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner, repo: context.repo.repo,
+              title: `Waterline uptime probe failed (${new Date().toISOString()})`,
+              body: "scripts/probe.py against production returned a nonzero exit. Check `docker logs waterline` on the VM.",
+              labels: ["ops"],
+            });
+```
+Keep the 30-minute cadence light: it's three cheap GETs, well under any rate limit.
 
 ## Monthly cost estimate — **UNVERIFIED, not fetched from Nebius pricing**
 Rough order of magnitude for a small always-on CPU VM (2 vCPU / 4 GB) run 24/7 for ~2.5

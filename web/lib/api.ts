@@ -2,6 +2,7 @@
 import * as mock from "./mock";
 import { session } from "./session";
 import { currentEvent } from "./event";
+import { isOffline, liveFetch, paused, snapshotGet, type SnapshotKind } from "./fallback";
 
 export const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "");
 export const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "1";
@@ -130,8 +131,7 @@ export type ApiError = Error & { status?: number };
 // Every call is scoped to the selected replay event (query param for GETs; also a body/form field for POSTs).
 const withEvent = (path: string) => (currentEvent() ? `${path}${path.includes("?") ? "&" : "?"}event=${encodeURIComponent(currentEvent())}` : path);
 
-async function req<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(API_BASE + withEvent(path), init);
+async function toJson<T>(res: Response): Promise<T> {
   if (!res.ok) {
     let detail = "";
     try {
@@ -141,6 +141,40 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
     throw Object.assign(new Error(detail || `Request failed (${res.status})`), { status: res.status });
   }
   return res.json();
+}
+
+async function req<T>(path: string, init?: RequestInit): Promise<T> {
+  return toJson<T>(await fetch(API_BASE + withEvent(path), init));
+}
+
+// A GET with a snapshot equivalent (web/lib/fallback.ts): serves the archived replay instead of
+// throwing once the live backend is down, so the map/timeline never just breaks. Never mixes
+// snapshot and live data for the SAME request; a caller fetching several things for one view (e.g.
+// segments + alerts at a time) should expect both to fall back together once the outage is real.
+async function liveOrSnapshot<T>(path: string, kind: SnapshotKind, t: string | null, signal?: AbortSignal): Promise<T> {
+  if (!isOffline()) {
+    try {
+      return await toJson<T>(await liveFetch(withEvent(path), { signal }));
+    } catch (e) {
+      if ((e as Error).name === "AbortError" && signal?.aborted) throw e; // the caller cancelled; not an outage
+    }
+  }
+  const snap = await snapshotGet<T>(kind, t);
+  if (snap) return snap;
+  throw new Error("Live service unavailable and no offline snapshot is available for this view.");
+}
+
+// Anything that needs a live server and has no snapshot (routing, chat, uploads, dashcam, ...):
+// fails fast with a clear "paused" message once the backend is known down, instead of waiting out
+// another 8 s timeout, and never fabricates a result.
+async function liveOnly<T>(path: string, init: RequestInit, feature: string): Promise<T> {
+  if (isOffline()) throw new Error(paused(feature));
+  try {
+    return await toJson<T>(await liveFetch(path, init));
+  } catch (e) {
+    if ((e as Error).name === "AbortError" && init.signal?.aborted) throw e;
+    throw new Error(paused(feature));
+  }
 }
 
 const json = (body: unknown, signal?: AbortSignal): RequestInit => ({
@@ -168,23 +202,28 @@ const withSession = (form: FormData) => {
 export const api = USE_MOCK
   ? mock.api
   : {
-      config: () => req<Config>("/config"),
-      events: () => req<EventInfo[]>("/events"),
+      config: () => liveOrSnapshot<Config>("/config", "config", null),
+      events: () => liveOrSnapshot<EventInfo[]>("/events", "events", null),
       segments: (t: string, signal?: AbortSignal) =>
-        req<Segments>(`/segments?t=${encodeURIComponent(t)}&session=${session()}`, { signal }),
-      alerts: (t: string, signal?: AbortSignal) => req<Alerts>(`/alerts?t=${encodeURIComponent(t)}`, { signal }),
-      route: (body: RouteRequest, signal?: AbortSignal) => req<RouteResponse>("/route", json({ ...body, session: session() }, signal)),
-      chat: (body: ChatRequest) => req<ChatResponse>("/chat", json({ ...body, session: session() })),
-      upload: (form: FormData) => req<UploadStatus>("/upload", { method: "POST", body: withSession(form) }),
-      uploadStatus: (id: string) => req<UploadStatus>(`/upload/${encodeURIComponent(id)}?session=${session()}`),
-      dashcam: (form: FormData) => req<DashcamResponse>("/dashcam", { method: "POST", body: withSession(form) }),
-      eval: () => req<EvalResult>("/eval"),
-      risk: (t: string, signal?: AbortSignal) => req<Risk>(`/risk?t=${encodeURIComponent(t)}&session=${session()}`, { signal }),
-      simulations: () => req<Simulation[]>("/simulations"),
+        liveOrSnapshot<Segments>(`/segments?t=${encodeURIComponent(t)}&session=${session()}`, "segments", t, signal),
+      alerts: (t: string, signal?: AbortSignal) => liveOrSnapshot<Alerts>(`/alerts?t=${encodeURIComponent(t)}`, "alerts", t, signal),
+      route: (body: RouteRequest, signal?: AbortSignal) =>
+        liveOnly<RouteResponse>("/route", json({ ...body, session: session() }, signal), "Routing"),
+      chat: (body: ChatRequest) => liveOnly<ChatResponse>("/chat", json({ ...body, session: session() }), "The chat assistant"),
+      upload: (form: FormData) => liveOnly<UploadStatus>("/upload", { method: "POST", body: withSession(form) }, "Uploads"),
+      uploadStatus: (id: string) => liveOnly<UploadStatus>(`/upload/${encodeURIComponent(id)}?session=${session()}`, {}, "Upload status"),
+      dashcam: (form: FormData) => liveOnly<DashcamResponse>("/dashcam", { method: "POST", body: withSession(form) }, "Drive mode"),
+      eval: () => liveOrSnapshot<EvalResult>("/eval", "eval", null),
+      risk: (t: string, signal?: AbortSignal) => liveOnly<Risk>(`/risk?t=${encodeURIComponent(t)}&session=${session()}`, { signal }, "Flood risk"),
+      simulations: () => liveOnly<Simulation[]>("/simulations", {}, "Simulations"),
       // The token travels only in the X-Responder-Token header, never in a URL.
-      responderQueue: (token: string) => req<QueueItem[]>("/responder/queue", { headers: { "X-Responder-Token": token } }),
+      responderQueue: (token: string) => liveOnly<QueueItem[]>("/responder/queue", { headers: { "X-Responder-Token": token } }, "Responder queue"),
       responderReview: (token: string, obs_id: string, action: "seen" | "dismissed") =>
-        req<{ ok: boolean }>("/responder/review", { ...json({ obs_id, action }), headers: { "Content-Type": "application/json", "X-Responder-Token": token } }),
+        liveOnly<{ ok: boolean }>(
+          "/responder/review",
+          { ...json({ obs_id, action }), headers: { "Content-Type": "application/json", "X-Responder-Token": token } },
+          "Responder review",
+        ),
       responderMedia: async (token: string, obs_id: string) => {
         const res = await fetch(`${API_BASE}/responder/media/${encodeURIComponent(obs_id)}`, { headers: { "X-Responder-Token": token } });
         if (!res.ok) throw Object.assign(new Error(`Media unavailable (${res.status})`), { status: res.status });

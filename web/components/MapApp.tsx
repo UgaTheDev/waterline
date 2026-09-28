@@ -3,6 +3,7 @@ import { BRAND } from "@/lib/brand";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { currentEvent, setEvent } from "@/lib/event";
+import { useOffline } from "@/lib/fallback";
 import { api, parsePoint, type Alerts, type Config, type EventInfo, type Point, type Risk, type RiskProps, type RouteResponse, type SegmentProps, type Segments } from "@/lib/api";
 import { LEGEND, PALETTE, bandFor, fmtClock, fmtTime } from "@/lib/depth";
 import { useReducedMotion, useTheme } from "@/lib/theme";
@@ -132,6 +133,7 @@ function ReportsFeed({ segments, onOpen }: { segments: Segments | null; onOpen: 
 export default function MapApp() {
   const theme = useTheme();
   const reduced = useReducedMotion();
+  const offline = useOffline(); // flips when the live backend goes down/comes back (lib/fallback.ts)
   const [config, setConfig] = useState<Config | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [t, setT] = useState<number>(0);
@@ -225,7 +227,9 @@ export default function MapApp() {
       clearTimeout(id);
       ctrl.abort();
     };
-  }, [iso, reload]);
+    // `offline` is included so segments/alerts refetch live as soon as the backend comes back,
+    // instead of leaving the archived snapshot on screen until the next scrub or report.
+  }, [iso, reload, offline]);
 
   // The risk layer is fetched only while it is switched on.
   useEffect(() => {
