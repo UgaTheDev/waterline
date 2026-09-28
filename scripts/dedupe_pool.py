@@ -27,7 +27,7 @@ POOL = ROOT / "eval/pool.csv"
 DUPES = ROOT / "eval/pool_dupes.csv"
 # images are gitignored: only exist in the main repo checkout, not in this worktree
 MAIN_REPO = pathlib.Path("/Users/kushzingade/Documents/Hackathons/NVIDIA")
-FIELDS = ["path", "source", "license", "credit", "lat", "lon", "group"]
+FIELDS = ["path", "source", "license", "credit", "lat", "lon", "group", "event"]
 DIST_THRESHOLD = 10  # Hamming distance over 64 bits; see docstring
 
 

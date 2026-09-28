@@ -43,9 +43,12 @@ and voices are already everywhere during a flood; nobody turns them into a map.
 ## Evaluation (the part we're proudest of)
 The headline metric is the **dangerous-road miss rate**: the share of photos with true depth over 15 cm that the system would
 let a sedan drive through. The target is 0. A prompt change that improves MAE but raises the miss rate is rejected.
-- Depth model, held-out test split: miss rate TODO(eval), abstain rate TODO(eval), MAE TODO(eval) cm, interval coverage TODO(eval).
-  The labels are human depth bands on public-domain/CC BY Harvey photos, deduplicated and group-split so near-identical
-  photos can't sit on both sides.
+- Depth model, held-out test split: miss rate TODO(eval) (TODO(eval) with 95% confidence), abstain rate TODO(eval), MAE
+  TODO(eval) cm, interval coverage TODO(eval); per-event breakdown TODO(eval). The labels are human depth bands on
+  public-domain/CC BY photos from four US flood events (Harvey 2017, Ida 2021, Helene 2024, July 2023 Vermont floods),
+  deduplicated across events and group-split so near-identical photos can't sit on both sides. Photos are labeled
+  independently by up to two annotators (TODO(eval): how many had a second label); disagreements score on the deeper (conservative) band. Inter-annotator agreement:
+  kappa TODO(eval), 15 cm boundary agreement TODO(eval).
 - USGS survey layer (water surface minus lidar ground), checked against 26 surveyed marks: median error +11 cm (it errs
   deep, the safe side).
 - Terrain inference, leave-one-out on the high-water marks: errors lean high (median +15 cm), and no reached dangerous mark was

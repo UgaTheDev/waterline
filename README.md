@@ -51,11 +51,19 @@ cached, so the demo works with the GPU switched off. Live uploads queue until th
 ## Evaluation
 The headline metric is the **dangerous-road miss rate**: the share of images with true depth over 15 cm
 that the system marks passable for a sedan. The target is 0, and a prompt change that improves MAE but
-raises the miss rate is rejected. We also report the abstain rate (so "refuse everything" can't
-look good), the false-block rate, MAE, interval coverage and accuracy by reference object. Labels are split 60/40
-into dev and test and frozen; prompts are tuned on dev only.
+raises the miss rate is rejected. We also report the miss rate's Wilson 95% confidence interval (so "0
+misses on 12 photos" doesn't read as more certain than it is), the abstain rate (so "refuse everything"
+can't look good), the false-block rate, MAE, interval coverage and accuracy by reference object, plus a
+per-event breakdown. Labels are split 60/40 into dev and test and frozen; prompts are tuned on dev only.
 
-Results: _pending_ (see `eval/results/test.json`, and the About page in the app).
+The eval pool spans multiple US flood events (Hurricane Harvey 2017, Hurricane Ida 2021, Hurricane Helene
+2024, the July 2023 Vermont/northeastern floods), all public-domain or CC BY, deduplicated across events.
+Photos are labeled independently by up to two annotators; where they disagree, the deeper (more
+conservative) band is used for scoring, and we report Cohen's kappa plus raw agreement on the 15 cm
+sedan-passable boundary between them.
+
+Results: TODO(eval) -- pending labels from the second annotator (see `eval/results/test.json`, and the
+About page in the app).
 
 MAE is not directly comparable to prior work such as FloodVision (8.75 cm), because the images and labels differ.
 
