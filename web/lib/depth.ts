@@ -8,25 +8,27 @@ const EN: T = (k, v) => translate("en", k, v);
 export type Band = "shallow" | "stall" | "float" | "sweep" | "unknownDepth" | "stale";
 
 export const PALETTE: Record<Theme, Record<Band | "route" | "routeCasing" | "alert" | "risk", string>> = {
+  // Bands double as text colour on cards/readouts (not just map/legend swatches), so every entry
+  // is AA (>=4.5:1) against both --bg and --panel in its theme. Hue is unchanged; only lightness moved.
   dark: {
     shallow: "#facc15",
     stall: "#fb923c",
     float: "#ff4d5e",
-    sweep: "#a3002a",
+    sweep: "#fa0040", // was #a3002a (2.4:1 on --bg, unreadable as text)
     unknownDepth: "#a78bfa",
-    stale: "#64748b",
+    stale: "#6d7e96", // was #64748b (4.15:1, just under 4.5)
     route: "#67e8f9",
     routeCasing: "#04151b",
     alert: "#fb7185",
     risk: "#e2e8f0", // a neutral haze: never a depth colour, never green
   },
   light: {
-    shallow: "#ca8a04",
-    stall: "#ea580c",
-    float: "#dc2626",
+    shallow: "#936403", // was #ca8a04 (2.6:1 on --bg)
+    stall: "#b9460a", // was #ea580c (3.1:1 on --bg)
+    float: "#d12222", // was #dc2626 (4.24:1, just under 4.5)
     sweep: "#7f1d1d",
     unknownDepth: "#7c3aed",
-    stale: "#94a3b8",
+    stale: "#5a6d87", // was #94a3b8 (2.25:1 on --bg)
     route: "#0e7490",
     routeCasing: "#ffffff",
     alert: "#be123c",

@@ -12,13 +12,13 @@
   --line-strong: #2a3847;
   --text: #e6edf3;
   --muted: #8c99a8;
-  --faint: #5a6878;
+  --faint: #748496; /* AA-adjusted: was #5a6878 (contrast 3.46 on --bg, fails 4.5 for normal text) */
   --accent: #67e8f9;
   --accent-ink: #032129;
   --accent-soft: rgb(103 232 249 / 0.12);
   --danger: #fb7185;
   --danger-soft: rgb(251 113 133 / 0.1);
-  --warn: #fbbf24;
+  --warn: #fbbf24; /* AA on dark bg already (11.8); unchanged */
   --warn-soft: rgb(251 191 36 / 0.1);
   --water: rgb(56 189 248 / 0.55);
   --water-line: #7dd3fc;
@@ -34,13 +34,13 @@
   --line-strong: #cfc8b8;
   --text: #12161b;
   --muted: #5a626d;
-  --faint: #8a919a;
+  --faint: #666d76; /* AA-adjusted: was #8a919a (contrast 2.8 on --bg, fails 4.5 for normal text) */
   --accent: #0e7490;
   --accent-ink: #ffffff;
   --accent-soft: rgb(14 116 144 / 0.1);
   --danger: #be123c;
   --danger-soft: rgb(190 18 60 / 0.07);
-  --warn: #a16207;
+  --warn: #9c5f07; /* AA-adjusted: was #a16207 (contrast 4.32 on --bg, just under 4.5) */
   --warn-soft: rgb(161 98 7 / 0.08);
   --water: rgb(14 116 144 / 0.35);
   --water-line: #0e7490;

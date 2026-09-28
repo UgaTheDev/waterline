@@ -87,7 +87,7 @@ export default function Timeline(props: {
             key={s}
             onClick={() => onSpeed(s)}
             aria-pressed={speed === s}
-            className={`font-mono text-[10px] leading-none px-1.5 py-[3px] rounded ${speed === s ? "bg-panel-2 text-text" : "text-faint hover:text-muted"}`}
+            className={`font-mono text-[10px] leading-none min-w-6 min-h-6 px-1.5 py-1.5 rounded flex items-center justify-center ${speed === s ? "bg-panel-2 text-text" : "text-faint hover:text-muted"}`}
           >
             {s}×
           </button>

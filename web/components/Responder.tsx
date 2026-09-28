@@ -311,8 +311,8 @@ function RescueRouting() {
           )}
         </button>
       </form>
-      {error && <p className="text-[13px] text-danger">{error}</p>}
-      {route && <RouteSummary route={route} onEvidence={setSelected} />}
+      {error && <p role="alert" className="text-[13px] text-danger">{error}</p>}
+      <div aria-live="polite">{route && <RouteSummary route={route} onEvidence={setSelected} />}</div>
       {selected && <EvidenceCard key={selected.id ?? selected.name} {...selected} vehicle={current} onClose={() => setSelected(null)} />}
     </div>
   );

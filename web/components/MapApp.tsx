@@ -495,7 +495,7 @@ export default function MapApp() {
         </div>
       </main>
 
-      <aside className="md:order-1 md:w-[420px] shrink-0 bg-panel md:border-r border-line flex flex-col md:min-h-0">
+      <aside id="route-planner" tabIndex={-1} className="md:order-1 md:w-[420px] shrink-0 bg-panel md:border-r border-line flex flex-col md:min-h-0 focus:outline-none">
         <div className="px-4 pt-4 pb-3 border-b border-line">
           <div className="flex items-end justify-between gap-3">
             <div className="min-w-0">
@@ -600,9 +600,11 @@ export default function MapApp() {
                   )}
                 </button>
               </form>
-              {routeError && <p className="text-[13px] text-danger">{routeError}</p>}
+              {routeError && <p role="alert" className="text-[13px] text-danger">{routeError}</p>}
               {!route && <ReportsFeed segments={segments} onOpen={open} />}
-              {route && <RouteSummary key={JSON.stringify(route.found ? route.geometry.coordinates[0] : route.reason) + vehicle} route={route} onEvidence={open} />}
+              <div aria-live="polite">
+                {route && <RouteSummary key={JSON.stringify(route.found ? route.geometry.coordinates[0] : route.reason) + vehicle} route={route} onEvidence={open} />}
+              </div>
             </>
           ) : (
             <Chat vehicle={vehicle} vehicleLabel={current ? vehicleName(t_, lang, current) : t_("veh.car")} t={iso} location={fromPt} onRoute={showRoute} onEvidence={open} onFiled={() => setReload((n) => n + 1)} />

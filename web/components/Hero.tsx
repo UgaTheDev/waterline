@@ -1,7 +1,7 @@
 "use client";
 import { BRAND } from "@/lib/brand";
 import { useT, type Key } from "@/lib/i18n";
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Mark } from "./Header";
 
 const KEY = "waterline-intro-seen";
@@ -43,6 +43,7 @@ export default function Hero() {
   const t = useT();
   const [leaving, setLeaving] = useState(false);
   const open = !alreadySeen && !closed;
+  const dialog = useRef<HTMLDivElement>(null);
 
   const close = useCallback(() => {
     try {
@@ -54,7 +55,22 @@ export default function Hero() {
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") return close();
+      // Full-screen intro: keep Tab cycling inside it rather than leaking into the page underneath.
+      if (e.key !== "Tab") return;
+      const focusable = dialog.current?.querySelectorAll<HTMLElement>("button, a[href]");
+      if (!focusable?.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, close]);
@@ -62,6 +78,7 @@ export default function Hero() {
   if (!open) return null;
   return (
     <div
+      ref={dialog}
       role="dialog"
       aria-modal="true"
       aria-labelledby="hero-title"
