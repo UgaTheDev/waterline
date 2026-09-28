@@ -15,6 +15,11 @@ Use the tools; never guess road conditions. Rules you must follow:
 - If the user describes water they see ("up to my knees at Main and 5th"), call file_report once with the place and
   what the water reached, then thank them and remind them not to walk or drive into it."""
 
+# Appended only for lang=es, so the English prompt stays byte-identical.
+SYSTEM_ES = """
+- The user reads Spanish: answer in Spanish (usted). Never call a road "seguro"/"segura", "seco" or "despejado".
+  Say "No se reporta agua profunda" and "Sin reportes no significa seco". The slogan is "¡Dé la vuelta, no se ahogue!"."""
+
 TOOLS = [
     {"type": "function", "function": {"name": "route", "description": "Driving route that avoids water too deep for the vehicle.",
      "parameters": {"type": "object", "properties": {
@@ -42,6 +47,12 @@ UNSAFE_CLAIM = re.compile(r"(?<!un)(?<!not )(?<!never )(?<!isn't )\bs[\W_]{0,2}a
                           r"|\b(is|are|looks|seems|stays|remains)\s+(dry|passable)\b"
                           r"|\b(road|roads|street|streets|route|way|lane|lanes|highway|freeway|st|ave|blvd|dr)\.?('s)?\s+(is\s+|are\s+|looks\s+)?clear\b"
                           r"|\b(all clear|clear to drive)\b", re.I)
+# Spanish: "seguro/segura", "despejado", "transitable", "sin peligro" anywhere, and "está/es seco" after a verb.
+# Negations ("no es seguro", "no está seco", "inseguro", "intransitable") are fine.
+_ES_NEG = r"(?<!\bno )(?<!\bnunca )(?<!\bni )(?<!\bno es )(?<!\bno son )(?<!\bno está )(?<!\bno esta )(?<!\bno están )(?<!\bno estan )(?<!\bno estoy )(?<!\bno parece )(?<!\bnunca es )"
+UNSAFE_CLAIM_ES = re.compile(_ES_NEG + r"\b(segur[oa]s?|despejad[oa]s?|transitables?|sin peligro)\b"
+                             r"|(?<!\bno )(?<!\bnunca )\b(es|son|está|esta|están|estan|parece|parecen|sigue|siguen|queda|quedan|luce|lucen)\s+"
+                             r"(muy\s+|totalmente\s+|completamente\s+)?(sec[oa]s?|despejad[oa]s?|transitables?|segur[oa]s?)\b", re.I)
 
 
 # What the water reached -> depth (cm). Deterministic: the model picks the words, never the number.
@@ -57,7 +68,7 @@ def reached_cm(text):
 
 def violates(text):
     t = _INVISIBLE.sub("", unicodedata.normalize("NFKC", text or "")).lower().translate(_CONFUSABLE)
-    return bool(UNSAFE_CLAIM.search(t))
+    return bool(UNSAFE_CLAIM.search(t) or UNSAFE_CLAIM_ES.search(t))
 
 
 def _slim(ev):
@@ -129,8 +140,10 @@ class Tools:
         return {"error": f"unknown tool {name}"}
 
 
-def template(r):
+def template(r, lang="en"):
     """Deterministic answer used when the model is unavailable or breaks the wording rules."""
+    if lang == "es":
+        return _template_es(r)
     if not r:
         return "I couldn't plan a route. Tell me where you're starting and where you're going."
     if not r["found"]:
@@ -142,23 +155,46 @@ def template(r):
     return " ".join(parts + r.get("warnings", []))
 
 
-def to_speech(text):
+def _reason_es(a):
+    if a.get("state") == "reported_unknown" or a.get("high_cm") is None:
+        return "agua reportada, profundidad ilegible"
+    return f"reportado hasta {a['high_cm']:.0f} cm, más que el límite de su vehículo"
+
+
+def _template_es(r):
+    # Built from the route's numbers, not by translating the router's English strings.
+    if not r:
+        return "No pude planear una ruta. Dígame de dónde sale y adónde va."
+    if not r["found"]:
+        return "Ninguna ruta evita el agua profunda reportada para su vehículo. No maneje por agua de inundación. ¡Dé la vuelta, no se ahogue!"
+    parts = [f"Ruta encontrada ({r['distance_m'] / 1000:.1f} km). No se reporta agua profunda en ella."]
+    parts += [f"Evita {a['name']}: {_reason_es(a)}." for a in r["avoided"][:5]]
+    if r["unknown_m"]:
+        parts.append(f"{r['unknown_m'] / 1000:.1f} km no tienen reportes; sin reportes no significa seco. Si ve agua, dé la vuelta.")
+    if r.get("warnings"):
+        parts.append("Parte de la ruta pasa por calles sin reportes recientes dentro de un aviso de inundación activo.")
+    return " ".join(parts)
+
+
+def to_speech(text, lang="en"):
     """Plain text for text-to-speech: no markdown, units spelled out."""
+    cm, km, m = ("centímetros", "kilómetros", "metros") if lang == "es" else ("centimetres", "kilometres", "metres")
     t = re.sub(r"[*_`#>]+", "", text or "")
     t = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", t)
-    t = re.sub(r"(\d)\s*cm\b", r"\1 centimetres", t)
-    t = re.sub(r"(\d)\s*km\b", r"\1 kilometres", t)
-    t = re.sub(r"(\d)\s*m\b", r"\1 metres", t)
+    t = re.sub(r"(\d)\s*cm\b", rf"\1 {cm}", t)
+    t = re.sub(r"(\d)\s*km\b", rf"\1 {km}", t)
+    t = re.sub(r"(\d)\s*m\b", rf"\1 {m}", t)
     return " ".join(t.split())
 
 
 def chat(messages, ctx):
-    tools, E = Tools(ctx), events.get(ctx.get("event"))
+    tools, E, lang = Tools(ctx), events.get(ctx.get("event")), ctx.get("lang", "en")
     if not P.TF_KEY:
-        msg = "The assistant is offline (no Token Factory key configured). Use the route panel."
+        msg = ("El asistente no está disponible (no hay clave de Token Factory). Use el panel de rutas." if lang == "es" else
+               "The assistant is offline (no Token Factory key configured). Use the route panel.")
         return {"reply": msg, "speak": msg, "route": None, "sources": [], "filed": []}
     c = OpenAI(base_url=P.TF_URL, api_key=P.TF_KEY, timeout=60, max_retries=1)
-    msgs = [{"role": "system", "content": SYSTEM.format(city=E["city"], event=E["name"])}] + [{"role": m.get("role"), "content": str(m.get("content", ""))[:2000]} for m in messages[-10:]
+    msgs = [{"role": "system", "content": SYSTEM.format(city=E["city"], event=E["name"]) + (SYSTEM_ES if lang == "es" else "")}] + [{"role": m.get("role"), "content": str(m.get("content", ""))[:2000]} for m in messages[-10:]
                                             if isinstance(m, dict) and m.get("role") in ("user", "assistant")]
     reply = None
     try:
@@ -179,5 +215,5 @@ def chat(messages, ctx):
         reply = None  # model/endpoint rejected tools: fall through to the template
     reply = re.sub(r"<think>.*?</think>", "", reply or "", flags=re.S).strip()
     if not reply or violates(reply):
-        reply = template(tools.last_route)
-    return {"reply": reply, "speak": to_speech(reply), "route": tools.last_route, "sources": tools.sources[:5], "filed": tools.filed}
+        reply = template(tools.last_route, lang)
+    return {"reply": reply, "speak": to_speech(reply, lang), "route": tools.last_route, "sources": tools.sources[:5], "filed": tools.filed}

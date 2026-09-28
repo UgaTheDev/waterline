@@ -98,3 +98,12 @@ when the agent filed a voice report ("water's up to my knees at Main and 5th"). 
 - `/chat` refuses conversations over 20 messages or 30 KB (413). Each message's content is flattened to text and capped at 2,000 characters.
 - Timestamps without a timezone are read as UTC.
 - A live "depth unknown" report keeps a street `reported_unknown` (blocking every vehicle) unless a readable report is deep enough to block every vehicle anyway.
+
+## Language (added 2026-09-28)
+Optional `lang` ∈ `"en"` | `"es"` (default `"en"`; anything else is 422). English output is unchanged.
+- `POST /chat` body field `lang`: with `"es"` the agent answers in Spanish, the fallback template is Spanish, and `speak` spells units in Spanish.
+- `POST /dashcam` form field `lang`: `speak` is Spanish ("Agua reportada adelante en …").
+- `POST /upload` form field `lang` and `GET /upload/{obs_id}?lang=es`: `message` is Spanish.
+- Error `detail` strings and `/route` `reason`/`warnings` stay English; the web translates the known router strings.
+- The wording guard covers Spanish too: never "seguro/segura", "está seco", "despejado", "transitable"; say
+  "No se reporta agua profunda" and "Sin reportes no significa seco". NWS slogan: "¡Dé la vuelta, no se ahogue!".
