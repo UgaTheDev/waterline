@@ -1,0 +1,28 @@
+{
+  "id": "ida2021",
+  "name": "Hurricane Ida (2021)",
+  "city": "New York City, NY",
+  "stn_event_id": 312,
+  "bbox": [
+    -73.955,
+    40.7,
+    -73.777,
+    40.836
+  ],
+  "wfo": [
+    "OKX"
+  ],
+  "replay": {
+    "start": "2021-09-01T12:00:00Z",
+    "end": "2021-09-03T12:00:00Z",
+    "default_t": "2021-09-01T12:00:00Z"
+  },
+  "credits": [],
+  "map_view": {
+    "center": [
+      -73.866,
+      40.768
+    ],
+    "zoom": 12
+  }
+}

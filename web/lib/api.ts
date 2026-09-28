@@ -1,6 +1,7 @@
 // Client for the backend contract in backend/API.md. NEXT_PUBLIC_USE_MOCK=1 swaps in lib/mock.ts.
 import * as mock from "./mock";
 import { session } from "./session";
+import { currentEvent } from "./event";
 
 export const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "");
 export const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "1";
@@ -19,6 +20,7 @@ export type Config = {
   live: boolean;
   features?: { risk?: boolean };
 };
+export type EventInfo = { id: string; name: string; city: string; replay: { start: string; end: string; default_t: string }; center: LngLat; zoom: number };
 export type Evidence = {
   obs_id: string;
   image_url: string | null;
@@ -125,8 +127,11 @@ export type EvalResult =
 // Errors carry the HTTP status so callers can tell "depth model offline" (503) from other failures.
 export type ApiError = Error & { status?: number };
 
+// Every call is scoped to the selected replay event (query param for GETs; also a body/form field for POSTs).
+const withEvent = (path: string) => (currentEvent() ? `${path}${path.includes("?") ? "&" : "?"}event=${encodeURIComponent(currentEvent())}` : path);
+
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(API_BASE + path, init);
+  const res = await fetch(API_BASE + withEvent(path), init);
   if (!res.ok) {
     let detail = "";
     try {
@@ -141,7 +146,7 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
 const json = (body: unknown, signal?: AbortSignal): RequestInit => ({
   method: "POST",
   headers: { "Content-Type": "application/json" },
-  body: JSON.stringify(body),
+  body: JSON.stringify(currentEvent() && body && typeof body === "object" ? { ...body, event: currentEvent() } : body),
   signal,
 });
 
@@ -156,6 +161,7 @@ export const mediaUrl = (u: string) => (USE_MOCK || /^https?:|^data:/.test(u) ? 
 
 const withSession = (form: FormData) => {
   if (!form.has("session")) form.append("session", session());
+  if (currentEvent() && !form.has("event")) form.append("event", currentEvent());
   return form;
 };
 
@@ -163,6 +169,7 @@ export const api = USE_MOCK
   ? mock.api
   : {
       config: () => req<Config>("/config"),
+      events: () => req<EventInfo[]>("/events"),
       segments: (t: string, signal?: AbortSignal) =>
         req<Segments>(`/segments?t=${encodeURIComponent(t)}&session=${session()}`, { signal }),
       alerts: (t: string, signal?: AbortSignal) => req<Alerts>(`/alerts?t=${encodeURIComponent(t)}`, { signal }),

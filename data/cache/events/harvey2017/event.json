@@ -1,0 +1,19 @@
+{
+  "id": "harvey2017",
+  "name": "Hurricane Harvey (2017)",
+  "city": "Houston, TX",
+  "bbox": [-95.50, 29.66, -95.33, 29.81],
+  "bbox_note": "downtown Houston + Buffalo Bayou + Meyerland",
+  "replay": {"start": "2017-08-26T12:00:00Z", "end": "2017-09-03T00:00:00Z", "default_t": "2017-09-01T20:00:00Z"},
+  "replay_note": "ends Sep 3: Buffalo Bayou peaked late (Addicks/Barker reservoir releases); USGS survey peaks are Sep 1-2",
+  "map_view": {"center": [-95.405, 29.715], "zoom": 11.8},
+  "stn_event_id": 180,
+  "wfo": ["HGX"],
+  "credits": [
+    "USGS Short-Term Network high-water marks, Hurricane Harvey event 180 (public domain)",
+    "USGS 3DEP 1 m bare-earth elevation (public domain)",
+    "NWS flood warnings (HGX) via Iowa Environmental Mesonet (public domain)",
+    "IEM IEMRE hourly rainfall reanalysis (Iowa Environmental Mesonet)",
+    "Road network (c) OpenStreetMap contributors (ODbL)"
+  ]
+}

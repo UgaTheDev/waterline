@@ -429,6 +429,7 @@ const wait = (n: number) => new Promise((r) => setTimeout(r, n));
 
 export const api = {
   config: async () => config,
+  events: async () => [{ id: "harvey2017", name: config.event, city: config.city, replay: config.replay, center: config.center, zoom: config.zoom }],
   segments: async (t: string) => segments(t),
   alerts: async (t: string) => alerts(t),
   route: async (body: RouteRequest) => {

@@ -6,19 +6,18 @@ infer(obs) -> list of inferred observations derived from one observed report:
   provenance={"method": "terrain-v1", "derived_from": [obs["obs_id"]]}, the source's time/half_life_min/session_id,
   lower confidence than the source, and bounds that widen with distance. Rules: additive only (never depth 0, never
   "dry"), never for kind in {"inferred", "survey"} sources unless the stream owner decides otherwise, bridges excluded.
-Replay inferences are precomputed into data/cache/inferred_observations.json (loaded by store.Store).
+Replay inferences are precomputed into data/cache/events/<id>/inferred_observations.json (loaded by store.Store).
+Multi-event: the DEM and road graph are the ones of obs["event"] (default event when absent), via backend/events.py.
 
 Stream owner decision: "survey" rows are skipped here; scripts/infer_replay.py seeds from the USGS marks' surveyed
 water surface directly instead (more exact than survey rows, which already subtract DEM ground).
-DEM: data/cache/dem_5m.npz from scripts/build_dem.py, NAVD88 int16 centimetres. All elevations here are NAVD88 cm.
+DEM: data/cache/events/<id>/dem_5m.npz from scripts/build_dem.py, NAVD88 int16 centimetres. All elevations here are NAVD88 cm.
 """
 import math
 import os
-import sys
 import numpy as np
 from scipy import ndimage
 from shapely.geometry import Point
-from .profiles import CACHE
 
 RADIUS_M = 800
 # Bathtub fails on slopes: every downhill cell is "connected and below" a seed on higher ground, so a shallow report
@@ -31,8 +30,8 @@ SKIP_KINDS = {"inferred", "survey"}
 # Deeper than this, the "road" low point is a bayou channel bed under the edge (seen up to 9 m in the LOO run), not street water.
 MAX_INFERRED_CM = 300
 
-DEM = None    # lazily loaded; tests assign a synthetic Dem
-ROADS = None  # lazily resolved; tests assign a Roads
+DEM = None    # test override: a synthetic Dem used for every event. None = the event's DEM (backend/events.py LRU)
+ROADS = None  # test override: a Roads used for every event. None = the event's road graph
 
 
 class Dem:
@@ -52,31 +51,20 @@ class Dem:
         return float(self.z[r, c]) if 0 <= r < self.rows and 0 <= c < self.cols else math.nan
 
 
-def dem():
-    global DEM
-    if DEM is None:
-        d = np.load(CACHE / "dem_5m.npz")
-        DEM = Dem(d["z_cm"], d["bbox"])
-    return DEM
+def dem(event=None):
+    from . import events
+    return DEM if DEM is not None else events.load(event, "dem")
 
 
-def roads():
-    global ROADS
-    if ROADS is None:
-        app = sys.modules.get("backend.app")  # ponytail: share the API's cached graph instead of loading a second copy
-        if app:
-            ROADS = app.roads()
-        else:
-            import osmnx as ox
-            from .router import Roads
-            ROADS = Roads(ox.load_graphml(CACHE / "graph.graphml"))
-    return ROADS
+def roads(event=None):
+    from . import events  # shared with the API: one cached graph per event
+    return ROADS if ROADS is not None else events.load(event, "roads")
 
 
-def flood(lon, lat, z_high):
+def flood(lon, lat, z_high, event=None):
     """Connected DEM cells below z_high (NAVD88 cm) containing (lon, lat), within RADIUS_M.
     Returns (r0, c0, component bool window, distance-from-seed metres window) or None."""
-    D = dem()
+    D = dem(event)
     r, c = (int(v) for v in D.cell(lon, lat))
     hr, hc = int(RADIUS_M / D.my) + 1, int(RADIUS_M / D.mx) + 1
     r0, c0 = max(0, r - hr), max(0, c - hc)
@@ -97,11 +85,12 @@ def _bridge(d):
 
 def spread(lon, lat, z_mid, z_high, z_low, src, reference, credit="USGS 3DEP elevation (public domain) + nearby report"):
     """Inferred observations for every road edge flooded from a water surface z_mid (upper bound z_high) at (lon, lat)."""
-    f = flood(lon, lat, z_high)
+    ev = src.get("event")
+    f = flood(lon, lat, z_high, ev)
     if f is None:
         return []
     r0, c0, comp, dist = f
-    D, R = dem(), roads()
+    D, R = dem(ev), roads(ev)
     out = []
     for j in R.tree.query(Point(*R.to_m(lon, lat)).buffer(RADIUS_M)):
         eid = R.ids[int(j)]
@@ -133,7 +122,7 @@ def spread(lon, lat, z_mid, z_high, z_low, src, reference, credit="USGS 3DEP ele
         out.append({"obs_id": f"inf-{src['obs_id']}-{eid}", "edge_id": eid, "time": src["time"], "lat": round(float(la), 6), "lon": round(float(lo), 6),
                     "status": "ok", "depth_cm": round(depth, 1), "low_cm": round(max(0.0, z_low - g_edge - sigma), 1),
                     "high_cm": round(z_high - g_edge + sigma, 1), "confidence": round(conf, 3),
-                    "half_life_min": src.get("half_life_min"), "session_id": src.get("session_id"), "kind": "inferred",
+                    "half_life_min": src.get("half_life_min"), "session_id": src.get("session_id"), "kind": "inferred", "event": ev,
                     "provenance": {"method": "terrain-v1", "derived_from": [src["obs_id"]]},
                     "reference": f"Inferred from {reference} {round(d)} m away + terrain",
                     "rationale": f"Water surface {z_mid / 30.48:.1f} ft (NAVD88) spread over connected lower ground; lowest road ground here {g_edge / 30.48:.1f} ft.",
@@ -144,13 +133,13 @@ def spread(lon, lat, z_mid, z_high, z_low, src, reference, credit="USGS 3DEP ele
 def infer(obs):
     if obs.get("kind") in SKIP_KINDS or obs.get("status") != "ok" or not (obs.get("depth_cm") or 0) > 0 or obs.get("high_cm") is None:
         return []
-    R = roads()
+    R = roads(obs.get("event"))
     eid = obs.get("edge_id")
     if eid not in R.edges or _bridge(R.G[R.edges[eid][0]][R.edges[eid][1]][R.edges[eid][2]]):
         return []  # water on a deck says nothing about the terrain under it
     geom = R.edges[eid][3]
     q = geom.interpolate(geom.project(Point(obs["lon"], obs["lat"])))  # report's spot on its road
-    g = dem().ground(q.x, q.y)
+    g = dem(obs.get("event")).ground(q.x, q.y)
     if math.isnan(g):
         return []
     return spread(q.x, q.y, g + obs["depth_cm"], g + obs["high_cm"], g + (obs.get("low_cm") or 0), obs, "a report")

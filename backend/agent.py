@@ -1,11 +1,11 @@
 """Nemotron (Nebius Token Factory) agent. Read-only tools; road status always comes from the router."""
 import json, re, unicodedata
 from openai import OpenAI, BadRequestError
-from . import profiles as P
+from . import events, profiles as P
 from .alerts import local_reports
 from .geocode import geocode
 
-SYSTEM = f"""You help drivers in {P.CITY} avoid flooded streets during {P.EVENT}.
+SYSTEM = """You help drivers in {city} avoid flooded streets during {event}.
 Use the tools; never guess road conditions. Rules you must follow:
 - Never say a road or route is "safe". Say "no deep water reported" and remind that unreported streets are unknown, not dry.
 - For every street the route avoids, name it and give the reported depth, the evidence time and the reference object.
@@ -73,11 +73,14 @@ class Tools:
         self.ctx, self.last_route, self.sources, self.filed = ctx, None, [], []
         self.calls = {"all": 0, "local_reports": 0}
 
+    def _city(self):
+        return events.get(self.ctx.get("event"))["city"]
+
     def _place(self, q):
         if q.strip().lower() in ("here", "my location", "current location"):
             loc = self.ctx["location"]
             return {"lat": loc["lat"], "lon": loc["lon"], "label": "your location"} if loc else None
-        return geocode(q)
+        return geocode(q, self.ctx.get("event"))
 
     def call(self, name, args):
         self.calls["all"] += 1
@@ -91,7 +94,7 @@ class Tools:
             if name == "route":
                 a, b = self._place(args["origin"]), self._place(args["destination"])
                 if not a or not b:
-                    return {"error": f"could not find {'origin' if not a else 'destination'} in {P.CITY}"}
+                    return {"error": f"could not find {'origin' if not a else 'destination'} in {self._city()}"}
                 r = self.ctx["route_fn"]((a["lat"], a["lon"]), (b["lat"], b["lon"]), args.get("vehicle") or self.ctx["vehicle"])
                 r.update({"from": a, "to": b})
                 self.last_route = r
@@ -111,14 +114,14 @@ class Tools:
                     return {"error": "ask what the water reached (ankles, knees, waist, curb, car doors)"}
                 p = self._place(args["place"])
                 if not p:
-                    return {"error": f"could not find that place in {P.CITY}; ask for a nearby street or intersection"}
+                    return {"error": f"could not find that place in {self._city()}; ask for a nearby street or intersection"}
                 ev = self.ctx["report_fn"](p["lat"], p["lon"], cm, args["reached"][:60])
                 if "error" in ev:
                     return ev
                 self.filed.append(ev)
                 return {"filed": True, "street": ev.get("street"), "depth_cm": cm}
             if name == "local_reports":
-                out = local_reports(args["query"])
+                out = local_reports(args["query"], self.ctx.get("event"))
                 self.sources += [{"title": x["title"], "url": x["url"]} for x in out.get("results", [])]
                 return out
         except Exception as e:  # a failing tool is reported to the model, not raised to the user
@@ -150,12 +153,12 @@ def to_speech(text):
 
 
 def chat(messages, ctx):
-    tools = Tools(ctx)
+    tools, E = Tools(ctx), events.get(ctx.get("event"))
     if not P.TF_KEY:
         msg = "The assistant is offline (no Token Factory key configured). Use the route panel."
         return {"reply": msg, "speak": msg, "route": None, "sources": [], "filed": []}
     c = OpenAI(base_url=P.TF_URL, api_key=P.TF_KEY, timeout=60, max_retries=1)
-    msgs = [{"role": "system", "content": SYSTEM}] + [{"role": m.get("role"), "content": str(m.get("content", ""))[:2000]} for m in messages[-10:]
+    msgs = [{"role": "system", "content": SYSTEM.format(city=E["city"], event=E["name"])}] + [{"role": m.get("role"), "content": str(m.get("content", ""))[:2000]} for m in messages[-10:]
                                             if isinstance(m, dict) and m.get("role") in ("user", "assistant")]
     reply = None
     try:

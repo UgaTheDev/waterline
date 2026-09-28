@@ -1,18 +1,14 @@
 """Constants and settings. Vehicle limits are deliberately conservative (NWS / FEMA)."""
-import os, pathlib
+import json, os, pathlib
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 CACHE = ROOT / "data/cache"
 DB_PATH = pathlib.Path(os.getenv("DB_PATH", ROOT / "data/uploads.db"))
 
-CITY = "Houston, TX"
-EVENT = "Hurricane Harvey (2017)"
-# [w, s, e, n]; downtown Houston + Buffalo Bayou + Meyerland
-BBOX = [float(x) for x in os.getenv("BBOX", "-95.50,29.66,-95.33,29.81").split(",")]
-# ends Sep 3: Buffalo Bayou peaked late (Addicks/Barker reservoir releases); USGS survey peaks are Sep 1-2
-# Opening view: frames where the replay data is (10-90% of survey + inferred obs), not the bbox centre
-MAP_VIEW = {"center": [-95.405, 29.715], "zoom": 11.8}  # MapLibre zoom (512 px tiles)
-REPLAY = {"start": "2017-08-26T12:00:00Z", "end": "2017-09-03T00:00:00Z", "default_t": "2017-09-01T20:00:00Z"}
+# City/event settings live in data/cache/events/<id>/event.json (backend/events.py). These are read-only aliases for
+# the DEFAULT event (Harvey), kept so older imports still work; per-event code must use events.get(event) instead.
+_default = json.loads((CACHE / "events/harvey2017/event.json").read_text())
+CITY, EVENT, BBOX, MAP_VIEW, REPLAY = _default["city"], _default["name"], _default["bbox"], _default["map_view"], _default["replay"]
 
 # Water depth (cm) at which each vehicle is blocked. ponytail: fixed table, per-model sill heights if asked.
 VEHICLES = {

@@ -2,7 +2,8 @@
 import { BRAND } from "@/lib/brand";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { api, parsePoint, type Alerts, type Config, type Point, type Risk, type RiskProps, type RouteResponse, type SegmentProps, type Segments } from "@/lib/api";
+import { currentEvent, setEvent } from "@/lib/event";
+import { api, parsePoint, type Alerts, type Config, type EventInfo, type Point, type Risk, type RiskProps, type RouteResponse, type SegmentProps, type Segments } from "@/lib/api";
 import { LEGEND, PALETTE, bandFor, fmtClock, fmtTime } from "@/lib/depth";
 import { useReducedMotion, useTheme } from "@/lib/theme";
 import Chat from "./Chat";
@@ -155,6 +156,10 @@ export default function MapApp() {
   const [toPt, setToPt] = useState<Point | null>(null);
   const [picking, setPicking] = useState<"from" | "to" | null>(null);
   const [route, setRoute] = useState<RouteResponse | null>(null);
+  const [events, setEvents] = useState<EventInfo[]>([]);
+  useEffect(() => {
+    api.events().then(setEvents).catch(() => setEvents([]));
+  }, []);
   const [routing, setRouting] = useState(false);
   const [routeError, setRouteError] = useState<string | null>(null);
   const [flash, setFlash] = useState({ ids: [] as string[], key: 0 });
@@ -379,7 +384,26 @@ export default function MapApp() {
           <span className="pointer-events-auto glass rounded-full border border-line px-3 py-1 text-[11.5px] text-text flex items-center gap-2">
             <span className={`w-1.5 h-1.5 rounded-full live-dot ${config.live ? "bg-danger text-danger" : "bg-accent text-accent"}`} />
             <span className="font-mono uppercase tracking-wider text-[10.5px]">{config.live ? "Live" : "Replay"}</span>
-            <span className="text-muted">{config.event}</span>
+            {events.length > 1 ? (
+              // ponytail: switching reloads the page (choice kept per tab), so no per-event state can go stale
+              <select
+                aria-label="Flood event"
+                value={currentEvent() || events[0].id}
+                onChange={(e) => {
+                  setEvent(e.target.value);
+                  window.location.reload();
+                }}
+                className="bg-transparent text-muted outline-none cursor-pointer"
+              >
+                {events.map((ev) => (
+                  <option key={ev.id} value={ev.id} className="bg-bg text-text">
+                    {ev.name} · {ev.city}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="text-muted">{config.event}</span>
+            )}
           </span>
           {activeAlerts.slice(0, 1).map((a, i) => (
             <span key={i} className="pointer-events-auto rise glass rounded-full border border-danger/50 px-3 py-1 text-[11.5px] text-text flex items-center gap-2">

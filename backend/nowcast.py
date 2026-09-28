@@ -6,8 +6,8 @@ Formula (transparent; eval and fit in scripts/eval_nowcast.py -> eval/results/no
   terrain = percentile among all scored edges of  W.bias + W.depression*log1p(depression_cm) + W.hand*hand_m   (fitted, logistic)
   rain    = clip(max(rain_1h/RAIN_REF_MM[1], rain_3h/RAIN_REF_MM[3], rain_6h/RAIN_REF_MM[6]), 0, 1)       (design rule, NOT fitted)
   risk    = terrain * rain
-  rain_Nh: IEMRE hourly rain (data/cache/rain_harvey.json) in the N hours ending at or before t, bilinear to the edge's
-  low point. depression_cm, hand_m: static terrain (data/cache/nowcast_static.npz, scripts/build_nowcast_features.py);
+  rain_Nh: IEMRE hourly rain (data/cache/events/harvey2017/rain.json) in the N hours ending at or before t, bilinear to the edge's
+  low point. depression_cm, hand_m: static terrain (data/cache/events/harvey2017/nowcast_static.npz, scripts/build_nowcast_features.py);
   hand_m is clipped to [HAND_MIN_M, HAND_MAX_M] and no river/canal within 2 km counts as HAND_MAX_M.
 Why rain is not fitted: every flooded-street label carries a Sep 1-2 USGS peak time, so labels have no timing to fit rain
 against, and the fitted rain weights came out 0 (the IEMRE grid is ~12 km, so rain barely varies across the bbox).
@@ -21,7 +21,7 @@ from datetime import datetime, timedelta, timezone
 import numpy as np
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
-from .profiles import CACHE, REPLAY
+from . import events
 
 router = APIRouter()
 
@@ -97,7 +97,8 @@ class Inputs:
 def inputs():
     global _M
     if _M is None:
-        _M = Inputs(np.load(CACHE / "nowcast_static.npz"), json.loads((CACHE / "rain_harvey.json").read_text()))
+        d = events.get(events.DEFAULT)["dir"]  # fitted and cached for Harvey only
+        _M = Inputs(np.load(d / "nowcast_static.npz"), json.loads((d / "rain.json").read_text()))
     return _M
 
 
@@ -116,16 +117,20 @@ def risk_at(t):
 _GEOM = {}  # edge_id -> GeoJSON geometry, built once per edge
 
 
+EVENT_NOTE = "The flood-risk nowcast was fitted and cached for the Harvey replay only."
 DISABLED_NOTE = "Flood-risk nowcast is off: in evaluation it did not beat a terrain-only baseline (eval/results/nowcast.json)."
 
 
 @router.get("/risk")
-def risk(t: str | None = None, session: str | None = None):
+def risk(t: str | None = None, session: str | None = None, event: str | None = None):
     from .profiles import NOWCAST_ENABLED
     if not NOWCAST_ENABLED:
         return JSONResponse({"type": "FeatureCollection", "features": [], "note": DISABLED_NOTE}, headers={"X-Waterline-Note": DISABLED_NOTE})
+    E = events.get(event)
+    if E["id"] != events.DEFAULT:
+        return JSONResponse({"type": "FeatureCollection", "features": [], "note": EVENT_NOTE}, headers={"X-Waterline-Note": EVENT_NOTE})
     try:
-        when = _ts(t or REPLAY["default_t"])
+        when = _ts(t or E["replay"]["default_t"])
     except ValueError:
         raise HTTPException(400, "t must be ISO-8601")
     out = risk_at(when)
