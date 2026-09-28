@@ -1,6 +1,7 @@
 """HTTP API. Contract: backend/API.md. Run: uvicorn backend.app:app --port 8000"""
 import json, re, time, uuid
 from collections import defaultdict, deque
+from typing import Literal
 from datetime import datetime, timezone
 import httpx
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Request, UploadFile
@@ -23,6 +24,7 @@ for r in (nowcast.router, responder.router, simulate.router):  # v2 streams own 
 MEDIA = P.CACHE / "media"          # replay frames (public domain / CC BY, credited)
 UPLOADS = P.DB_PATH.parent / "uploads"  # never served
 MAX_BYTES = 15 * 1024 * 1024
+Lang = Literal["en", "es"]  # reply language for /chat, /dashcam and upload status; anything else is a 422
 
 
 def roads(event=None):
@@ -200,6 +202,7 @@ class ChatReq(BaseModel):
     location: dict | None = None
     session: str | None = None
     event: str | None = None
+    lang: Lang = "en"
 
 
 def _file_report(lat, lon, t, session, kind, fields, event=None):
@@ -251,7 +254,8 @@ def chat(req: ChatReq, request: Request):
             "precision": "street"}, ev)
 
     ctx = {"route_fn": lambda a, b, v: _route(a, b, v if v in P.VEHICLES else req.vehicle, t, req.session, ev), "near_fn": near,
-           "alerts_fn": lambda: alerts.active(t, ev), "location": req.location, "vehicle": req.vehicle, "report_fn": report, "event": ev}
+           "alerts_fn": lambda: alerts.active(t, ev), "location": req.location, "vehicle": req.vehicle, "report_fn": report, "event": ev,
+           "lang": req.lang}
     out = agent.chat(req.messages, ctx)
     if out["route"]:
         out["route"] = _public_route(out["route"])
@@ -288,19 +292,29 @@ def _process(obs_id):
     store.put({**o, **est, "queue_state": "done"})
 
 
-def _upload_view(o):
+_UPLOAD_MSG = {
+    "en": {"queued": "Queued: the depth model is starting or offline; it will process this when it's online.", "done": "Processed.",
+           "no_water": "No flood water visible in this photo, so no report was filed. That doesn't mean the street is clear.",
+           "failed": "This file couldn't be processed. Try a clear JPEG photo of the water.", None: "Rejected."},
+    "es": {"queued": "En cola: el modelo de profundidad está arrancando o fuera de línea; procesará esto cuando esté disponible.", "done": "Procesado.",
+           "no_water": "No se ve agua de inundación en esta foto, así que no se registró ningún reporte. Eso no significa que la calle esté libre de agua.",
+           "failed": "No se pudo procesar este archivo. Pruebe con una foto JPEG clara del agua.", None: "Rechazado."},
+}
+
+
+def _upload_view(o, lang="en"):
     if not o:
         raise HTTPException(404, "unknown upload")
     status = {"queued": "queued", "processing": "queued", "done": "done"}.get(o["queue_state"], "rejected")
+    msg = _UPLOAD_MSG[lang]
     return {"obs_id": o["obs_id"], "status": status, "result": _evidence(o) if status == "done" else None,
-            "message": {"queued": "Queued: the depth model is starting or offline; it will process this when it's online.", "done": "Processed.",
-                        "no_water": "No flood water visible in this photo, so no report was filed. That doesn't mean the street is clear.",
-                        "failed": "This file couldn't be processed. Try a clear JPEG photo of the water."}.get(o["queue_state"], "Rejected.")}
+            "message": msg.get(o["queue_state"], msg[None])}
 
 
 @app.post("/upload", status_code=202)
 def upload(request: Request, bg: BackgroundTasks, file: UploadFile = File(...), lat: float | None = Form(None), lon: float | None = Form(None),
-                 t: str | None = Form(None), session: str | None = Form(None), event: str | None = Form(None)):
+                 t: str | None = Form(None), session: str | None = Form(None), event: str | None = Form(None),
+                 lang: Lang = Form("en")):
     limit(request, "upload", 5, 600)
     events.get(event)  # unknown event: 400 before any work
     budget("upload")
@@ -338,15 +352,22 @@ def upload(request: Request, bg: BackgroundTasks, file: UploadFile = File(...), 
     for q in store.queued():  # at most 3 older retries per upload
         if q["obs_id"] != obs_id:
             bg.add_task(_process, q["obs_id"])
-    return _upload_view(store.get(obs_id))
+    return _upload_view(store.get(obs_id), lang)
 
 
 DASHCAM_BYTES = 3 * 1024 * 1024
 _dash_recent = {}  # (session or client, street) -> last filed epoch s. ponytail: in-memory, fine for one instance
 
 
-def _speak_dash(street, ev, vehicle, over):
+_VEH_ES = {"sedan": "sedán", "suv": "SUV", "truck": "camioneta", "rescue": "camión de rescate"}
+
+
+def _speak_dash(street, ev, vehicle, over, lang="en"):
     v = P.VEHICLES[vehicle]
+    if lang == "es":
+        msg = (f"Agua reportada adelante en {street}, unos {ev['depth_cm']:.0f} centímetros, posiblemente hasta {ev['high_cm']:.0f}. "
+               f"El límite de su {_VEH_ES.get(vehicle, v['label'].lower())} es {v['limit_cm']}.")
+        return msg + (" Cambiando la ruta." if over else " Los cálculos pueden fallar. Si se ve más profunda, dé la vuelta.")
     msg = (f"Water reported ahead on {street}, about {ev['depth_cm']:.0f} centimetres, possibly up to {ev['high_cm']:.0f}. "
            f"Your {v['label'].lower()}'s limit is {v['limit_cm']}.")
     return msg + (" Rerouting." if over else " Estimates can be wrong. If it looks deeper, turn around.")
@@ -354,7 +375,8 @@ def _speak_dash(street, ev, vehicle, over):
 
 @app.post("/dashcam")
 def dashcam(request: Request, frame: UploadFile = File(...), lat: float = Form(...), lon: float = Form(...),
-                  vehicle: str = Form("sedan"), t: str | None = Form(None), session: str | None = Form(None), event: str | None = Form(None)):
+                  vehicle: str = Form("sedan"), t: str | None = Form(None), session: str | None = Form(None), event: str | None = Form(None),
+                  lang: Lang = Form("en")):
     limit(request, "dashcam", 40, 60)
     events.get(event)  # unknown event: 400 before paying for the model
     budget("dashcam")
@@ -385,7 +407,8 @@ def dashcam(request: Request, frame: UploadFile = File(...), lat: float = Form(.
             del _dash_recent[k]
     if not eid or now - _dash_recent.get(key, 0) < 120:
         return {"water": True, "filed": False, "street": street, "over_limit": over, "evidence": None,
-                "speak": None if eid else "Water ahead. Location unclear, so no report was filed."}
+                "speak": None if eid else ("Agua adelante. La ubicación no es clara, así que no se registró ningún reporte." if lang == "es"
+                                          else "Water ahead. Location unclear, so no report was filed.")}
     _dash_recent[key] = now
     fields = {k: est[k] for k in ("depth_cm", "low_cm", "high_cm", "reference", "rationale")}
     fields["flags"] = est.get("flags") or []
@@ -394,12 +417,12 @@ def dashcam(request: Request, frame: UploadFile = File(...), lat: float = Form(.
     if "error" in ev:
         return {"water": True, "filed": False, "street": street, "over_limit": over, "evidence": None, "speak": None}
     return {"water": True, "filed": True, "edge_id": eid, "street": street, "over_limit": over, "evidence": ev,
-            "speak": _speak_dash(street, ev, vehicle, over)}
+            "speak": _speak_dash(street, ev, vehicle, over, lang)}
 
 
 @app.get("/upload/{obs_id}")
-def upload_status(obs_id: str):
-    return _upload_view(store.get(obs_id[:32]))
+def upload_status(obs_id: str, lang: Lang = "en"):
+    return _upload_view(store.get(obs_id[:32]), lang)
 
 
 @app.get("/media/{name}")

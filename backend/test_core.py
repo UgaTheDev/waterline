@@ -78,6 +78,15 @@ def test_wording():
     for r in [None, {"found": False, "reason": "No route avoids reported deep water for a sedan.", "avoided": []},
               {"found": True, "distance_m": 3000, "avoided": [{"name": "Main St", "reason": "reported up to 40 cm"}], "unknown_m": 500, "warnings": []}]:
         assert not violates(template(r)), template(r)
+        assert not violates(template(r, "es")), template(r, "es")
+    # Spanish: affirmative safety claims are caught, negations are allowed
+    for bad in ["La calle Main es segura", "Es seguro manejar por I-45", "Tome esta ruta segura", "Yale St está seco", "La calle está despejada",
+                "El camino es transitable", "Puede pasar sin peligro", "Las calles siguen secas", "Es muy seguro", "ES SEGURO"]:
+        assert violates(bad), bad
+    for ok in ["No es seguro manejar", "La calle no está seca", "No se reporta agua profunda", "Sin reportes no significa seco",
+               "¡Dé la vuelta, no se ahogue!", "Esa calle es insegura", "La calle es intransitable", "No estoy seguro de la ubicación"]:
+        assert not violates(ok), ok
+    assert template(None, "es").startswith("No pude") and "Dé la vuelta" in template({"found": False, "reason": "x", "avoided": []}, "es")
 
 
 def test_eval_metrics():
@@ -93,6 +102,12 @@ def test_voice_mapping():
     assert reached_cm("up to my knees") == 50 and reached_cm("over the tire tops") == 65 and reached_cm("ankle deep") == 10
     assert reached_cm("halfway up the car door") == 45 and reached_cm("it's a boat ship") is None and reached_cm("wet") is None
     assert to_speech("**Avoid** Main St: 40 cm, 3.2 km") == "Avoid Main St: 40 centimetres, 3.2 kilometres"
+    assert to_speech("Evite Main St: 40 cm, 3.2 km", "es") == "Evite Main St: 40 centímetros, 3.2 kilómetros"
+    from .app import _speak_dash, _UPLOAD_MSG
+    es = _speak_dash("Yale Street", {"depth_cm": 30, "high_cm": 45}, "sedan", True, "es")
+    assert es.startswith("Agua reportada adelante en Yale Street") and "sedán es 15" in es and not violates(es)
+    assert _speak_dash("Yale Street", {"depth_cm": 30, "high_cm": 45}, "sedan", True).startswith("Water reported ahead")
+    assert _UPLOAD_MSG["es"].keys() == _UPLOAD_MSG["en"].keys()
 
 
 def test_api_sandbox_and_dashcam():

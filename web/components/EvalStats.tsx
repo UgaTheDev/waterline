@@ -1,12 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
 import { api, type EvalResult } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 
 const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
 
 export default function EvalStats() {
   const [res, setRes] = useState<EvalResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const t = useT();
   useEffect(() => {
     api.eval().then(setRes, (e: Error) => setError(e.message));
   }, []);
@@ -15,25 +17,23 @@ export default function EvalStats() {
   const stats =
     res && "miss_rate" in res && res.n > 0
       ? [
-          { label: "Dangerous-road miss rate", value: pct(res.miss_rate), note: "Photos with water over 15 cm that we would have let a sedan through. Target: 0.", lead: true },
-          { label: "Interval coverage", value: pct(res.coverage), note: "How often the measured depth falls inside our low–high range." },
-          { label: "Mean absolute error", value: `${res.mae_cm.toFixed(1)} cm`, note: "Average gap between estimate and measured depth." },
-          { label: "Abstained", value: pct(res.abstain_rate), note: "No readable reference, so we said depth unknown (and blocked it)." },
-          ...(res.false_block_rate !== undefined
-            ? [{ label: "False-block rate", value: pct(res.false_block_rate), note: "Shallow water we blocked anyway. The cost of caution." }]
-            : []),
+          { label: t("eval.miss"), value: pct(res.miss_rate), note: t("eval.missNote"), lead: true },
+          { label: t("eval.cov"), value: pct(res.coverage), note: t("eval.covNote") },
+          { label: t("eval.mae"), value: `${res.mae_cm.toFixed(1)} cm`, note: t("eval.maeNote") },
+          { label: t("eval.abstain"), value: pct(res.abstain_rate), note: t("eval.abstainNote") },
+          ...(res.false_block_rate !== undefined ? [{ label: t("eval.fb"), value: pct(res.false_block_rate), note: t("eval.fbNote") }] : []),
         ]
       : [];
 
   if (error || pending)
     return (
       <div className="rounded-2xl border border-dashed border-line-strong bg-panel p-6">
-        <p className="eyebrow">Evaluation</p>
-        <p className="font-display text-[28px] text-text mt-1">{error ? "Results unavailable" : res ? "Evaluation pending" : "Loading…"}</p>
+        <p className="eyebrow">{t("eval.title")}</p>
+        <p className="font-display text-[28px] text-text mt-1">{t(error ? "eval.unavailable" : res ? "eval.pending" : "loading")}</p>
         <p className="text-[13px] text-muted mt-1 max-w-lg">
           {error
-            ? `The results service didn't respond (${error}).`
-            : "Numbers appear here once the held-out test set of USGS high-water-mark photos has been scored. We publish them whatever they say."}
+            ? t("eval.noResponse", { e: error })
+            : t("eval.pendingNote")}
         </p>
       </div>
     );
@@ -55,12 +55,12 @@ export default function EvalStats() {
       </div>
       {res && "by_reference" in res && Object.keys(res.by_reference ?? {}).length > 0 && (
         <div className="rounded-2xl border border-line bg-panel overflow-hidden">
-          <p className="eyebrow px-5 pt-4">Error by reference object</p>
+          <p className="eyebrow px-5 pt-4">{t("eval.byRef")}</p>
           <table className="w-full mt-2 text-[13px]">
             <thead>
               <tr className="text-left">
-                <th className="eyebrow font-normal px-5 py-2">Reference</th>
-                <th className="eyebrow font-normal px-5 py-2 text-right">Photos</th>
+                <th className="eyebrow font-normal px-5 py-2">{t("eval.ref")}</th>
+                <th className="eyebrow font-normal px-5 py-2 text-right">{t("eval.photos")}</th>
                 <th className="eyebrow font-normal px-5 py-2 text-right">MAE</th>
               </tr>
             </thead>
@@ -81,10 +81,10 @@ export default function EvalStats() {
       {res && "split" in res && (
         <p className="font-mono text-[11px] text-faint">
           n = {res.n}
-          {res.n_dangerous !== undefined && ` · ${res.n_dangerous} dangerous`}
-          {res.misses !== undefined && ` · ${res.misses} missed`} · {res.split} split
+          {res.n_dangerous !== undefined && t("eval.dangerous", { n: res.n_dangerous })}
+          {res.misses !== undefined && t("eval.missed", { n: res.misses })} · {t("eval.split", { s: res.split })}
           {res.model && ` · ${res.model}`}
-          {res.prompt_version && ` · prompt ${res.prompt_version}`}
+          {res.prompt_version && t("eval.prompt", { p: res.prompt_version })}
           {res.note ? ` · ${res.note}` : ""}
         </p>
       )}

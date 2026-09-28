@@ -1,5 +1,8 @@
 import type { SegmentState } from "./api";
 import type { Theme } from "./theme";
+import { translate, type Key, type Lang, type T } from "./i18n";
+
+const EN: T = (k, v) => translate("en", k, v);
 
 // Bands and wording per backend/API.md. Never say "safe": shallow reads "No deep water reported".
 export type Band = "shallow" | "stall" | "float" | "sweep" | "unknownDepth" | "stale";
@@ -31,13 +34,14 @@ export const PALETTE: Record<Theme, Record<Band | "route" | "routeCasing" | "ale
   },
 };
 
-export const LEGEND: { band: Band; label: string; note: string }[] = [
-  { band: "shallow", label: "≤ 15 cm", note: "No deep water reported" },
-  { band: "stall", label: "15–30", note: "Can stall most cars" },
-  { band: "float", label: "30–60", note: "Many vehicles float" },
-  { band: "sweep", label: "> 60", note: "Sweeps most vehicles away" },
-  { band: "unknownDepth", label: "Water", note: "Depth unknown" },
-  { band: "stale", label: "Old", note: "Report aged out" },
+// label and note are i18n keys where they are words; numeric labels stay as they are.
+export const LEGEND: { band: Band; label: string | Key; note: Key }[] = [
+  { band: "shallow", label: "≤ 15 cm", note: "lg.shallow" },
+  { band: "stall", label: "15–30", note: "lg.stall" },
+  { band: "float", label: "30–60", note: "lg.float" },
+  { band: "sweep", label: "> 60", note: "lg.sweep" },
+  { band: "unknownDepth", label: "lg.waterLabel", note: "lg.unknownDepth" },
+  { band: "stale", label: "lg.oldLabel", note: "lg.stale" },
 ];
 
 export const THRESHOLDS = [15, 30, 60];
@@ -51,19 +55,19 @@ export function bandFor(state: SegmentState, high: number | null): Band {
   return "sweep";
 }
 
-export function describe(state: SegmentState, high: number | null) {
-  if (state === "unknown") return "No reports. That does not mean dry.";
-  if (state === "reported_unknown" || high === null) return "Water reported, depth unknown";
-  const prefix = state === "stale" ? "Last known: " : "";
-  if (high <= 15) return prefix + "No deep water reported";
-  if (high <= 30) return prefix + "Deep enough to stall most cars";
-  if (high <= 60) return prefix + "Deep enough to float many vehicles";
-  return prefix + "Deep enough to sweep vehicles away";
+export function describe(state: SegmentState, high: number | null, t: T = EN) {
+  if (state === "unknown") return t("d.none");
+  if (state === "reported_unknown" || high === null) return t("d.unknown");
+  const prefix = state === "stale" ? t("d.lastKnown") : "";
+  if (high <= 15) return prefix + t("d.shallow");
+  if (high <= 30) return prefix + t("d.stall");
+  if (high <= 60) return prefix + t("d.float");
+  return prefix + t("d.sweep");
 }
 
-export function range(low: number | null, high: number | null) {
-  if (high === null) return "Depth unknown";
-  if (low === null || low === high) return `up to ${Math.round(high)} cm`;
+export function range(low: number | null, high: number | null, t: T = EN) {
+  if (high === null) return t("d.rangeUnknown");
+  if (low === null || low === high) return t("d.upTo", { n: Math.round(high) });
   return `${Math.round(low)}–${Math.round(high)} cm`;
 }
 
@@ -71,11 +75,15 @@ export const inches = (cm: number) => Math.round(cm / 2.54);
 
 // The replay is Houston; show local time so the timeline matches news reports.
 const TZ = "America/Chicago";
-const fmt = (iso: string | number, o: Intl.DateTimeFormatOptions) => new Date(iso).toLocaleString("en-US", { timeZone: TZ, ...o });
-export const fmtTime = (iso: string, withDay = true) =>
-  fmt(iso, { ...(withDay ? { weekday: "short", month: "short", day: "numeric" } : {}), hour: "numeric", minute: "2-digit", timeZoneName: "short" });
+const fmt = (iso: string | number, o: Intl.DateTimeFormatOptions, lang: Lang = "en") =>
+  new Date(iso).toLocaleString(lang === "es" ? "es-US" : "en-US", { timeZone: TZ, ...o });
+export const fmtTime = (iso: string, withDay = true, lang: Lang = "en") =>
+  fmt(iso, { ...(withDay ? { weekday: "short", month: "short", day: "numeric" } : {}), hour: "numeric", minute: "2-digit", timeZoneName: "short" }, lang);
 export const fmtClock = (t: number) => fmt(t, { hour: "numeric", minute: "2-digit" });
-export const fmtDay = (t: number) => fmt(t, { weekday: "short", month: "short", day: "numeric" });
+export const fmtDay = (t: number, lang: Lang = "en") => fmt(t, { weekday: "short", month: "short", day: "numeric" }, lang);
+// Timeline labels. es-US reads "lun, 28 de ago", so it gets its own shapes; clocks stay en-US to fit the timeline box.
+export const fmtDate = (t: number, lang: Lang = "en") => (lang === "es" ? fmt(t, { month: "short", day: "numeric" }, "es") : fmtDay(t).replace(/^\w+, /, ""));
+export const fmtTick = (t: number, lang: Lang = "en") => (lang === "es" ? fmt(t, { weekday: "short", day: "numeric" }, "es") : fmtDay(t).replace(/,.* /, " "));
 
 export function fmtDistance(m: number) {
   return m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${Math.round(m)} m`;

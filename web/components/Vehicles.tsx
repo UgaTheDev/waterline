@@ -1,5 +1,6 @@
 "use client";
 import type { Vehicle } from "@/lib/api";
+import { useLang, useT, vehicleName } from "@/lib/i18n";
 
 // Side profiles drawn to one scale (CM units per cm) so a waterline at N cm sits where it would on the real vehicle.
 export const CM = 0.37;
@@ -50,6 +51,7 @@ export function VehicleSilhouette({
   animate?: boolean;
   className?: string;
 }) {
+  const t = useT();
   const s = shapeFor(id);
   const yAt = (cm: number) => Math.max(4, GROUND - Math.min(cm, 240) * CM);
   const top = waterCm === null ? null : yAt(waterCm);
@@ -91,7 +93,7 @@ export function VehicleSilhouette({
         <g>
           <line x1="0" x2="220" y1={limitY} y2={limitY} stroke="var(--warn)" strokeWidth="1.2" strokeDasharray="4 3" />
           <text x="218" y={limitY - 3} textAnchor="end" fontSize="9" fill="var(--warn)" fontFamily="var(--font-plex-mono)">
-            limit {limitCm}
+            {t("veh.limit", { n: limitCm ?? "" })}
           </text>
         </g>
       )}
@@ -100,8 +102,10 @@ export function VehicleSilhouette({
 }
 
 export function VehiclePicker({ vehicles, value, onChange }: { vehicles: Vehicle[]; value: string; onChange: (id: string) => void }) {
+  const t = useT();
+  const lang = useLang();
   return (
-    <div className={`grid gap-2 ${vehicles.length > 3 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`} role="radiogroup" aria-label="Vehicle">
+    <div className={`grid gap-2 ${vehicles.length > 3 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`} role="radiogroup" aria-label={t("veh.picker")}>
       {vehicles.map((v) => {
         const on = v.id === value;
         return (
@@ -115,8 +119,8 @@ export function VehiclePicker({ vehicles, value, onChange }: { vehicles: Vehicle
             }`}
           >
             <VehicleSilhouette key={String(on)} id={v.id} waterCm={on ? v.limit_cm : null} animate={on} className={`w-full h-auto transition-opacity ${on ? "" : "opacity-70 group-hover:opacity-100"}`} />
-            <span className={`block text-[12.5px] font-medium mt-1 ${on ? "text-text" : "text-muted"}`}>{v.label}</span>
-            <span className="block font-mono text-[10.5px] text-faint">limit {v.limit_cm} cm</span>
+            <span className={`block text-[12.5px] font-medium mt-1 ${on ? "text-text" : "text-muted"}`}>{vehicleName(t, lang, v)}</span>
+            <span className="block font-mono text-[10.5px] text-faint">{t("veh.limitCm", { n: v.limit_cm })}</span>
           </button>
         );
       })}

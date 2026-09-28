@@ -2,7 +2,8 @@
 import { useEffect, useRef, useState } from "react";
 import { api, type ChatMessage, type ChatResponse, type Evidence, type Point, type RouteResponse } from "@/lib/api";
 import { range } from "@/lib/depth";
-import { recognitionCtor, speak, stopSpeaking, useCanListen, useSpeaking, type Recognition } from "@/lib/speech";
+import { lowerName, useLang, useT, type Key, type T } from "@/lib/i18n";
+import { recognitionCtor, speak, speechLang, stopSpeaking, useCanListen, useSpeaking, type Recognition } from "@/lib/speech";
 import { useReducedMotion } from "@/lib/theme";
 import RouteSummary, { type Selection } from "./Route";
 
@@ -26,20 +27,21 @@ function Typing({ text, onDone }: { text: string; onDone: () => void }) {
 }
 
 // Shown while waiting: the agent's tools, in the order it usually calls them.
-const WAIT_STEPS = ["Checking street reports", "Checking NWS flood warnings", "Planning around deep water", "Writing the answer"];
+const WAIT_STEPS: Key[] = ["chat.step1", "chat.step2", "chat.step3", "chat.step4"];
 
 function Waiting() {
+  const t = useT();
   const [n, setN] = useState(1);
   useEffect(() => {
     const id = setInterval(() => setN((x) => Math.min(WAIT_STEPS.length, x + 1)), 1100);
     return () => clearInterval(id);
   }, []);
   return (
-    <li className="flex flex-wrap gap-1.5" aria-label="The agent is working">
+    <li className="flex flex-wrap gap-1.5" aria-label={t("chat.working")}>
       {WAIT_STEPS.slice(0, n).map((s, i) => (
         <span key={s} className="rise font-mono text-[10.5px] rounded-full border border-line bg-panel-2 px-2 py-0.5 flex items-center gap-1.5">
           {i === n - 1 ? <span className="w-1.5 h-1.5 rounded-full bg-accent text-accent live-dot" /> : <span className="text-faint">·</span>}
-          <span className={i === n - 1 ? "shimmer-text" : "text-faint"}>{s}…</span>
+          <span className={i === n - 1 ? "shimmer-text" : "text-faint"}>{t(s)}…</span>
         </span>
       ))}
     </li>
@@ -47,11 +49,11 @@ function Waiting() {
 }
 
 // Steps are derived from what the answer actually contains, not invented progress.
-function stepsFor(res: ChatResponse, vehicle: string) {
+function stepsFor(res: ChatResponse, vehicle: string, t: T) {
   const s: string[] = [];
-  if (res.route) s.push(res.route.found ? `Planned a ${vehicle} route` : `No ${vehicle} route found`);
-  if (res.route?.avoided.length) s.push(`Avoided ${res.route.avoided.length} streets`);
-  if (res.sources.length) s.push(`${res.sources.length} sources`);
+  if (res.route) s.push(t(res.route.found ? "chat.planned" : "chat.noRoute", { v: vehicle }));
+  if (res.route?.avoided.length) s.push(t("chat.avoided", { n: res.route.avoided.length }));
+  if (res.sources.length) s.push(t("chat.sources", { n: res.sources.length }));
   return s;
 }
 
@@ -66,6 +68,9 @@ export default function Chat(props: {
 }) {
   const { vehicle, vehicleLabel, t, location, onRoute, onEvidence, onFiled } = props;
   const reduced = useReducedMotion();
+  const t_ = useT(); // `t` is the replay time here
+  const lang = useLang();
+  const vLower = lowerName(lang, vehicleLabel);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
@@ -97,9 +102,9 @@ export default function Chat(props: {
     setError(null);
     try {
       const res = await api.chat({ messages: next.map(({ role, content }) => ({ role, content })), vehicle, t, location });
-      setMessages([...next, { role: "assistant", content: res.reply, sources: res.sources, route: res.route, steps: stepsFor(res, vehicleLabel.toLowerCase()), fresh: !reduced, filed: res.filed }]);
+      setMessages([...next, { role: "assistant", content: res.reply, sources: res.sources, route: res.route, steps: stepsFor(res, vLower, t_), fresh: !reduced, filed: res.filed }]);
       if (res.route) onRoute(res.route);
-      if (voice && res.speak) speak(res.speak);
+      if (voice && res.speak) speak(res.speak, lang);
       if (res.filed?.length) onFiled?.();
     } catch (e) {
       setError((e as Error).message);
@@ -114,7 +119,7 @@ export default function Chat(props: {
     if (!Ctor || busy || rec.current) return;
     stopSpeaking();
     const r = new Ctor();
-    r.lang = "en-US";
+    r.lang = speechLang(lang);
     r.interimResults = true;
     r.continuous = true;
     heard.current = "";
@@ -123,7 +128,7 @@ export default function Chat(props: {
       setDraft(heard.current);
     };
     r.onerror = (e) => {
-      if (e.error === "not-allowed" || e.error === "service-not-allowed") setError("Microphone access was blocked. You can still type.");
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") setError(t_("chat.micBlocked"));
     };
     r.onend = () => {
       rec.current = null;
@@ -148,10 +153,10 @@ export default function Chat(props: {
     <div className="space-y-4">
       {messages.length === 0 && (
         <div className="space-y-3 rise">
-          <p className="font-display text-[24px] leading-tight text-text">Ask before you drive.</p>
-          <p className="text-[13px] text-muted">The agent checks street reports and flood warnings, plans around deep water, and shows the photo behind every blocked street.</p>
+          <p className="font-display text-[24px] leading-tight text-text">{t_("chat.title")}</p>
+          <p className="text-[13px] text-muted">{t_("chat.intro")}</p>
           <div className="space-y-1.5">
-            {[`Can I drive from Studemont St to downtown in my ${vehicleLabel.toLowerCase()}?`, "Which streets near Buffalo Bayou have water reported?"].map((s) => (
+            {[t_("chat.ex1", { v: vLower }), t_("chat.ex2")].map((s) => (
               <button key={s} onClick={() => send(s)} className="block w-full text-left text-[13px] rounded-lg border border-line bg-panel-2/60 px-3 py-2.5 text-text hover:border-accent/60 transition-colors">
                 <span className="text-accent mr-1.5">↳</span>
                 {s}
@@ -196,9 +201,9 @@ export default function Chat(props: {
               {m.filed?.map((ev) => (
                 <p key={ev.obs_id} className="fade inline-flex flex-wrap items-center gap-x-2 gap-y-0.5 rounded-full border border-accent/50 bg-accent-soft px-3 py-1 text-[12px] text-text mr-1.5">
                   <span className="text-accent" aria-hidden>●</span>
-                  Report filed
-                  <span className="font-mono tabular-nums">{range(ev.low_cm, ev.high_cm)}</span>
-                  <span className="font-mono text-[10.5px] text-muted">voice report · low confidence</span>
+                  {t_("chat.filed")}
+                  <span className="font-mono tabular-nums">{range(ev.low_cm, ev.high_cm, t_)}</span>
+                  <span className="font-mono text-[10.5px] text-muted">{t_("chat.filedNote")}</span>
                 </p>
               ))}
               {!m.fresh && m.sources && m.sources.length > 0 && (
@@ -232,9 +237,9 @@ export default function Chat(props: {
           <button
             type="button"
             disabled={busy}
-            aria-label={listening ? "Listening. Release to send" : "Hold to talk"}
+            aria-label={listening ? t_("chat.listeningAria") : t_("chat.hold")}
             aria-pressed={listening}
-            title="Hold to talk"
+            title={t_("chat.hold")}
             onPointerDown={(e) => {
               e.currentTarget.setPointerCapture(e.pointerId);
               startListening();
@@ -264,11 +269,11 @@ export default function Chat(props: {
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder={listening ? "Listening…" : "Ask about a street or a trip"}
-          aria-label="Message the flood agent"
+          placeholder={listening ? t_("chat.listening") : t_("chat.ph")}
+          aria-label={t_("chat.aria")}
           className="flex-1 min-w-0 rounded-lg border border-line bg-panel-2 px-3 py-2.5 text-[14px] text-text placeholder:text-faint focus:outline-none focus:border-accent"
         />
-        <button type="submit" disabled={busy || !draft.trim()} aria-label="Send" className="w-11 rounded-lg bg-accent text-accent-ink disabled:opacity-40 flex items-center justify-center">
+        <button type="submit" disabled={busy || !draft.trim()} aria-label={t_("chat.send")} className="w-11 rounded-lg bg-accent text-accent-ink disabled:opacity-40 flex items-center justify-center">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
             <path d="M5 12h14M13 6l6 6-6 6" />
           </svg>
@@ -276,10 +281,10 @@ export default function Chat(props: {
       </form>
       {canListen && (
         <p className="flex items-center justify-between gap-3 font-mono text-[10.5px] text-faint -mt-2">
-          <span>Hold the mic to talk. Voice uses your browser&apos;s speech engine.</span>
+          <span>{t_("chat.voiceNote")}</span>
           {speaking && (
             <button type="button" onClick={stopSpeaking} className="shrink-0 rounded-full border border-line px-2.5 py-0.5 text-muted hover:text-text">
-              ■ Stop speaking
+              {t_("chat.stop")}
             </button>
           )}
         </p>
