@@ -3,6 +3,8 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, parsePoint, type ApiError, type Config, type DashcamResponse, type Point, type RouteResponse, type Segments } from "@/lib/api";
 import { PALETTE, bandFor, describe, fmtDistance, range } from "@/lib/depth";
+import { BRAND } from "@/lib/brand";
+import { routerText, useLang, useT, vehicleName } from "@/lib/i18n";
 import { speak, stopSpeaking, useSpeaking } from "@/lib/speech";
 import { useReducedMotion, useTheme } from "@/lib/theme";
 import { VehiclePicker } from "./Vehicles";
@@ -15,17 +17,17 @@ const FloodMap = dynamic(() => import("./FloodMap"), {
 const CADENCE_MS = 4000; // backend/API.md: 1 frame every 4 s, skipped while a request is in flight
 const REPEAT_MS = 2 * 60_000; // don't announce the same street twice within this window
 const MAX_SIDE = 1024;
-const NOTICE = "Mount your phone before driving. Don't interact with Waterline while the car is moving. Frames are analysed and never stored.";
 
 type Mode = "camera" | "demo";
 
 function ResultCard({ result, vehicleLabel, limit, next }: { result: DashcamResponse; vehicleLabel: string; limit: number; next: string }) {
   const theme = useTheme();
+  const t = useT();
   if (!result.water)
     return (
       <div className="bg-bg/90 backdrop-blur rounded-2xl border border-line p-5">
-        <p className="font-display text-[34px] sm:text-[44px] leading-none text-text">No water detected in view</p>
-        <p className="text-[15px] text-muted mt-2">That does not mean the road ahead is dry. If water covers the road, turn around.</p>
+        <p className="font-display text-[34px] sm:text-[44px] leading-none text-text">{t("dr.noWater")}</p>
+        <p className="text-[15px] text-muted mt-2">{t("dr.noWaterNote")}</p>
       </div>
     );
   const high = result.evidence?.high_cm ?? null;
@@ -33,21 +35,21 @@ function ResultCard({ result, vehicleLabel, limit, next }: { result: DashcamResp
   const color = PALETTE[theme][bandFor(state, high)];
   return (
     <div className="bg-bg/90 backdrop-blur rounded-2xl border-2 p-5 rise" style={{ borderColor: color }}>
-      <p className="eyebrow">Water ahead</p>
-      <p className="font-display text-[36px] sm:text-[48px] leading-none text-text mt-1">{result.street ?? "Nearby road"}</p>
+      <p className="eyebrow">{t("dr.waterAhead")}</p>
+      <p className="font-display text-[36px] sm:text-[48px] leading-none text-text mt-1">{result.street ?? t("dr.nearby")}</p>
       <p className="font-mono text-[40px] sm:text-[56px] leading-none tabular-nums mt-3" style={{ color }}>
-        {range(result.evidence?.low_cm ?? null, high)}
+        {range(result.evidence?.low_cm ?? null, high, t)}
       </p>
       <p className="text-[18px] mt-2 font-medium" style={{ color }}>
-        {describe(state, high)}
+        {describe(state, high, t)}
       </p>
       {result.over_limit && (
         <p className="text-[17px] text-text mt-2">
-          Over your {vehicleLabel.toLowerCase()}&apos;s {limit} cm limit. {next}
+          {t("dr.over", { v: vehicleLabel, n: limit, next })}
         </p>
       )}
       <p className="font-mono text-[11px] text-faint mt-3">
-        {result.filed ? "Filed as a dashcam report · frame not stored" : "Not filed: already reported on this drive, or no road within 30 m"}
+        {t(result.filed ? "dr.filed" : "dr.notFiled")}
       </p>
     </div>
   );
@@ -57,6 +59,8 @@ export default function Drive() {
   const theme = useTheme();
   const reduced = useReducedMotion();
   const speaking = useSpeaking();
+  const t = useT();
+  const lang = useLang();
   const [config, setConfig] = useState<Config | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [vehicle, setVehicle] = useState("sedan");
@@ -109,29 +113,29 @@ export default function Drive() {
         setRoute(r);
         if (r.avoided.length) setFlash({ ids: r.avoided.map((a) => a.edge_id), key: Date.now() });
       } catch (e) {
-        setError(`Reroute failed: ${(e as Error).message}`);
+        setError(t("dr.rerouteFailed", { e: (e as Error).message }));
       } finally {
         setRouting(false);
       }
     },
-    [dest, vehicle, replayT],
+    [dest, vehicle, replayT, t],
   );
 
   // The frame loop reads the latest state through a ref so the interval never restarts mid-drive.
-  const live = useRef({ pos, vehicle, dest, replayT, reroute, loadSegments });
+  const live = useRef({ pos, vehicle, dest, replayT, reroute, loadSegments, lang });
   useEffect(() => {
-    live.current = { pos, vehicle, dest, replayT, reroute, loadSegments };
+    live.current = { pos, vehicle, dest, replayT, reroute, loadSegments, lang };
   });
 
   const handle = (r: DashcamResponse) => {
     if (!r.water) return;
-    const { pos, dest, reroute, loadSegments } = live.current;
+    const { pos, dest, reroute, loadSegments, lang } = live.current;
     if (r.filed) loadSegments();
     const key = r.street ?? r.edge_id ?? r.speak ?? "";
     const now = Date.now();
     if (now - (announced.current.get(key) ?? -Infinity) < REPEAT_MS) return;
     announced.current.set(key, now);
-    if (r.speak) speak(r.speak);
+    if (r.speak) speak(r.speak, lang);
     if (r.over_limit && dest.trim() && pos) reroute(pos);
   };
 
@@ -150,7 +154,7 @@ export default function Drive() {
       try {
         blob = await new Promise<Blob | null>((res) => c.toBlob(res, "image/jpeg", 0.7));
       } catch {
-        setError("This video's host doesn't allow frame capture. Download it and choose the file instead.");
+        setError(t("dr.noCapture"));
         return;
       }
       if (!blob) return;
@@ -200,11 +204,11 @@ export default function Drive() {
           video.current.play().catch(() => {});
         }
       },
-      (e: Error) => setCamError(`Camera unavailable: ${e.message}`),
+      (e: Error) => setCamError(t("dr.camUnavail", { e: e.message })),
     );
     const watch = navigator.geolocation?.watchPosition(
       (p) => setPos({ lat: p.coords.latitude, lon: p.coords.longitude }),
-      (e) => setCamError(`Location unavailable: ${e.message}`),
+      (e) => setCamError(t("dr.locUnavail", { e: e.message })),
       { enableHighAccuracy: true, maximumAge: 2000 },
     );
     const v = video.current;
@@ -214,6 +218,7 @@ export default function Drive() {
       if (v) v.srcObject = null;
       if (watch !== undefined) navigator.geolocation.clearWatch(watch);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- a language switch must not restart the camera
   }, [running, mode]);
 
   // Keep the screen on while driving, where the browser supports it.
@@ -239,8 +244,8 @@ export default function Drive() {
     setRoute(null);
     announced.current.clear();
     if (mode === "camera") {
-      if (!navigator.mediaDevices?.getUserMedia) return setCamError("This browser can't open the camera here. It needs HTTPS.");
-      if (!navigator.geolocation) return setCamError("This browser can't share your location.");
+      if (!navigator.mediaDevices?.getUserMedia) return setCamError(t("dr.needHttps"));
+      if (!navigator.geolocation) return setCamError(t("dr.noGeo"));
     } else setPos(null);
     loadSegments();
     setRunning(true);
@@ -262,7 +267,7 @@ export default function Drive() {
     return (
       <div className="flex-1 flex items-center justify-center p-6 text-center">
         <div className="space-y-2">
-          <p className="font-display text-[28px] text-text">Can&apos;t reach the flood data service</p>
+          <p className="font-display text-[28px] text-text">{t("unreachable")}</p>
           <p className="text-sm text-muted font-mono">{loadError}</p>
         </div>
       </div>
@@ -270,11 +275,12 @@ export default function Drive() {
 
   const current = config?.vehicles.find((v) => v.id === vehicle);
   const showMap = running && config && (mode === "demo" || route);
-  const waiting = !pos ? (mode === "demo" ? "Click the map to set the camera position" : "Waiting for your location…") : "Watching the road…";
+  const vName = current ? vehicleName(t, lang, current) : "";
+  const waiting = t(!pos ? (mode === "demo" ? "dr.clickMap" : "dr.waitLoc") : "dr.watching");
 
   return (
     <div className="flex-1 flex flex-col md:flex-row min-h-0">
-      <section className="relative flex-1 min-h-0 bg-black overflow-hidden" aria-label="Drive mode">
+      <section className="relative flex-1 min-h-0 bg-black overflow-hidden" aria-label={t("nav.drive")}>
         <video
           ref={video}
           src={mode === "demo" ? (demoSrc ?? undefined) : undefined}
@@ -283,7 +289,7 @@ export default function Drive() {
           muted
           loop={mode === "demo"}
           playsInline
-          onError={() => mode === "demo" && demoSrc && setError("That video couldn't be played. Try a different file or URL.")}
+          onError={() => mode === "demo" && demoSrc && setError(t("dr.badVideo"))}
           className={`absolute inset-0 w-full h-full object-cover ${running ? "" : "opacity-30"}`}
         />
 
@@ -291,41 +297,39 @@ export default function Drive() {
           <div className="absolute inset-0 overflow-y-auto">
             <div className="max-w-md mx-auto px-4 py-6 space-y-5">
               <div>
-                <p className="eyebrow">Drive mode</p>
-                <h1 className="font-display text-[40px] leading-none text-text mt-1">Eyes on the road.</h1>
-                <p className="text-[14px] text-muted mt-2">
-                  Waterline reads a frame every 4 seconds, files any flood water it sees, and speaks up when water ahead is over your vehicle&apos;s limit.
-                </p>
+                <p className="eyebrow">{t("nav.drive")}</p>
+                <h1 className="font-display text-[40px] leading-none text-text mt-1">{t("dr.title")}</h1>
+                <p className="text-[14px] text-muted mt-2">{t("dr.intro", { brand: BRAND })}</p>
               </div>
               <p role="note" className="rounded-xl border border-warn/50 bg-warn-soft text-warn text-[15px] leading-snug p-4 font-medium">
-                {NOTICE}
+                {t("dr.notice", { brand: BRAND })}
               </p>
 
               {config && (
                 <div>
-                  <p className="eyebrow mb-2">Your vehicle</p>
+                  <p className="eyebrow mb-2">{t("veh.your")}</p>
                   <VehiclePicker vehicles={config.vehicles.filter((v) => !v.responder_only)} value={vehicle} onChange={setVehicle} />
                 </div>
               )}
 
               <label className="block">
-                <span className="eyebrow">Destination (optional)</span>
+                <span className="eyebrow">{t("dr.dest")}</span>
                 <input
                   value={dest}
                   onChange={(e) => setDest(e.target.value)}
-                  placeholder="Place name, or lat, lon"
+                  placeholder={t("dr.destPh")}
                   className="mt-1.5 w-full rounded-lg border border-line bg-panel-2 px-3 py-3 text-[15px] text-text placeholder:text-faint focus:outline-none focus:border-accent"
                 />
-                <span className="block text-[12px] text-muted mt-1">Set one to be rerouted when water ahead is over your limit.</span>
+                <span className="block text-[12px] text-muted mt-1">{t("dr.destHelp")}</span>
               </label>
 
               <div>
-                <p className="eyebrow mb-2">Source</p>
-                <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Video source">
+                <p className="eyebrow mb-2">{t("source")}</p>
+                <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label={t("dr.videoSource")}>
                   {(
                     [
-                      ["camera", "Phone camera"],
-                      ["demo", "Demo video"],
+                      ["camera", t("dr.camera")],
+                      ["demo", t("dr.demo")],
                     ] as const
                   ).map(([k, label]) => (
                     <button
@@ -341,11 +345,11 @@ export default function Drive() {
                 </div>
                 {mode === "demo" && (
                   <div className="mt-3 space-y-2 rounded-lg border border-line bg-panel/80 p-3">
-                    <p className="text-[12.5px] text-muted">Replays dashcam footage instead of the camera, at the replay time. After starting, click the map to set where the camera is.</p>
+                    <p className="text-[12.5px] text-muted">{t("dr.demoHelp")}</p>
                     <input
                       type="file"
                       accept="video/*"
-                      aria-label="Choose a video file"
+                      aria-label={t("dr.chooseFile")}
                       onChange={(e) => chooseFile(e.target.files?.[0])}
                       className="block w-full text-[13px] text-muted file:mr-3 file:rounded-md file:border-0 file:bg-panel-2 file:px-3 file:py-2 file:text-text"
                     />
@@ -359,12 +363,12 @@ export default function Drive() {
                       <input
                         value={demoUrl}
                         onChange={(e) => setDemoUrl(e.target.value)}
-                        placeholder="or a video URL"
-                        aria-label="Video URL"
+                        placeholder={t("dr.urlPh")}
+                        aria-label={t("dr.url")}
                         className="flex-1 min-w-0 rounded-lg border border-line bg-panel-2 px-3 py-2 text-[13px] text-text placeholder:text-faint focus:outline-none focus:border-accent"
                       />
                       <button type="submit" className="rounded-lg border border-line px-3 text-[13px] text-text hover:border-accent">
-                        Load
+                        {t("dr.load")}
                       </button>
                     </form>
                   </div>
@@ -378,7 +382,7 @@ export default function Drive() {
                 disabled={!config || (mode === "demo" && !demoSrc)}
                 className="w-full rounded-xl bg-accent text-accent-ink text-[17px] font-medium py-4 disabled:opacity-40 hover:brightness-110 transition"
               >
-                {mode === "demo" && !demoSrc ? "Choose a video to start" : "Start driving"}
+                {t(mode === "demo" && !demoSrc ? "dr.chooseToStart" : "dr.start")}
               </button>
             </div>
           </div>
@@ -387,17 +391,17 @@ export default function Drive() {
             <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2">
               <span className="glass rounded-full border border-line px-3 py-1.5 text-[13px] text-text flex items-center gap-2">
                 <span className={`w-2 h-2 rounded-full live-dot ${offline ? "bg-warn text-warn" : "bg-accent text-accent"}`} />
-                <span className="font-mono uppercase tracking-wider text-[11px]">{mode === "demo" ? "Demo" : "Live"}</span>
-                <span className="text-muted hidden sm:inline">{current?.label} · frame every 4 s</span>
+                <span className="font-mono uppercase tracking-wider text-[11px]">{mode === "demo" ? t("dr.demoTag") : t("live")}</span>
+                <span className="text-muted hidden sm:inline">{t("dr.cadence", { v: vName })}</span>
               </span>
               <div className="flex gap-2">
                 {speaking && (
                   <button onClick={stopSpeaking} className="glass rounded-full border border-line px-4 py-2 text-[14px] text-text">
-                    ■ Quiet
+                    {t("dr.quiet")}
                   </button>
                 )}
                 <button onClick={stop} className="rounded-full bg-danger text-white px-5 py-2 text-[15px] font-medium">
-                  Stop
+                  {t("dr.stop")}
                 </button>
               </div>
             </div>
@@ -405,20 +409,25 @@ export default function Drive() {
             <div className="absolute inset-x-3 bottom-3 space-y-2" aria-live="polite">
               {offline && (
                 <div role="alert" className="rounded-2xl border-2 border-warn bg-bg/90 p-4">
-                  <p className="text-[22px] sm:text-[26px] font-medium text-warn leading-tight">Depth model offline — no warnings</p>
-                  <p className="text-[14px] text-text mt-1">Waterline can&apos;t see water right now. Drive as if every flooded road is deep.</p>
+                  <p className="text-[22px] sm:text-[26px] font-medium text-warn leading-tight">{t("dr.offline")}</p>
+                  <p className="text-[14px] text-text mt-1">{t("dr.offlineNote", { brand: BRAND })}</p>
                 </div>
               )}
               {camError && <p className="bg-bg/90 backdrop-blur rounded-lg border border-danger/60 px-3 py-2 text-[14px] text-danger">{camError}</p>}
               {error && <p className="bg-bg/90 backdrop-blur rounded-lg border border-danger/60 px-3 py-2 text-[14px] text-danger">{error}</p>}
-              {route && !route.found && <p className="bg-bg/90 backdrop-blur rounded-lg border border-danger/60 px-3 py-2 text-[15px] text-text">{route.reason}</p>}
+              {route && !route.found && <p className="bg-bg/90 backdrop-blur rounded-lg border border-danger/60 px-3 py-2 text-[15px] text-text">{routerText(lang, route.reason)}</p>}
               {route?.found && (
                 <p className="bg-bg/90 backdrop-blur rounded-lg border border-accent/60 px-3 py-2 text-[15px] text-text">
-                  New route · {fmtDistance(route.distance_m)} · avoids {route.avoided.length} {route.avoided.length === 1 ? "street" : "streets"}
+                  {t("dr.newRoute", { d: fmtDistance(route.distance_m), n: route.avoided.length, streets: t(route.avoided.length === 1 ? "rt.street" : "rt.streets") })}
                 </p>
               )}
               {result && current ? (
-                <ResultCard result={result} vehicleLabel={current.label} limit={current.limit_cm} next={routing ? "Rerouting…" : route?.found ? "Take the new route." : "Turn around."} />
+                <ResultCard
+                  result={result}
+                  vehicleLabel={vehicleName(t, lang, current, true)}
+                  limit={current.limit_cm}
+                  next={t(routing ? "dr.rerouting" : route?.found ? "dr.takeNew" : "dr.turnAround")}
+                />
               ) : (
                 !offline && (
                   <div className="bg-bg/90 backdrop-blur rounded-2xl border border-line p-5">
@@ -449,7 +458,7 @@ export default function Drive() {
           />
           {mode === "demo" && (
             <p className="absolute top-2 left-2 right-12 glass rounded-md border border-line px-2 py-1 text-[12px] text-text pointer-events-none">
-              Click the map to set the camera position
+              {t("dr.clickMap")}
             </p>
           )}
         </aside>

@@ -292,7 +292,7 @@ _UPLOAD_MSG = {
            "no_water": "No flood water visible in this photo, so no report was filed. That doesn't mean the street is clear.",
            "failed": "This file couldn't be processed. Try a clear JPEG photo of the water.", None: "Rejected."},
     "es": {"queued": "En cola: el modelo de profundidad está arrancando o fuera de línea; procesará esto cuando esté disponible.", "done": "Procesado.",
-           "no_water": "No se ve agua de inundación en esta foto, así que no se registró ningún reporte. Eso no significa que la calle esté despejada.",
+           "no_water": "No se ve agua de inundación en esta foto, así que no se registró ningún reporte. Eso no significa que la calle esté libre de agua.",
            "failed": "No se pudo procesar este archivo. Pruebe con una foto JPEG clara del agua.", None: "Rechazado."},
 }
 

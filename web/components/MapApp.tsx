@@ -6,10 +6,11 @@ import { currentEvent, setEvent } from "@/lib/event";
 import { api, parsePoint, type Alerts, type Config, type EventInfo, type Point, type Risk, type RiskProps, type RouteResponse, type SegmentProps, type Segments } from "@/lib/api";
 import { LEGEND, PALETTE, bandFor, fmtClock, fmtTime } from "@/lib/depth";
 import { useReducedMotion, useTheme } from "@/lib/theme";
+import { useLang, useT, vehicleName, type Key } from "@/lib/i18n";
 import Chat from "./Chat";
 import EvidenceCard from "./EvidenceCard";
 import Hero from "./Hero";
-import RiskCard, { RISK_LABEL } from "./Risk";
+import RiskCard from "./Risk";
 import RouteSummary, { type Selection } from "./Route";
 import Timeline from "./Timeline";
 import { VehiclePicker } from "./Vehicles";
@@ -29,15 +30,16 @@ const isInferred = (p: SegmentProps) => p.basis === "inferred";
 
 function Legend({ open, onToggle, risk }: { open: boolean; onToggle: () => void; risk: boolean }) {
   const theme = useTheme();
+  const t = useT();
   return (
     <div className="glass rounded-xl border border-line shadow-[var(--shadow)] text-[12px] overflow-hidden">
       <button onClick={onToggle} aria-expanded={open} className="w-full flex items-center justify-between gap-3 px-3 py-2">
-        <span className="eyebrow">Reported water depth</span>
+        <span className="eyebrow">{t("lg.title")}</span>
         <span className={`text-faint transition-transform ${open ? "rotate-180" : ""}`} aria-hidden>
           ⌃
         </span>
       </button>
-      {!open && <p className="px-3 pb-2 -mt-1 text-[11px] text-muted">Uncoloured streets have no reports. That does not mean dry.</p>}
+      {!open && <p className="px-3 pb-2 -mt-1 text-[11px] text-muted">{t("lg.collapsed")}</p>}
       {open && (
         <div className="px-3 pb-3 fade">
           <ul className="grid grid-cols-2 md:grid-cols-1 gap-x-3 gap-y-1.5">
@@ -55,8 +57,8 @@ function Legend({ open, onToggle, risk }: { open: boolean; onToggle: () => void;
                           : { background: c, boxShadow: l.band === "float" ? `0 0 8px ${c}` : undefined }
                     }
                   />
-                  <span className="font-mono text-[11px] text-text w-12 shrink-0">{l.label}</span>
-                  <span className="text-muted hidden md:inline">{l.note}</span>
+                  <span className="font-mono text-[11px] text-text w-12 shrink-0">{l.label.startsWith("lg.") ? t(l.label as Key) : l.label}</span>
+                  <span className="text-muted hidden md:inline">{t(l.note)}</span>
                 </li>
               );
             })}
@@ -67,16 +69,18 @@ function Legend({ open, onToggle, risk }: { open: boolean; onToggle: () => void;
               style={{ background: `repeating-linear-gradient(90deg, ${PALETTE[theme].float} 0 5px, transparent 5px 8px)` }}
               aria-hidden
             />
-            Inferred from nearby reports + terrain
+            {t("lg.inferred")}
           </p>
           {risk && (
             <p className="mt-2 flex items-center gap-2.5 text-muted leading-snug">
               <span className="inline-block w-6 h-[9px] rounded-full shrink-0 blur-[2px]" style={{ background: PALETTE[theme].risk, opacity: 0.45 }} aria-hidden />
-              Flood risk next hour. {RISK_LABEL}.
+              {t("lg.risk", { label: t("risk.label") })}
             </p>
           )}
           <p className="mt-2.5 pt-2.5 border-t border-line text-muted leading-snug">
-            Uncoloured streets have <span className="text-text">no reports</span>. That does not mean they are dry.
+            {t("lg.noReportsA")}
+            <span className="text-text">{t("lg.noReportsB")}</span>
+            {t("lg.noReportsC")}
           </p>
         </div>
       )}
@@ -86,6 +90,7 @@ function Legend({ open, onToggle, risk }: { open: boolean; onToggle: () => void;
 
 function ReportsFeed({ segments, onOpen }: { segments: Segments | null; onOpen: (s: Selection) => void }) {
   const theme = useTheme();
+  const t = useT();
   const seen = new Set<string>();
   const rows = (segments?.features ?? [])
     .filter((f) => f.properties.state !== "unknown" && !isInferred(f.properties) && f.properties.evidence.length)
@@ -98,10 +103,10 @@ function ReportsFeed({ segments, onOpen }: { segments: Segments | null; onOpen: 
   return (
     <div>
       <p className="eyebrow mb-2 flex items-center gap-2">
-        <span className="w-1.5 h-1.5 rounded-full bg-accent text-accent live-dot" /> Latest reports
+        <span className="w-1.5 h-1.5 rounded-full bg-accent text-accent live-dot" /> {t("feed.title")}
       </p>
       {rows.length === 0 ? (
-        <p className="text-[13px] text-muted">No reports yet at this time. That does not mean the streets are dry.</p>
+        <p className="text-[13px] text-muted">{t("feed.empty")}</p>
       ) : (
         <ul className="divide-y divide-line border-y border-line">
           {rows.map((f) => {
@@ -114,9 +119,9 @@ function ReportsFeed({ segments, onOpen }: { segments: Segments | null; onOpen: 
                   className="w-full flex items-center gap-3 py-2.5 text-left hover:bg-panel-2/60 transition-colors"
                 >
                   <span className="w-2 h-2 rounded-full shrink-0" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
-                  <span className="flex-1 min-w-0 text-[13.5px] text-text truncate">{p.name ?? "Unnamed street"}</span>
+                  <span className="flex-1 min-w-0 text-[13.5px] text-text truncate">{p.name ?? t("unnamed")}</span>
                   <span className="font-mono text-[12px] tabular-nums" style={{ color }}>
-                    {p.state === "reported_unknown" || p.high_cm === null ? "depth ?" : `≤ ${Math.round(p.high_cm)} cm`}
+                    {p.state === "reported_unknown" || p.high_cm === null ? t("depth.q") : `≤ ${Math.round(p.high_cm)} cm`}
                   </span>
                   <span className="font-mono text-[11px] text-faint w-16 text-right">{fmtClock(new Date(p.obs_time).getTime())}</span>
                 </button>
@@ -131,6 +136,8 @@ function ReportsFeed({ segments, onOpen }: { segments: Segments | null; onOpen: 
 
 export default function MapApp() {
   const theme = useTheme();
+  const t_ = useT(); // `t` is the replay time here
+  const lang = useLang();
   const reduced = useReducedMotion();
   const [config, setConfig] = useState<Config | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -236,14 +243,14 @@ export default function MapApp() {
         .risk(iso, ctrl.signal)
         .then(setRisk)
         .catch((e: Error) => {
-          if (e.name !== "AbortError") setLayerError(`risk layer: ${e.message}`);
+          if (e.name !== "AbortError") setLayerError(t_("map.riskLayer", { err: e.message }));
         });
     }, 90);
     return () => {
       clearTimeout(id);
       ctrl.abort();
     };
-  }, [iso, riskOn]);
+  }, [iso, riskOn, t_]);
 
   useEffect(() => {
     if (!playing || !config) return;
@@ -268,7 +275,7 @@ export default function MapApp() {
       const from = fromPt ?? parsePoint(fromText);
       const to = toPt ?? parsePoint(toText);
       if (!from || !to) {
-        setRouteError("Enter a start and a destination, or pick them on the map.");
+        setRouteError(t_("map.needPoints"));
         return;
       }
       routeAbort.current?.abort();
@@ -284,7 +291,7 @@ export default function MapApp() {
         if (routeAbort.current === ctrl) setRouting(false);
       }
     },
-    [fromPt, toPt, fromText, toText, iso, showRoute],
+    [fromPt, toPt, fromText, toText, iso, showRoute, t_],
   );
 
   const chooseVehicle = (id: string) => {
@@ -319,7 +326,7 @@ export default function MapApp() {
     return (
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="max-w-sm text-center space-y-3">
-          <p className="font-display text-[28px] text-text">Can&apos;t reach the flood data service</p>
+          <p className="font-display text-[28px] text-text">{t_("unreachable")}</p>
           <p className="text-sm text-muted font-mono">{loadError}</p>
           <button
             onClick={() => {
@@ -328,7 +335,7 @@ export default function MapApp() {
             }}
             className="rounded-full bg-accent text-accent-ink text-sm px-5 py-2"
           >
-            Try again
+            {t_("retry")}
           </button>
         </div>
       </div>
@@ -338,7 +345,7 @@ export default function MapApp() {
     return (
       <div className="flex-1 flex items-center justify-center">
         <Hero />
-        <p className="shimmer-text font-mono text-sm">Loading flood map…</p>
+        <p className="shimmer-text font-mono text-sm">{t_("map.loading")}</p>
       </div>
     );
 
@@ -383,11 +390,11 @@ export default function MapApp() {
         <div className="absolute top-3 left-3 right-14 flex flex-wrap gap-2 pointer-events-none">
           <span className="pointer-events-auto glass rounded-full border border-line px-3 py-1 text-[11.5px] text-text flex items-center gap-2">
             <span className={`w-1.5 h-1.5 rounded-full live-dot ${config.live ? "bg-danger text-danger" : "bg-accent text-accent"}`} />
-            <span className="font-mono uppercase tracking-wider text-[10.5px]">{config.live ? "Live" : "Replay"}</span>
+            <span className="font-mono uppercase tracking-wider text-[10.5px]">{config.live ? t_("live") : t_("replay")}</span>
             {events.length > 1 ? (
               // ponytail: switching reloads the page (choice kept per tab), so no per-event state can go stale
               <select
-                aria-label="Flood event"
+                aria-label={t_("map.event")}
                 value={currentEvent() || events[0].id}
                 onChange={(e) => {
                   setEvent(e.target.value);
@@ -409,7 +416,7 @@ export default function MapApp() {
             <span key={i} className="pointer-events-auto rise glass rounded-full border border-danger/50 px-3 py-1 text-[11.5px] text-text flex items-center gap-2">
               <span className="text-danger" aria-hidden>▲</span>
               {a.properties.event}
-              <span className="text-muted font-mono text-[10.5px] hidden sm:inline">until {fmtTime(a.properties.expires, false)}</span>
+              <span className="text-muted font-mono text-[10.5px] hidden sm:inline">{t_("map.until", { time: fmtTime(a.properties.expires, false, lang) })}</span>
               {activeAlerts.length > 1 && <span className="text-muted">+{activeAlerts.length - 1}</span>}
             </span>
           ))}
@@ -420,25 +427,25 @@ export default function MapApp() {
               setRiskSel(null);
             }}
             aria-pressed={riskOn}
-            title={RISK_LABEL}
+            title={t_("risk.label")}
             className={`pointer-events-auto glass rounded-full border px-3 py-1 text-[11.5px] flex items-center gap-2 transition-colors ${riskOn ? "border-text/50 text-text" : "border-line text-muted hover:text-text"}`}
           >
             <span className={`relative w-6 h-3.5 rounded-full border transition-colors ${riskOn ? "border-text/60 bg-text/20" : "border-line-strong"}`} aria-hidden>
               <span className={`absolute left-0 top-[2px] w-2 h-2 rounded-full bg-current transition-transform ${riskOn ? "translate-x-[12px]" : "translate-x-[2px]"}`} />
             </span>
-            Flood risk next hour
+            {t_("risk.toggle")}
           </button>
           )}
           {layerError && (
-            <span className="pointer-events-auto glass rounded-full border border-warn/50 px-3 py-1 text-[11.5px] text-warn">Depth layer not updated: {layerError}</span>
+            <span className="pointer-events-auto glass rounded-full border border-warn/50 px-3 py-1 text-[11.5px] text-warn">{t_("map.layerError", { err: layerError })}</span>
           )}
         </div>
 
         {picking && (
           <div className="absolute top-14 left-1/2 -translate-x-1/2 rise glass rounded-full border border-accent px-4 py-1.5 text-[13px] text-text shadow-[var(--shadow)] z-10 whitespace-nowrap">
-            Tap the map to set the {picking === "from" ? "start" : "destination"}
+            {t_(picking === "from" ? "map.pickStart" : "map.pickDest")}
             <button className="ml-3 text-accent underline" onClick={() => setPicking(null)}>
-              Cancel
+              {t_("cancel")}
             </button>
           </div>
         )}
@@ -487,17 +494,17 @@ export default function MapApp() {
       <aside className="md:order-1 md:w-[420px] shrink-0 bg-panel md:border-r border-line flex flex-col md:min-h-0">
         <div className="px-4 pt-4 pb-3 border-b border-line">
           <div className="flex items-end justify-between gap-3">
-            <div>
+            <div className="min-w-0">
               <p className="eyebrow">{config.city}</p>
-              <p className="font-display text-[26px] leading-none text-text mt-1">Street conditions</p>
+              <p className="font-display text-[26px] leading-none text-text mt-1">{t_("map.title")}</p>
             </div>
             <dl className="flex gap-4 text-right">
               <div>
-                <dt className="eyebrow">Reported</dt>
+                <dt className="eyebrow">{t_("map.reported")}</dt>
                 <dd className="font-mono text-[20px] leading-tight text-text tabular-nums">{stats.reported}</dd>
               </div>
               <div>
-                <dt className="eyebrow">Deep / unknown</dt>
+                <dt className="eyebrow whitespace-nowrap">{t_("map.deep")}</dt>
                 <dd className="font-mono text-[20px] leading-tight tabular-nums" style={{ color: stats.deep ? PALETTE[theme].float : "var(--muted)" }}>
                   {stats.deep}
                 </dd>
@@ -507,10 +514,10 @@ export default function MapApp() {
         </div>
 
         <div className="px-4 py-3 border-b border-line">
-          <p className="eyebrow mb-2">Your vehicle</p>
+          <p className="eyebrow mb-2">{t_("veh.your")}</p>
           <VehiclePicker vehicles={vehicles} value={vehicle} onChange={chooseVehicle} />
           <p className="text-[12px] text-muted mt-2 leading-snug">
-            Routes avoid streets reported deeper than your vehicle&apos;s limit, and any water of unknown depth.
+            {t_("map.vehicleHelp")}
           </p>
         </div>
 
@@ -523,7 +530,7 @@ export default function MapApp() {
               onClick={() => setTab(k)}
               className={`relative flex-1 py-3 text-[13px] font-medium transition-colors ${tab === k ? "text-text" : "text-muted hover:text-text"}`}
             >
-              {k === "route" ? "Plan a route" : "Ask the agent"}
+              {t_(k === "route" ? "map.tabRoute" : "map.tabAsk")}
               <span className={`absolute left-4 right-4 -bottom-px h-0.5 rounded-full bg-accent transition-opacity ${tab === k ? "opacity-100" : "opacity-0"}`} />
             </button>
           ))}
@@ -543,10 +550,10 @@ export default function MapApp() {
                   <span className="absolute left-[13px] top-[26px] bottom-[26px] w-px bg-line-strong" aria-hidden />
                   {(
                     [
-                      ["from", "Start", fromText, setFromText, setFromPt, "Address, place, or lat, lon"],
-                      ["to", "Destination", toText, setToText, setToPt, "e.g. Memorial Hermann Hospital"],
+                      ["from", t_("map.start"), fromText, setFromText, setFromPt, t_("map.startPh"), t_("map.pickStartAria")],
+                      ["to", t_("map.dest"), toText, setToText, setToPt, t_("map.destPh"), t_("map.pickDestAria")],
                     ] as const
-                  ).map(([key, label, value, setText, setPt, ph]) => (
+                  ).map(([key, label, value, setText, setPt, ph, pickAria]) => (
                     <label key={key} className="flex items-center gap-2.5">
                       <span
                         className={`relative z-10 w-[11px] h-[11px] ml-2 shrink-0 rounded-full border-2 ${key === "from" ? "border-text bg-panel" : "border-accent bg-accent"}`}
@@ -565,7 +572,7 @@ export default function MapApp() {
                       <button
                         type="button"
                         onClick={() => setPicking(picking === key ? null : key)}
-                        aria-label={`Pick ${label.toLowerCase()} on the map`}
+                        aria-label={pickAria}
                         aria-pressed={picking === key}
                         className={`shrink-0 w-10 h-10 rounded-lg border flex items-center justify-center transition-colors ${picking === key ? "border-accent bg-accent text-accent-ink" : "border-line text-muted hover:text-text hover:border-line-strong"}`}
                       >
@@ -582,7 +589,11 @@ export default function MapApp() {
                   disabled={routing}
                   className="w-full rounded-lg bg-accent text-accent-ink text-[14px] font-medium py-3 disabled:opacity-60 hover:brightness-110 transition"
                 >
-                  {routing ? <span className="animate-pulse">Planning around reported water…</span> : `Find a ${current?.label.toLowerCase() ?? ""} route`}
+                  {routing ? (
+                    <span className="animate-pulse">{t_("map.planning")}</span>
+                  ) : (
+                    t_("map.find", { v: current ? vehicleName(t_, lang, current, true) : "" })
+                  )}
                 </button>
               </form>
               {routeError && <p className="text-[13px] text-danger">{routeError}</p>}
@@ -590,7 +601,7 @@ export default function MapApp() {
               {route && <RouteSummary key={JSON.stringify(route.found ? route.geometry.coordinates[0] : route.reason) + vehicle} route={route} onEvidence={open} />}
             </>
           ) : (
-            <Chat vehicle={vehicle} vehicleLabel={current?.label ?? "car"} t={iso} location={fromPt} onRoute={showRoute} onEvidence={open} onFiled={() => setReload((n) => n + 1)} />
+            <Chat vehicle={vehicle} vehicleLabel={current ? vehicleName(t_, lang, current) : t_("veh.car")} t={iso} location={fromPt} onRoute={showRoute} onEvidence={open} onFiled={() => setReload((n) => n + 1)} />
           )}
 
           <div className="md:hidden">
@@ -598,8 +609,8 @@ export default function MapApp() {
           </div>
 
           <p className="text-[11.5px] text-faint border-t border-line pt-3 leading-relaxed">
-            {BRAND} shows reported water only and never tells you a road is clear. If water covers the road,{" "}
-            <strong className="text-muted">Turn Around, Don&apos;t Drown</strong>.
+            {t_("map.footer", { brand: BRAND })}
+            <strong className="text-muted">{t_("slogan")}</strong>.
           </p>
         </div>
       </aside>

@@ -7,11 +7,14 @@ const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 const canSpeak = () => typeof window !== "undefined" && "speechSynthesis" in window;
 
-export function speak(text: string) {
+// es-US when Spanish is selected, for both synthesis and recognition.
+export const speechLang = (lang: "en" | "es") => (lang === "es" ? "es-US" : "en-US");
+
+export function speak(text: string, lang: "en" | "es" = "en") {
   if (!canSpeak() || !text) return;
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
-  u.lang = "en-US";
+  u.lang = speechLang(lang);
   u.onend = u.onerror = () => {
     if (current !== u) return; // the cancel() above ends the previous utterance; ignore it
     current = null;

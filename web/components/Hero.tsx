@@ -1,5 +1,6 @@
 "use client";
-import { BRAND, TAGLINE } from "@/lib/brand";
+import { BRAND } from "@/lib/brand";
+import { useT, type Key } from "@/lib/i18n";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { Mark } from "./Header";
 
@@ -39,6 +40,7 @@ function Wave({ d, opacity, line }: { d: number; opacity: number; line?: boolean
 export default function Hero() {
   const alreadySeen = useSyncExternalStore(() => () => {}, seen, () => true);
   const [closed, setClosed] = useState(false);
+  const t = useT();
   const [leaving, setLeaving] = useState(false);
   const open = !alreadySeen && !closed;
 
@@ -77,7 +79,7 @@ export default function Hero() {
       </div>
       {/* NWS thresholds, marked on the right like a depth gauge */}
       <div className="absolute right-4 sm:right-10 bottom-[8%] hidden sm:flex flex-col gap-7 font-mono text-[10px] text-muted text-right" aria-hidden>
-        {["60 cm · sweeps most vehicles", "30 cm · many vehicles float", "15 cm · stalls most cars"].map((s, i) => (
+        {(["hero.t60", "hero.t30", "hero.t15"] as Key[]).map((k, i) => [t(k), i] as const).map(([s, i]) => (
           <span key={s} className="rise flex items-center gap-2 justify-end" style={{ animationDelay: `${1.4 + i * 0.3}s` }}>
             {s} <span className="w-8 h-px bg-current" />
           </span>
@@ -89,28 +91,28 @@ export default function Hero() {
           <span className="text-accent">
             <Mark size={16} />
           </span>
-          {BRAND} · Hurricane Harvey replay · Houston, Aug 2017
+          {t("hero.eyebrow", { brand: BRAND })}
         </p>
         <h1 id="hero-title" className="rise font-display text-[44px] sm:text-[72px] leading-[0.98] tracking-tight text-text mt-5" style={{ animationDelay: "0.25s" }}>
-          More than half of flood deaths happen <em className="text-accent">in vehicles.</em>
+          {t("hero.h1")}
+          <em className="text-accent">{t("hero.h1em")}</em>
         </h1>
         <p className="rise font-display italic text-[22px] sm:text-[28px] text-text/90 mt-5" style={{ animationDelay: "0.45s" }}>
-          {TAGLINE}
+          {t("tagline")}
         </p>
         <p className="rise text-[15px] sm:text-[17px] text-muted max-w-xl mt-4 leading-relaxed" style={{ animationDelay: "0.6s" }}>
-          People drive into water because nothing tells them how deep it is. {BRAND} reads the depth from photos of the street, and plans routes
-          around reported deep water for the vehicle you drive.
+          {t("hero.body", { brand: BRAND })}
         </p>
         <div className="rise flex flex-wrap items-center gap-3 mt-9" style={{ animationDelay: "0.85s" }}>
           <button onClick={close} autoFocus className="rounded-full bg-accent text-accent-ink px-6 py-3 text-[15px] font-medium shadow-[0_0_40px_-8px_var(--accent)] hover:scale-[1.03] transition-transform">
-            Open the flood map
+            {t("hero.open")}
           </button>
           <button onClick={close} className="text-[13px] text-muted hover:text-text px-2 py-3">
-            Skip intro
+            {t("hero.skip")}
           </button>
         </div>
         <p className="rise font-mono text-[10.5px] text-faint mt-10" style={{ animationDelay: "1s" }}>
-          Source: NWS &ldquo;Turn Around, Don&apos;t Drown&rdquo;. {BRAND} shows where water has been reported. No report does not mean dry.
+          {t("hero.source", { brand: BRAND })}
         </p>
       </div>
     </div>

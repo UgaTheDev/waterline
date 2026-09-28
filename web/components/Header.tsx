@@ -1,7 +1,10 @@
 "use client";
-import { BRAND, TAGLINE } from "@/lib/brand";
+import { BRAND } from "@/lib/brand";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
+import { USE_MOCK } from "@/lib/api";
+import { setLang, useLang, useT, type Key } from "@/lib/i18n";
 import { setTheme, useTheme } from "@/lib/theme";
 
 // The mark: a tyre with the water standing at its hub, the waterline the product is named for.
@@ -16,23 +19,35 @@ export function Mark({ size = 22 }: { size?: number }) {
   );
 }
 
-const links = [
-  { href: "/", label: "Map", short: "Map" },
-  { href: "/upload", label: "Report water", short: "Report" },
-  { href: "/drive", label: "Drive mode", short: "Drive" },
-  { href: "/about", label: "How it works", short: "About" },
+const links: { href: string; label: Key; short: Key }[] = [
+  { href: "/", label: "nav.map", short: "nav.mapShort" },
+  { href: "/upload", label: "nav.report", short: "nav.reportShort" },
+  { href: "/drive", label: "nav.drive", short: "nav.driveShort" },
+  { href: "/about", label: "nav.about", short: "nav.aboutShort" },
 ];
 
 export default function Header() {
   const path = usePathname();
   const theme = useTheme();
+  const lang = useLang();
+  const t = useT();
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
+  // Phone widths are tight (390 px): the brand, link padding and icon buttons shrink below sm, and Spanish short labels stay short.
   return (
-    <header className="h-12 shrink-0 border-b border-line bg-panel flex items-center justify-between px-3 sm:px-4 relative z-30">
-      <Link href="/" title={TAGLINE} className="flex items-center gap-2 text-text">
+    <>
+    {USE_MOCK && (
+      <div role="status" className="bg-warn-soft text-warn text-center text-xs py-1.5 px-4 font-medium">
+        {t("mock.banner")}
+      </div>
+    )}
+    <header className="h-12 shrink-0 border-b border-line bg-panel flex items-center justify-between gap-1 px-3 sm:px-4 relative z-30">
+      <Link href="/" title={t("tagline")} className="flex items-center gap-1.5 sm:gap-2 text-text min-w-0">
         <Mark />
-        <span className="font-display text-[22px] leading-none tracking-tight">{BRAND}</span>
+        <span className="font-display text-[19px] sm:text-[22px] leading-none tracking-tight max-[350px]:hidden">{BRAND}</span>
       </Link>
-      <nav className="flex items-center gap-0.5 sm:gap-1 text-[13px]">
+      <nav className="flex items-center gap-0 sm:gap-1 text-[12.5px] sm:text-[13px]">
         {links.map((l) => {
           const active = l.href === "/" ? path === "/" : path.startsWith(l.href);
           return (
@@ -40,17 +55,26 @@ export default function Header() {
               key={l.href}
               href={l.href}
               aria-current={active ? "page" : undefined}
-              className={`px-2 sm:px-2.5 py-1.5 rounded-md transition-colors ${active ? "text-text bg-panel-2" : "text-muted hover:text-text"}`}
+              className={`px-1.5 sm:px-2.5 py-1.5 rounded-md whitespace-nowrap transition-colors ${active ? "text-text bg-panel-2" : "text-muted hover:text-text"}`}
             >
-              <span className="sm:hidden">{l.short}</span>
-              <span className="hidden sm:inline">{l.label}</span>
+              <span className="sm:hidden">{t(l.short)}</span>
+              <span className="hidden sm:inline">{t(l.label)}</span>
             </Link>
           );
         })}
         <button
+          onClick={() => setLang(lang === "es" ? "en" : "es")}
+          aria-label={t("lang.switch")}
+          title={t("lang.switch")}
+          lang={lang === "es" ? "en" : "es"}
+          className="ml-0.5 sm:ml-1 w-7 sm:w-8 h-8 rounded-md font-mono text-[11px] tracking-wide text-muted hover:text-text hover:bg-panel-2 flex items-center justify-center"
+        >
+          {t("lang.code")}
+        </button>
+        <button
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-          className="ml-1 w-8 h-8 rounded-md text-muted hover:text-text hover:bg-panel-2 flex items-center justify-center"
+          aria-label={t(theme === "dark" ? "theme.toLight" : "theme.toDark")}
+          className="w-7 sm:w-8 h-8 rounded-md text-muted hover:text-text hover:bg-panel-2 flex items-center justify-center"
         >
           {theme === "dark" ? (
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
@@ -65,5 +89,6 @@ export default function Header() {
         </button>
       </nav>
     </header>
+    </>
   );
 }

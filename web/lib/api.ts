@@ -2,6 +2,7 @@
 import * as mock from "./mock";
 import { session } from "./session";
 import { currentEvent } from "./event";
+import { currentLang } from "./i18n";
 
 export const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "");
 export const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "1";
@@ -161,6 +162,7 @@ export const mediaUrl = (u: string) => (USE_MOCK || /^https?:|^data:/.test(u) ? 
 
 const withSession = (form: FormData) => {
   if (!form.has("session")) form.append("session", session());
+  if (!form.has("lang")) form.append("lang", currentLang()); // reply language for dashcam speech and upload messages
   if (currentEvent() && !form.has("event")) form.append("event", currentEvent());
   return form;
 };
@@ -174,9 +176,9 @@ export const api = USE_MOCK
         req<Segments>(`/segments?t=${encodeURIComponent(t)}&session=${session()}`, { signal }),
       alerts: (t: string, signal?: AbortSignal) => req<Alerts>(`/alerts?t=${encodeURIComponent(t)}`, { signal }),
       route: (body: RouteRequest, signal?: AbortSignal) => req<RouteResponse>("/route", json({ ...body, session: session() }, signal)),
-      chat: (body: ChatRequest) => req<ChatResponse>("/chat", json({ ...body, session: session() })),
+      chat: (body: ChatRequest) => req<ChatResponse>("/chat", json({ ...body, session: session(), lang: currentLang() })),
       upload: (form: FormData) => req<UploadStatus>("/upload", { method: "POST", body: withSession(form) }),
-      uploadStatus: (id: string) => req<UploadStatus>(`/upload/${encodeURIComponent(id)}?session=${session()}`),
+      uploadStatus: (id: string) => req<UploadStatus>(`/upload/${encodeURIComponent(id)}?session=${session()}&lang=${currentLang()}`),
       dashcam: (form: FormData) => req<DashcamResponse>("/dashcam", { method: "POST", body: withSession(form) }),
       eval: () => req<EvalResult>("/eval"),
       risk: (t: string, signal?: AbortSignal) => req<Risk>(`/risk?t=${encodeURIComponent(t)}&session=${session()}`, { signal }),

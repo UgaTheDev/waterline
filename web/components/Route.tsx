@@ -1,6 +1,7 @@
 "use client";
 import type { Avoided, RouteResponse } from "@/lib/api";
 import { PALETTE, bandFor, fmtDistance } from "@/lib/depth";
+import { routerText, useLang, useT } from "@/lib/i18n";
 import { useTheme } from "@/lib/theme";
 
 export type Selection = {
@@ -15,10 +16,12 @@ export type Selection = {
 
 function AvoidedList({ items, onEvidence }: { items: Avoided[]; onEvidence: (s: Selection) => void }) {
   const theme = useTheme();
+  const t = useT();
+  const lang = useLang();
   if (!items.length) return null;
   return (
     <div>
-      <p className="eyebrow mb-2">Streets avoided · {items.length}</p>
+      <p className="eyebrow mb-2">{t("rt.avoidedN", { n: items.length })}</p>
       <ul className="space-y-1.5">
         {items.map((a, i) => {
           const color = PALETTE[theme][bandFor(a.state, a.high_cm)];
@@ -32,12 +35,12 @@ function AvoidedList({ items, onEvidence }: { items: Avoided[]; onEvidence: (s: 
                 <span className="w-1 rounded-full shrink-0" style={{ background: color, boxShadow: `0 0 10px ${color}` }} />
                 <span className="flex-1 min-w-0">
                   <span className="flex items-baseline justify-between gap-2">
-                    <span className="text-[13.5px] font-medium text-text truncate">{a.name ?? "Unnamed street"}</span>
+                    <span className="text-[13.5px] font-medium text-text truncate">{a.name ?? t("unnamed")}</span>
                     <span className="font-mono text-[12px] tabular-nums shrink-0" style={{ color }}>
-                      {a.high_cm === null ? "depth ?" : `≤ ${Math.round(a.high_cm)} cm`}
+                      {a.high_cm === null ? t("depth.q") : `≤ ${Math.round(a.high_cm)} cm`}
                     </span>
                   </span>
-                  <span className="block text-[12px] text-muted mt-0.5">{a.reason}</span>
+                  <span className="block text-[12px] text-muted mt-0.5">{routerText(lang, a.reason)}</span>
                 </span>
                 {a.evidence.length > 0 && <span className="self-center text-faint text-sm">›</span>}
               </button>
@@ -50,14 +53,17 @@ function AvoidedList({ items, onEvidence }: { items: Avoided[]; onEvidence: (s: 
 }
 
 export default function RouteSummary({ route, onEvidence }: { route: RouteResponse; onEvidence: (s: Selection) => void }) {
+  const t = useT();
+  const lang = useLang();
   if (!route.found) {
     return (
       <div className="space-y-3 rise">
         <div className="rounded-lg border border-danger/40 bg-danger-soft p-3.5">
-          <p className="eyebrow text-danger!">No route</p>
-          <p className="font-display text-[22px] leading-tight text-text mt-0.5">{route.reason}</p>
+          <p className="eyebrow text-danger!">{t("rt.none")}</p>
+          <p className="font-display text-[22px] leading-tight text-text mt-0.5">{routerText(lang, route.reason)}</p>
           <p className="text-[13px] text-text mt-2">
-            <strong className="text-danger">Turn Around, Don&apos;t Drown.</strong> Wait it out, or ask local officials for help.
+            <strong className="text-danger">{t("slogan")}.</strong>
+            {t("rt.noneHelp")}
           </p>
         </div>
         <AvoidedList items={route.avoided} onEvidence={onEvidence} />
@@ -68,13 +74,13 @@ export default function RouteSummary({ route, onEvidence }: { route: RouteRespon
     <div className="space-y-3">
       <div className="rise flex items-end justify-between gap-3">
         <div>
-          <p className="eyebrow">Route found</p>
+          <p className="eyebrow">{t("rt.found")}</p>
           <p className="font-mono text-[30px] leading-none text-text tabular-nums mt-1">{fmtDistance(route.distance_m)}</p>
         </div>
         <p className="text-right text-[12.5px] text-muted leading-snug">
-          avoids <span className="text-text font-medium">{route.avoided.length}</span> {route.avoided.length === 1 ? "street" : "streets"}
+          {t("rt.avoids")} <span className="text-text font-medium">{route.avoided.length}</span> {t(route.avoided.length === 1 ? "rt.street" : "rt.streets")}
           <br />
-          with reported water
+          {t("rt.withWater")}
         </p>
       </div>
       {(route.from?.label || route.to?.label) && (
@@ -85,12 +91,13 @@ export default function RouteSummary({ route, onEvidence }: { route: RouteRespon
       {route.warnings.map((w) => (
         <p key={w} className="rise rounded-lg border border-warn/40 bg-warn-soft p-2.5 text-[13px] text-text flex gap-2">
           <span className="text-warn" aria-hidden>▲</span>
-          {w}
+          {routerText(lang, w)}
         </p>
       ))}
       {route.unknown_m > 0 && (
         <p className="rise text-[12.5px] text-muted">
-          <span className="font-mono text-text">{fmtDistance(route.unknown_m)}</span> of this route has no recent reports: unknown, not dry.
+          <span className="font-mono text-text">{fmtDistance(route.unknown_m)}</span>
+          {t("rt.unknownTail")}
         </p>
       )}
       <AvoidedList items={route.avoided} onEvidence={onEvidence} />

@@ -4,6 +4,7 @@ import { Map as MLMap, Marker, NavigationControl, AttributionControl, setWorkerU
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Alerts, Config, Feature, LineString, Point, Risk, RiskProps, SegmentProps, Segments } from "@/lib/api";
 import { PALETTE, bandFor, range, type Band } from "@/lib/depth";
+import { useT } from "@/lib/i18n";
 import type { Theme } from "@/lib/theme";
 
 // Worker files are copied to public/ by scripts/copy-maplibre-worker.mjs (bundlers can't resolve its dynamic URL).
@@ -81,6 +82,7 @@ export default function FloodMap(props: Props) {
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<MLMap | null>(null);
   const latest = useRef(props);
+  const t = useT();
   const anim = useRef({ fresh: 0, flash: 0, route: 0 });
   const seen = useRef<Set<string>>(new Set());
   const callouts = useRef<Marker[]>([]);
@@ -333,7 +335,7 @@ export default function FloodMap(props: Props) {
       inner.className = `${props.reduced ? "" : "callout "}glass rounded-md border px-2 py-1 font-mono text-[10.5px] whitespace-nowrap shadow-lg`;
       inner.style.borderColor = pal[bandFor(f.properties.state, f.properties.high_cm)];
       inner.style.color = "var(--text)";
-      inner.textContent = `avoided · ${f.properties.name ?? "street"} · ${range(f.properties.low_cm, f.properties.high_cm)}`;
+      inner.textContent = t("map.avoidedCallout", { name: f.properties.name ?? t("street"), range: range(f.properties.low_cm, f.properties.high_cm, t) });
       node.appendChild(inner);
       return new Marker({ element: node, anchor: "bottom", offset: [0, -8] }).setLngLat(midpoint(f.geometry.coordinates)).addTo(m);
     });
@@ -353,7 +355,7 @@ export default function FloodMap(props: Props) {
   // MapLibre sets position:relative on its container, so the absolute box is a wrapper.
   return (
     <div className="absolute inset-0">
-      <div ref={el} className="w-full h-full" role="region" aria-label="Flood depth map" />
+      <div ref={el} className="w-full h-full" role="region" aria-label={t("map.aria")} />
     </div>
   );
 }

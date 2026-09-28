@@ -3,7 +3,6 @@ import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans, Instrument_Serif } from "next/font/google";
 import Header from "@/components/Header";
 import { themeBootScript } from "@/lib/theme";
-import { USE_MOCK } from "@/lib/api";
 import "./globals.css";
 
 const plex = IBM_Plex_Sans({ variable: "--font-plex", subsets: ["latin"], weight: ["400", "500", "600"] });
@@ -30,11 +29,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
       </head>
       <body className="min-h-full flex flex-col font-sans">
-        {USE_MOCK && (
-          <div role="status" className="bg-warn-soft text-warn text-center text-xs py-1.5 px-4 font-medium">
-            Sample data for UI development. These are not real flood reports.
-          </div>
-        )}
         <Header />
         {children}
       </body>
