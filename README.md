@@ -58,7 +58,7 @@ per-event breakdown. Labels are split 60/40 into dev and test and frozen; prompt
 
 The eval pool spans multiple US flood events (Hurricane Harvey 2017, Hurricane Ida 2021, Hurricane Helene
 2024, the July 2023 Vermont/northeastern floods), all public-domain or CC BY, deduplicated across events.
-Every photo is labeled independently by two annotators; where they disagree, the deeper (more
+Photos are labeled independently by up to two annotators; where they disagree, the deeper (more
 conservative) band is used for scoring, and we report Cohen's kappa plus raw agreement on the 15 cm
 sedan-passable boundary between them.
 
