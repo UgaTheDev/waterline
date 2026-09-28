@@ -75,7 +75,7 @@ def main():
         E["replay"]["default_t"] = a.default_t
     E.setdefault("map_view", view(E, []))
     save(E, p)
-    E = events.get(a.id)
+    E = events.registry(include_incomplete=True)[a.id]  # the builder must see an event before its graph exists
     d, need = E["dir"], lambda f: a.force or not (E["dir"] / f).exists()
 
     if need("graph.graphml.gz") and not (d / "graph.graphml").exists():

@@ -21,14 +21,21 @@ MAX_LOADED = int(os.getenv("MAX_LOADED_EVENTS", "2"))
 _REG = None  # id -> event dict (+ "dir"); tests may assign one
 
 
-def registry():
+def ready(e):
+    """An event is served only once its road graph exists; a half-built event (add_event.py mid-run) stays hidden."""
+    if "dir" not in e:  # synthetic events injected by tests
+        return True
+    return any((e["dir"] / f).exists() for f in ("graph.graphml", "graph.graphml.gz"))
+
+
+def registry(include_incomplete=False):
     global _REG
     if _REG is None:
         _REG = {}
         for p in sorted(DIR.glob("*/event.json")):
             e = json.loads(p.read_text())
             _REG[e["id"]] = {**e, "dir": p.parent}
-    return _REG
+    return _REG if include_incomplete else {k: e for k, e in _REG.items() if ready(e)}
 
 
 def get(event_id=None):
