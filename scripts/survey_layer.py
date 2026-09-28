@@ -122,6 +122,16 @@ def rain_peak(E, lat, lon, cache):
     return cache[key]
 
 
+def conformal_ft(E):
+    """The event's conformal upper-bound allowance in feet (eval/results/survey_calibration_<id>.json), else 0."""
+    p = events.CACHE.parent.parent / "eval/results" / f"survey_calibration_{E['id']}.json"
+    try:
+        cm = json.loads(p.read_text()).get("conformal_allowance_cm")
+    except (OSError, ValueError):
+        return 0.0
+    return (cm or 0.0) / FT
+
+
 def marks(E, peaks=True):
     """Usable marks in the event bbox; with peaks=True each gets "peak" (UTC ISO or None) and "peak_source"
     (provenance dict: {"source": usgs_peak_summary|stream_gauge|rainfall_peak, ...})."""
@@ -216,7 +226,9 @@ def main(E, hs=None):
             depth_ft = wse - low_ground  # lowest point of the road near the mark = deepest water
             if depth_ft <= 0:
                 continue  # road above the water surface: skip, never claim dry
-            band = QUALITY_FT[h["hwm_quality_id"]] + DEM_FT + SLOPE_FT
+            # Upper-bound allowance: the fixed error budget, widened to the event's split-conformal 95% allowance when one
+            # exists (scripts/calibrate_survey.py). Wider only ever adds false blocks, never misses.
+            band = max(QUALITY_FT[h["hwm_quality_id"]] + DEM_FT + SLOPE_FT, conformal_ft(E))
             dist = round(here.distance(Point(*R.to_m(*geom.interpolate(0.5, normalized=True).coords[0]))))
             obs.append({"obs_id": f"usgs-{h['hwm_id']}-{eid}", "edge_id": eid, "time": peak[:19] + "Z",
                         "lat": lat, "lon": lon, "status": "ok", "depth_cm": round(depth_ft * FT, 1),

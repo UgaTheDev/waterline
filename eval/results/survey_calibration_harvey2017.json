@@ -1,0 +1,9 @@
+{
+ "event": "harvey2017",
+ "alpha": 0.05,
+ "n": 22,
+ "conformal_allowance_cm": 68.9,
+ "shipped_allowance_cm_median": 28.3,
+ "shipped_covers": 21,
+ "note": "Residual = true - estimated depth at street-level marks (basement/ramp seed lines excluded). If the conformal allowance exceeds the shipped one, the shipped band under-covers at this confidence."
+}
