@@ -1,13 +1,13 @@
 """HTTP API. Contract: backend/API.md. Run: uvicorn backend.app:app --port 8000"""
 import json, re, time, uuid
-from collections import defaultdict, deque
+from collections import OrderedDict, defaultdict, deque
 from typing import Literal
 from datetime import datetime, timezone
 import httpx
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
 from shapely.geometry import Point
 from . import agent, alerts, depth, events, nowcast, profiles as P, responder, simulate, terrain
@@ -143,10 +143,31 @@ def config(event: str | None = None):
             "thresholds": P.THRESHOLDS, "live": False, "features": {"risk": P.NOWCAST_ENABLED and E["id"] == events.DEFAULT}}
 
 
+_seg_cache = OrderedDict()  # (event, t, data version) -> serialized FeatureCollection; only for views without sandboxed rows
+
+
+def _segments_body(t, session, event):
+    R = roads(event)
+    return json.dumps({"type": "FeatureCollection", "features": [R.feature(eid, _public(s)) for eid, s in _states(t, session, event=event).items()
+                                                                  if eid in R.edges]}, separators=(",", ":")).encode()
+
+
 @app.get("/segments")
 def segments(t: str | None = None, session: str | None = None, event: str | None = None):
-    R = roads(event)
-    return {"type": "FeatureCollection", "features": [R.feature(eid, _public(s)) for eid, s in _states(_t(t, event), session, event=event).items() if eid in R.edges]}
+    """Every visitor at the same replay time sees the same map unless they filed sandboxed reports, so the common case
+    is cached (load test: p95 25 s at 50 concurrent clients before). The key includes Store.version, so a new report
+    can never be hidden behind a stale entry."""
+    E, when = events.get(event), _t(t, event)
+    sid = _session(session)
+    if store.has_session_rows(sid, E["id"]):
+        return Response(_segments_body(when, sid, E["id"]), media_type="application/json")
+    key = (E["id"], when.isoformat(), Store.version)
+    body = _seg_cache.get(key)
+    if body is None:
+        body = _seg_cache[key] = _segments_body(when, None, E["id"])
+        while len(_seg_cache) > 64:
+            _seg_cache.popitem(last=False)
+    return Response(body, media_type="application/json")
 
 
 @app.get("/alerts")

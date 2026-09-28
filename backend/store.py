@@ -36,7 +36,17 @@ class Store:
             if c not in have:
                 self.db.execute(f"ALTER TABLE obs ADD COLUMN {c} {'REAL' if c in REAL else 'TEXT'}")
 
+    version = 0  # bumped on every write: response caches key on it, so they can never serve stale data
+
+    def has_session_rows(self, session, event):
+        if not session:
+            return False
+        with self.lock:
+            return self.db.execute("SELECT 1 FROM obs WHERE session_id=? AND COALESCE(event, ?)=? LIMIT 1",
+                                   (session, events.DEFAULT, event)).fetchone() is not None
+
     def put(self, o):
+        Store.version += 1
         row = {c: o.get(c) for c in COLS}
         row["time"] = o["time"].isoformat() if isinstance(o["time"], datetime) else o["time"]
         if isinstance(row["provenance"], (dict, list)):
