@@ -15,14 +15,20 @@
   "replay": {
     "start": "2021-09-01T12:00:00Z",
     "end": "2021-09-03T12:00:00Z",
-    "default_t": "2021-09-01T12:00:00Z"
+    "default_t": "2021-09-02T02:00:00Z"
   },
-  "credits": [],
+  "credits": [
+    "USGS Short-Term Network high-water marks (public domain)",
+    "USGS 3DEP 1 m bare-earth elevation (public domain)",
+    "Road network (c) OpenStreetMap contributors (ODbL)",
+    "NWS flood warnings (OKX) via Iowa Environmental Mesonet (public domain)",
+    "IEM IEMRE hourly rainfall reanalysis (Iowa Environmental Mesonet), used for peak timing"
+  ],
   "map_view": {
     "center": [
-      -73.866,
-      40.768
+      -73.8929,
+      40.7395
     ],
-    "zoom": 12
+    "zoom": 11.6
   }
 }
