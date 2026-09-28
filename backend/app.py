@@ -41,7 +41,7 @@ def _evidence(o):
     return {"obs_id": o["obs_id"], "image_url": o.get("image_url"), "reference": o.get("reference"), "depth_cm": o.get("depth_cm"),
             "low_cm": o.get("low_cm"), "high_cm": o.get("high_cm"), "confidence": o.get("confidence"),
             "time": o["time"].isoformat(), "rationale": o.get("rationale"), "credit": o.get("credit"),
-            "source_url": o.get("source_url"), "location_precision": o.get("precision") or "exact", "kind": o.get("kind") or "photo",
+            "source_url": o.get("source_url"), "location_precision": o.get("precision") or "exact", "kind": o.get("display_kind") or o.get("kind") or "photo",
             "street": o.get("street")}
 
 
@@ -79,7 +79,12 @@ def _states(t, session=None, routing=False, event=None):
     channels (eval/results/terrain_loo.json), so inference is display-only context, never what blocks or clears a road."""
     E = events.get(event)
     R = roads(E["id"])  # a report applies to both directions of the same street
-    obs = [o for o in store.all(_session(session), E["id"]) if not (routing and o.get("kind") == "inferred")]
+    display_only = {"inferred"} | (set() if events.survey_routes(E) else {"survey"})
+    obs = store.all(_session(session), E["id"])
+    if routing:
+        obs = [o for o in obs if o.get("kind") not in display_only]
+    else:  # shown hatched like inferred streets: estimated, not used for routing
+        obs = [{**o, "kind": "inferred", "display_kind": o["kind"]} if o.get("kind") == "survey" and "survey" in display_only else o for o in obs]
     return states_at([{**o, "edge_id": tw} for o in obs if o.get("edge_id") in R.edges for tw in R.twin_ids(o["edge_id"])], t)
 
 

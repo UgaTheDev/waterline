@@ -100,3 +100,19 @@ if __name__ == "__main__":
         if name.startswith("test_"):
             fn()
             print("ok", name)
+
+
+def test_survey_routing_gate():
+    """A survey layer routes only when its event's validation shows 0 street-level sedan misses."""
+    import json, tempfile, pathlib as pl
+    from backend import events as ev
+    assert ev.survey_routes(ev.get("harvey2017")), "Harvey validated 0/25: survey routes"
+    assert not ev.survey_routes({"id": "no_such_event_xyz"}), "unvalidated: display-only"
+    ida = ev.registry(include_incomplete=True).get("ida2021")
+    if ida:
+        assert not ev.survey_routes(ida), "Ida 5/63 street-level misses: display-only"
+    print("ok test_survey_routing_gate")
+
+
+if __name__ == "__main__":
+    test_survey_routing_gate()

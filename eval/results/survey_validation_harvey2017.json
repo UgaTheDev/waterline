@@ -1,0 +1,11 @@
+{
+ "event": "harvey2017",
+ "n": 26,
+ "median_err_cm": 11,
+ "mae_cm": 36,
+ "upper_bound_covers_truth": "25/26",
+ "dangerous_marks": 25,
+ "sedan_misses": 0,
+ "method": "HWM water surface (STN, NAVD88) minus 3DEP ground at the mark vs surveyed height above ground; quality <= 4",
+ "date": "2026-09-28"
+}

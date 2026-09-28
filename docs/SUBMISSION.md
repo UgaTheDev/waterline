@@ -51,6 +51,11 @@ let a sedan drive through. The target is 0. A prompt change that improves MAE bu
   kappa TODO(eval), 15 cm boundary agreement TODO(eval).
 - USGS survey layer (water surface minus lidar ground), checked against 26 surveyed marks: median error +11 cm (it errs
   deep, the safe side).
+- **The survey method doesn't transfer safely, and we gate it.** Validated in a second city (Hurricane Ida, NYC, 77 surveyed
+  marks): it reads unbiased there (median -1 cm on 66 street-level marks), not deep as in Houston, so its upper bound missed
+  5 of 63 dangerous marks for a sedan. Many all-marks misses were basement and ramp seed lines, water pooled below street
+  grade. So each event's survey layer must earn routing: it decides routes only with 0 street-level sedan misses in its own
+  validation (Harvey 0/25). Otherwise it's shown but display-only (`eval/results/survey_validation_*.json`).
 - Terrain inference, leave-one-out on the high-water marks: errors lean high (median +15 cm), and no reached dangerous mark was
   under-called for a sedan. But it reaches only 30-60% of held-out marks, so **inferred depths are display-only**.
 - **What didn't work, and we say so:** a "flood risk next hour" nowcast (rain + terrain). On held-out streets it scored AUC

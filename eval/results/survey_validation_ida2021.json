@@ -1,0 +1,21 @@
+{
+ "event": "ida2021",
+ "n": 77,
+ "median_err_cm": -4,
+ "mae_cm": 51,
+ "upper_bound_covers_truth": "51/77",
+ "dangerous_marks": 72,
+ "sedan_misses": 11,
+ "method": "HWM water surface (STN, NAVD88) minus 3DEP ground at the mark vs surveyed height above ground; quality <= 4",
+ "date": "2026-09-28",
+ "street_level_only": {
+  "excluded": "marks described as basement/ramp/stair/inside/below grade (water pooled below street level)",
+  "n": 66,
+  "median_err_cm": -1,
+  "mae_cm": 25,
+  "upper_bound_covers_truth": "50/66",
+  "dangerous_marks": 63,
+  "sedan_misses": 5
+ },
+ "note": "All-marks misses are basement/ramp seed lines: water pooled below street grade, measured against a basement floor, while 3DEP is street-level ground. Those produce no street observation (unknown, never dry). Street-level subset is the fair test."
+}

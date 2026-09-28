@@ -47,6 +47,19 @@ def get(event_id=None):
     return e
 
 
+def survey_routes(e):
+    """A USGS survey layer decides routing only if its event earned it: eval/results/survey_validation_<id>.json shows
+    0 sedan misses on street-level marks (n >= 20). Harvey: 0/25. Ida NYC: 5/63 (water surface ~unbiased there, so
+    the band is too tight). Unvalidated or failing -> the layer is shown on the map but is display-only."""
+    p = CACHE.parent.parent / "eval/results" / f"survey_validation_{e['id']}.json"
+    try:
+        v = json.loads(p.read_text())
+    except (OSError, ValueError):
+        return False
+    v = v.get("street_level_only", v)
+    return v.get("n", 0) >= 20 and v.get("sedan_misses", 1) == 0
+
+
 def inside(e, lat, lon):
     w, s, ea, n = e["bbox"]
     return s <= lat <= n and w <= lon <= ea
