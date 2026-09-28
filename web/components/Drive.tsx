@@ -34,7 +34,7 @@ function ResultCard({ result, vehicleLabel, limit, next }: { result: DashcamResp
   const state = high === null ? "reported_unknown" : "reported";
   const color = PALETTE[theme][bandFor(state, high)];
   return (
-    <div className="bg-bg/90 backdrop-blur rounded-2xl border-2 p-5 rise" style={{ borderColor: color }}>
+    <div role="alert" className="bg-bg/90 backdrop-blur rounded-2xl border-2 p-5 rise" style={{ borderColor: color }}>
       <p className="eyebrow">{t("dr.waterAhead")}</p>
       <p className="font-display text-[36px] sm:text-[48px] leading-none text-text mt-1">{result.street ?? t("dr.nearby")}</p>
       <p className="font-mono text-[40px] sm:text-[56px] leading-none tabular-nums mt-3" style={{ color }}>

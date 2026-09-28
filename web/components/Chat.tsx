@@ -283,7 +283,7 @@ export default function Chat(props: {
         <p className="flex items-center justify-between gap-3 font-mono text-[10.5px] text-faint -mt-2">
           <span>{t_("chat.voiceNote")}</span>
           {speaking && (
-            <button type="button" onClick={stopSpeaking} className="shrink-0 rounded-full border border-line px-2.5 py-0.5 text-muted hover:text-text">
+            <button type="button" onClick={stopSpeaking} className="shrink-0 min-h-6 rounded-full border border-line px-2.5 py-1 text-muted hover:text-text">
               {t_("chat.stop")}
             </button>
           )}

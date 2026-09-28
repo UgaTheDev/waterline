@@ -37,6 +37,12 @@ export default function Header() {
   // Phone widths are tight (390 px): the brand, link padding and icon buttons shrink below sm, and Spanish short labels stay short.
   return (
     <>
+    <a
+      href="#route-planner"
+      className="sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:z-50 focus-visible:top-2 focus-visible:left-2 focus-visible:rounded-md focus-visible:bg-accent focus-visible:text-accent-ink focus-visible:px-4 focus-visible:py-2 focus-visible:text-sm focus-visible:font-medium"
+    >
+      {t("skip.route")}
+    </a>
     {USE_MOCK && (
       <div role="status" className="bg-warn-soft text-warn text-center text-xs py-1.5 px-4 font-medium">
         {t("mock.banner")}
