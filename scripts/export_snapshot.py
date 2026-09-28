@@ -7,7 +7,7 @@ No server: FastAPI's TestClient drives backend/app.py in-process against a throw
 DB_PATH, so the export never touches session-scoped reports or uploads (no `session` query param
 is ever sent, and the temp DB starts empty regardless).
 
-    python -m scripts.export_snapshot [--step-hours N]
+    python -m scripts.export_snapshot [--step-hours N] [--event ID]
 
 A step whose output would be too large: rerun with a larger --step-hours (fewer times).
 """
@@ -31,6 +31,7 @@ def _fname(d):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--step-hours", type=float, default=3.0)
+    ap.add_argument("--event", default=None, help="event id (default: the default event)")
     args = ap.parse_args()
 
     tmp = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
@@ -52,7 +53,7 @@ def main():
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(json.dumps(obj, separators=(",", ":")))  # compact: gzips well, small on disk either way
 
-    eid = events.DEFAULT
+    eid = args.event or events.DEFAULT
     out = pathlib.Path(__file__).resolve().parent.parent / "web/public/snapshot" / eid
 
     cfg = get(f"/config?event={eid}")
