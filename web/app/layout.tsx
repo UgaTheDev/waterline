@@ -2,6 +2,8 @@ import { BRAND, TAGLINE } from "@/lib/brand";
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans, Instrument_Serif } from "next/font/google";
 import Header from "@/components/Header";
+import OfflineBanner from "@/components/OfflineBanner";
+import RegisterSw from "@/components/RegisterSw";
 import { themeBootScript } from "@/lib/theme";
 import "./globals.css";
 
@@ -12,6 +14,11 @@ const serif = Instrument_Serif({ variable: "--font-serif", subsets: ["latin"], w
 export const metadata: Metadata = {
   title: `${BRAND} · street-level flood depth`,
   description: `${TAGLINE} Flood depth from photos, routing that respects your vehicle.`,
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }, { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" }],
+    apple: "/icons/apple-touch-icon.png",
+  },
 };
 export const viewport: Viewport = {
   width: "device-width",
@@ -29,6 +36,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
       </head>
       <body className="min-h-full flex flex-col font-sans">
+        <OfflineBanner />
+        <RegisterSw />
         <Header />
         {children}
       </body>

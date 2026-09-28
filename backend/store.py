@@ -47,7 +47,12 @@ class Store:
             self.db.execute(f"INSERT OR REPLACE INTO obs VALUES ({','.join('?' * len(COLS))})", [row[c] for c in COLS])
 
     def get(self, obs_id):
-        r = self.db.execute("SELECT * FROM obs WHERE obs_id=?", (obs_id,)).fetchone()
+        # ponytail: sqlite3.Connection isn't safe for concurrent execute() from multiple threads
+        # (one uvicorn worker still runs sync endpoints across a threadpool of threads) -- under
+        # load this raised "sqlite3.InterfaceError: bad parameter or other API misuse". The lock
+        # already serializes writers; reads need it too, not a connection pool, at this traffic.
+        with self.lock:
+            r = self.db.execute("SELECT * FROM obs WHERE obs_id=?", (obs_id,)).fetchone()
         return dict(r, time=ts(r["time"])) if r else None
 
     def claim(self, obs_id):
@@ -56,9 +61,12 @@ class Store:
             return self.db.execute("UPDATE obs SET queue_state='processing' WHERE obs_id=? AND queue_state='queued'", (obs_id,)).rowcount == 1
 
     def queued(self):
-        return [dict(r, time=ts(r["time"])) for r in self.db.execute("SELECT * FROM obs WHERE queue_state='queued' ORDER BY time LIMIT 3")]
+        with self.lock:
+            return [dict(r, time=ts(r["time"])) for r in self.db.execute("SELECT * FROM obs WHERE queue_state='queued' ORDER BY time LIMIT 3")]
 
     def all(self, session=None, event=events.DEFAULT):
         """One event's replay cache + its global live reports + its reports sandboxed to this session."""
         q = "SELECT * FROM obs WHERE queue_state='done' AND (session_id IS NULL OR session_id=?) AND COALESCE(event, ?)=?"
-        return self.replay.get(event, []) + [dict(r, time=ts(r["time"])) for r in self.db.execute(q, (session or "", events.DEFAULT, event))]
+        with self.lock:
+            rows = self.db.execute(q, (session or "", events.DEFAULT, event)).fetchall()
+        return self.replay.get(event, []) + [dict(r, time=ts(r["time"])) for r in rows]
