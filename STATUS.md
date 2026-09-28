@@ -2,7 +2,7 @@
 
 <!-- Worker-owned. Update at every checkpoint, blocker, or decision. The orchestrator reads this file; keep the headings exactly. -->
 
-**Updated:** 2026-09-28 12:10  ·  **Stage:** building  ·  **Health:** 🟡 at risk
+**Updated:** 2026-09-28 13:45  ·  **Stage:** building  ·  **Health:** 🟡 at risk
 
 ## Needs Kush
 - **Token Factory key: $50 free credit, no paid plan needed** (blocks the live depth model, the agent and latency/cost numbers): (1) redeem the hackathon promo form https://nebius.com/promo-code?utm_promo_event_code=2026-devpost-global-ai-hack&utm_promo_code_type=Token_Factory&utm_promo_activation_code=NEBIUS-DEVPOST-GLOBAL26 with code `NEBIUS-DEVPOST-GLOBAL26` ($25); (2) join https://dev.nebius.com/builders and claim another $25; (3) create an API key and add `TF_KEY=...` to `.env` in this repo (never paste it in chat).
@@ -12,6 +12,7 @@
 - **Accept the Cosmos licenses on Hugging Face** (your HF token works, but both models return 403 until you do): open https://huggingface.co/nvidia/Cosmos-Reason2-8B and https://huggingface.co/nvidia/Cosmos-Transfer2.5-2B and accept each. Then run `.venv/bin/python -m scripts.check_keys` to confirm.
 - **Hugging Face read token** (done: it's in .env) (needed for the Cosmos weights on the GPU VM): create it at https://huggingface.co/settings/tokens and add `HF_TOKEN=...` to `.env`.
 - **Film a 5-15 s dry street clip** (daylight, steady, cars and curb in frame, no readable plates or close faces, not your own building) (blocks the Cosmos Transfer "see your street flooded" spike; no clean PD/CC-BY clip exists): phone held steady at eye level on an ordinary street, no faces or plates up close, then drop it in `data/raw/recon/street.mp4`.
+- **Native Spanish check (5 min):** read the 7 Spanish safety lines ("No se reporta agua profunda", "Sin reportes no significa seco", "¡Dé la vuelta, no se ahogue!"...) on the site with EN/ES set to ES, or ask a Spanish-speaking friend. Tell this session if any line reads wrong.
 - **Oct 28: make the repo public** (Nebius requires public + license): `gh repo edit UgaTheDev/waterline --visibility public --accept-visibility-change-consequences`
 
 ## Done since last update
@@ -20,6 +21,8 @@
 - Depth default switched to Nemotron Nano 2 VL on Token Factory; Cosmos Reason 2 kept as a benchmark.
 - v2 plan approved; v2 contracts frozen (backend/API.md) with stub routers for risk, responder and simulations.
 - Stream C merged: voice chat (push-to-talk, spoken replies) + /drive dashcam HUD, live on Vercel (sample mode).
+- Spanish UI + voice (es-US) + agent answers + Spanish 'safe'-claim guard; checked at 390 px.
+- Survey method validated in a second city: Ida NYC fails (5/63 street-level sedan misses), so each event's survey layer must earn routing (Harvey 0/25 passes). Conformal 95% band: Harvey needs 69 cm vs 28 cm shipped, so the upper bound now uses the conformal allowance (only more cautious).
 - Scale-up: multi-event architecture merged (event registry, per-event data, /events, web switcher, add_event.py); Harvey unchanged as default. Eval pool 182 photos across Harvey/Ida/Helene/Vermont (19 of 103 harvested kept after visual review), second-annotator mode, Wilson CIs, kappa. Both agents stalled; lead finished and verified their work.
 - Security review: 12 findings fixed (event-loop blocking, decompression bomb, unknown-depth wiped by a dry photo, chat/tool cost caps, upload retry storm, 'safe' guard bypasses, naive-time 500s, proxy IP trust, memory bounds, responder 500s); test_security_regressions covers them.
 - Hardening batch: site-wide hourly spend caps (dashcam/chat/upload); gzip (map payload 4.4 MB -> 166 KB); scripts/check_keys.py; eval pool deduped 212 -> 163 (group-aware split); Docker + Nebius VM deploy package (built and run locally, healthy); real-backend integration test (opening view fixed to the data, legend collapsed); docs/SUBMISSION.md + docs/VIDEO.md drafts; README refreshed.
