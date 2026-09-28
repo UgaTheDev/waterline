@@ -12,7 +12,7 @@
   --line-strong: #2a3847;
   --text: #e6edf3;
   --muted: #8c99a8;
-  --faint: #748496; /* AA-adjusted: was #5a6878 (contrast 3.46 on --bg, fails 4.5 for normal text) */
+  --faint: #8594a6; /* AA: >= 4.7 on --bg, --panel and the selected-card tint (#172c33); was #5a6878 */
   --accent: #67e8f9;
   --accent-ink: #032129;
   --accent-soft: rgb(103 232 249 / 0.12);
@@ -34,13 +34,13 @@
   --line-strong: #cfc8b8;
   --text: #12161b;
   --muted: #5a626d;
-  --faint: #666d76; /* AA-adjusted: was #8a919a (contrast 2.8 on --bg, fails 4.5 for normal text) */
-  --accent: #0e7490;
+  --faint: #5d646c; /* AA: >= 4.78 on --bg, panels and tints (#e5eeef, #ece5d6); was #8a919a */
+  --accent: #0c6680; /* AA: >= 5.07 on tinted panels (#efe0dc); was #0e7490 (4.17) */
   --accent-ink: #ffffff;
   --accent-soft: rgb(14 116 144 / 0.1);
   --danger: #be123c;
   --danger-soft: rgb(190 18 60 / 0.07);
-  --warn: #9c5f07; /* AA-adjusted: was #a16207 (contrast 4.32 on --bg, just under 4.5) */
+  --warn: #8a5406; /* AA: 5.00 on --warn-soft over --bg (#ece5d6), 5.50 on --bg; was #a16207 */
   --warn-soft: rgb(161 98 7 / 0.08);
   --water: rgb(14 116 144 / 0.35);
   --water-line: #0e7490;
