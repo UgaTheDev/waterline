@@ -2,7 +2,7 @@
 
 <!-- Worker-owned. Update at every checkpoint, blocker, or decision. The orchestrator reads this file; keep the headings exactly. -->
 
-**Updated:** 2026-09-27 18:30  ·  **Stage:** building  ·  **Health:** 🟡 at risk
+**Updated:** 2026-09-28 12:10  ·  **Stage:** building  ·  **Health:** 🟡 at risk
 
 ## Needs Kush
 - **Token Factory key: $50 free credit, no paid plan needed** (blocks the live depth model, the agent and latency/cost numbers): (1) redeem the hackathon promo form https://nebius.com/promo-code?utm_promo_event_code=2026-devpost-global-ai-hack&utm_promo_code_type=Token_Factory&utm_promo_activation_code=NEBIUS-DEVPOST-GLOBAL26 with code `NEBIUS-DEVPOST-GLOBAL26` ($25); (2) join https://dev.nebius.com/builders and claim another $25; (3) create an API key and add `TF_KEY=...` to `.env` in this repo (never paste it in chat).
@@ -20,6 +20,7 @@
 - Depth default switched to Nemotron Nano 2 VL on Token Factory; Cosmos Reason 2 kept as a benchmark.
 - v2 plan approved; v2 contracts frozen (backend/API.md) with stub routers for risk, responder and simulations.
 - Stream C merged: voice chat (push-to-talk, spoken replies) + /drive dashcam HUD, live on Vercel (sample mode).
+- Scale-up: multi-event architecture merged (event registry, per-event data, /events, web switcher, add_event.py); Harvey unchanged as default. Eval pool 182 photos across Harvey/Ida/Helene/Vermont (19 of 103 harvested kept after visual review), second-annotator mode, Wilson CIs, kappa. Both agents stalled; lead finished and verified their work.
 - Security review: 12 findings fixed (event-loop blocking, decompression bomb, unknown-depth wiped by a dry photo, chat/tool cost caps, upload retry storm, 'safe' guard bypasses, naive-time 500s, proxy IP trust, memory bounds, responder 500s); test_security_regressions covers them.
 - Hardening batch: site-wide hourly spend caps (dashcam/chat/upload); gzip (map payload 4.4 MB -> 166 KB); scripts/check_keys.py; eval pool deduped 212 -> 163 (group-aware split); Docker + Nebius VM deploy package (built and run locally, healthy); real-backend integration test (opening view fixed to the data, legend collapsed); docs/SUBMISSION.md + docs/VIDEO.md drafts; README refreshed.
 - Stream B merged but switched OFF (NOWCAST_ENABLED=0): on held-out streets AUC 0.43-0.68, no better than terrain-only; rain data is ~12 km and labels are Sep 1-2 reservoir-release peaks. About page says so plainly.
@@ -40,10 +41,11 @@
 | F eval | Kush labels + keys | blocked | see Needs Kush |
 | G web integration | stream-g-web (opus) | ✅ merged 0dcc181 | — |
 | Security review | security-review (opus, read-only) | ✅ 12 findings fixed + regression-tested | — |
-| Scale #3: multi-event + Ida 2021 NYC | worktree stream-events (opus) | running | event registry, add_event.py, Ida replay, event switcher |
-| Scale #2: bigger eval (+Ida/Helene/VT photos, 2nd annotator, CIs, kappa) | worktree stream-eval-scale (sonnet) | running | harvest + label.py annotator mode |
+| Scale #3: multi-event + Ida 2021 NYC | stream-events (opus; finished by lead) | ✅ merged bbab386 (Ida data pending) | `python -m scripts.add_event ida2021` once Overpass accepts queries |
+| Scale #2: bigger eval | stream-eval-scale (sonnet; finished by lead) | ✅ merged 105d322 | pool 182 photos, 4 events; needs labels |
 
 ## Blockers (not Kush)
+- Overpass (OSM) refused every road-graph query for Ida on 2026-09-28 (one of its two servers refuses all connections, the other is overloaded). Retry later; knobs OVERPASS_IP / OVERPASS_PAUSE_S in scripts/build_graph.py. Fallback: a Geofabrik extract + pyosmium (a package install, needs Kush's OK).
 - Ida/Helene/VT have almost no USGS peak-time summaries (Ida 5, VT 0, Helene 0): Ida peak times will be estimated from the nearest stream gauge or the rainfall peak, and labeled as estimated.
 
 ## Next checkpoint
