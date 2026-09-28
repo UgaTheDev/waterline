@@ -3,7 +3,7 @@ import csv, pathlib
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 rows = lambda p: list(csv.DictReader(open(p))) if p.exists() else []
-replay = [r for r in rows(ROOT / "data/cache/replay_manifest.csv") if r.get("use_in_replay") == "yes"]
+replay = [r for m in sorted((ROOT / "data/cache/events").glob("*/replay_manifest.csv")) for r in rows(m) if r.get("use_in_replay") == "yes"]
 labeled = {r["path"] for r in rows(ROOT / "eval/labels.csv")}
 evalset = [r for r in rows(ROOT / "eval/pool.csv") if r["path"] in labeled]
 out = ["# Sources", "", "All media is public domain or CC BY, credited below. Raw files are not in the repo (data/raw/ is gitignored).", "",

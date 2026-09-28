@@ -1,21 +1,22 @@
-"""Run Cosmos over the replay photos once and cache everything, so the hosted demo needs no GPU.
+"""Run the depth model over an event's replay photos once and cache everything, so the hosted demo needs no GPU.
 
-  COSMOS_URL=http://<vm>:8000/v1 COSMOS_KEY=... python -m scripts.batch_replay
-Reads data/cache/replay_manifest.csv; writes data/cache/replay_observations.json + data/cache/media/*.jpg.
-Resumable: observations already in the output are skipped. Stop the GPU VM afterwards.
+  python -m scripts.batch_replay [event_id]          (default harvey2017; needs TF_KEY, or DEPTH_PROVIDER=cosmos + COSMOS_URL)
+Reads data/cache/events/<id>/replay_manifest.csv; writes data/cache/events/<id>/replay_observations.json and the served
+frames to data/cache/media/*.jpg (obs ids are unique across events). Resumable: observations already in the output are
+skipped. If you used the Cosmos VM, stop it afterwards.
 """
 import csv, json, sys
-import osmnx as ox
-from backend import depth
+from backend import depth, events
 from backend.profiles import CACHE, ROOT
-from backend.router import Roads
 
-out_p, media = CACHE / "replay_observations.json", CACHE / "media"
+E = events.registry(include_incomplete=True)[sys.argv[1] if len(sys.argv) > 1 else events.DEFAULT]
+out_p, media = E["dir"] / "replay_observations.json", CACHE / "media"
 media.mkdir(parents=True, exist_ok=True)
 done = {o["obs_id"]: o for o in json.loads(out_p.read_text())} if out_p.exists() else {}
-roads = Roads(ox.load_graphml(CACHE / "graph.graphml"))
+roads = events.load(E["id"], "roads")
 c = depth.client()
-rows = list(csv.DictReader(open(CACHE / "replay_manifest.csv")))
+manifest = E["dir"] / "replay_manifest.csv"
+rows = list(csv.DictReader(open(manifest))) if manifest.exists() else []
 skipped = []
 for i, r in enumerate(rows):
     if r["obs_id"] in done:
