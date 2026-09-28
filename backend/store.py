@@ -1,11 +1,13 @@
-"""Observations: the committed replay cache (read-only) + live uploads in SQLite."""
+"""Observations: the committed per-event replay caches (read-only) + live uploads in SQLite. Every observation carries
+"event" (an id from backend/events.py); rows from databases made before events existed are the default event."""
 import json, os, pathlib, sqlite3, threading
 from datetime import datetime, timezone
-from .profiles import CACHE, DB_PATH
+from .profiles import DB_PATH
+from . import events
 
 COLS = ["obs_id", "edge_id", "time", "lat", "lon", "status", "depth_cm", "low_cm", "high_cm", "confidence",
         "reference", "rationale", "credit", "image_url", "queue_state", "media_path", "mime", "session_id", "kind", "street", "provenance", "half_life_min",
-        "flags", "attempts"]  # flags: JSON list of "person_in_water"|"occupied_vehicle"; never reaches /segments or routing
+        "flags", "attempts", "event"]  # flags: JSON list of "person_in_water"|"occupied_vehicle"; never reaches /segments or routing
 REAL = ("depth_cm", "low_cm", "high_cm", "confidence", "lat", "lon", "half_life_min", "attempts")
 
 
@@ -16,10 +18,14 @@ def ts(s):
 
 class Store:
     def __init__(self):
-        paths = [pathlib.Path(os.getenv("REPLAY_PATH", CACHE / "replay_observations.json")),  # override only for local dev fixtures
-                 CACHE / "survey_observations.json",  # USGS high-water marks minus 3DEP ground (scripts/survey_layer.py)
-                 CACHE / "inferred_observations.json"]  # stream A: terrain inference over the replay
-        self.replay = [dict(o, time=ts(o["time"])) for p in paths if p.exists() for o in json.loads(p.read_text())]
+        self.replay = {}  # event id -> read-only replay observations
+        for eid, e in events.registry().items():
+            d = e["dir"]
+            photos = pathlib.Path(os.getenv("REPLAY_PATH")) if os.getenv("REPLAY_PATH") and eid == events.DEFAULT else d / "replay_observations.json"
+            paths = [photos,  # REPLAY_PATH overrides the default event's photos, only for local dev fixtures
+                     d / "survey_observations.json",  # USGS high-water marks minus 3DEP ground (scripts/survey_layer.py)
+                     d / "inferred_observations.json"]  # stream A: terrain inference over the replay
+            self.replay[eid] = [dict(o, time=ts(o["time"]), event=eid) for p in paths if p.exists() for o in json.loads(p.read_text())]
         DB_PATH.parent.mkdir(parents=True, exist_ok=True)
         self.db = sqlite3.connect(DB_PATH, check_same_thread=False)
         self.db.row_factory = sqlite3.Row
@@ -52,7 +58,7 @@ class Store:
     def queued(self):
         return [dict(r, time=ts(r["time"])) for r in self.db.execute("SELECT * FROM obs WHERE queue_state='queued' ORDER BY time LIMIT 3")]
 
-    def all(self, session=None):
-        """Replay cache + global live reports + reports sandboxed to this session (filed while viewing the replay)."""
-        q = "SELECT * FROM obs WHERE queue_state='done' AND (session_id IS NULL OR session_id=?)"
-        return self.replay + [dict(r, time=ts(r["time"])) for r in self.db.execute(q, (session or "",))]
+    def all(self, session=None, event=events.DEFAULT):
+        """One event's replay cache + its global live reports + its reports sandboxed to this session."""
+        q = "SELECT * FROM obs WHERE queue_state='done' AND (session_id IS NULL OR session_id=?) AND COALESCE(event, ?)=?"
+        return self.replay.get(event, []) + [dict(r, time=ts(r["time"])) for r in self.db.execute(q, (session or "", events.DEFAULT, event))]

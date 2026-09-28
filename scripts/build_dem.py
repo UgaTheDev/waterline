@@ -1,16 +1,16 @@
-"""Bare-earth DEM for the whole BBOX at ~5 m/px from USGS 3DEP (public domain). Writes data/cache/dem_5m.npz.
+"""Bare-earth DEM for an event bbox at ~5 m/px from USGS 3DEP (public domain). Writes data/cache/events/<id>/dem_5m.npz.
 
 Vertical datum: NAVD88, stored as int16 CENTIMETRES (the 3DEP service returns float metres; x100, rounded).
   metres = z_cm / 100, feet = z_cm / 30.48. STN high-water mark elev_ft values are NAVD88 FEET: convert with * 30.48.
   NODATA = -32768. Grid: EPSG:4326, row 0 = north edge; cell (r, c) centre =
   (lon = w + (c + 0.5) * dx, lat = n - (r + 0.5) * dy), with bbox = [w, s, e, n] and shape = (rows, cols).
 3DEP's bare-earth surface is the ground under a bridge, not the deck (see scripts/survey_layer.py).
-    python -m scripts.build_dem
+    python -m scripts.build_dem [event_id]          (default harvey2017)
 """
 import io, math, time, urllib.parse, urllib.request
 import numpy as np
 from PIL import Image
-from backend.profiles import BBOX, CACHE
+from backend import events
 from scripts.survey_layer import DEM
 
 UA = {"User-Agent": "WaterlineFloodDemo/1.0 (https://github.com/UgaTheDev/waterline)"}
@@ -39,8 +39,8 @@ def tile(w, s, e, n, cols, rows):
     raise SystemExit("3DEP still failing after retries")
 
 
-def main():
-    w, s, e, n = BBOX
+def main(E):
+    w, s, e, n = E["bbox"]
     lat0 = (s + n) / 2
     dx, dy = RES_M / (111320 * math.cos(math.radians(lat0))), RES_M / 110540
     cols, rows = math.ceil((e - w) / dx), math.ceil((n - s) / dy)
@@ -54,7 +54,7 @@ def main():
             ok = a > -1000
             z[r0:r0 + h, c0:c0 + wd][ok] = np.round(a[ok] * 100).astype(np.int16)
             time.sleep(0.5)
-    out = CACHE / "dem_5m.npz"
+    out = E["dir"] / "dem_5m.npz"
     np.savez_compressed(out, z_cm=z, bbox=np.array([w, s, e, n]), shape=np.array(z.shape),
                         datum=np.array("NAVD88 centimetres (int16); nodata -32768; row 0 = north"))
     print(f"{out} {z.shape} {out.stat().st_size / 1e6:.1f} MB, nodata {np.mean(z == NODATA):.2%}, "
@@ -62,4 +62,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    main(events.get(sys.argv[1] if len(sys.argv) > 1 else None))
