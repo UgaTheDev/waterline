@@ -109,7 +109,7 @@ def hf_access():
     who.raise_for_status()
     access = {}
     for m in ("nvidia/Cosmos-Reason2-8B", "nvidia/Cosmos-Transfer2.5-2B"):
-        r = httpx.head(f"https://huggingface.co/{m}/resolve/main/config.json", headers=h, timeout=20, follow_redirects=True)
+        r = httpx.head(f"https://huggingface.co/{m}/resolve/main/README.md", headers=h, timeout=20, follow_redirects=True)  # Transfer2.5 has no config.json
         access[m] = "granted" if r.status_code == 200 else f"HTTP {r.status_code} (accept the license on the model page)"
     if any(v != "granted" for v in access.values()):
         raise RuntimeError(f"gated model access missing: {access}")
