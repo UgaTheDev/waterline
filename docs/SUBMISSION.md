@@ -43,8 +43,15 @@ and voices are already everywhere during a flood; nobody turns them into a map.
 ## Evaluation (the part we're proudest of)
 The headline metric is the **dangerous-road miss rate**: the share of photos with true depth over 15 cm that the system would
 let a sedan drive through. The target is 0. A prompt change that improves MAE but raises the miss rate is rejected.
-- Depth model, held-out test split: miss rate TODO(eval) (TODO(eval) with 95% confidence), abstain rate TODO(eval), MAE
-  TODO(eval) cm, interval coverage TODO(eval); per-event breakdown TODO(eval). The labels are depth bands on
+- Depth model (**provisional: Nemotron 3.5 Super VL via build.nvidia.com, a dev stand-in; replace with the Nebius run
+  before submitting**). First run, test split: 4 of 38 dangerous photos missed, all four "0 cm" readings with no reference
+  object (a patio, a boat, a house, wet pavement): "can't measure" had become "dry". New rule: a 0 cm reading must name what
+  it saw dry, otherwise it is unknown and blocks every vehicle. Because that rule came from reading test misses, the clean
+  check is the dev split, scored with the rule fixed beforehand: **0 of 49 dangerous photos missed (95% CI 0-7.3%)**,
+  across Harvey, Ida, Helene and Vermont. The price is caution: 15% of photos read unknown, 12 of 13 shallow-water roads are
+  blocked anyway, MAE 23 cm, and the depth range contains the labelled band only 34% of the time (ranges are tight; the
+  routing safety comes from the bound sitting above the sedan limit, not from calibrated intervals). Test split with the
+  rule: 0 of 38 (contaminated, reported for completeness). The labels are depth bands on
   public-domain/CC BY photos from four US flood events (Harvey 2017, Ida 2021, Helene 2024, July 2023 Vermont floods),
   deduplicated across events and group-split so near-identical photos can't sit on both sides. **Disclosure: the first
   annotator is Claude (an AI model, not a depth model under test)**, labelling from pixels only and taking the deeper band

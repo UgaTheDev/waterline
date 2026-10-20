@@ -1,0 +1,65 @@
+{
+ "n": 62,
+ "n_dangerous": 49,
+ "miss_rate": 0.0,
+ "misses": 0,
+ "miss_rate_ci95": [
+  0.0,
+  0.07270029673590504
+ ],
+ "miss_rate_upper_message": "miss rate \u2264 7.3% with 95% confidence",
+ "false_block_rate": 0.9230769230769231,
+ "abstain_rate": 0.14516129032258066,
+ "mae_cm": 23.0,
+ "coverage": 0.34,
+ "by_reference": {
+  "car tire": {
+   "n": 39,
+   "mae_cm": 22.9
+  },
+  "adult knee": {
+   "n": 6,
+   "mae_cm": 30.5
+  },
+  "curb": {
+   "n": 5,
+   "mae_cm": 10.6
+  },
+  "mailbox": {
+   "n": 3,
+   "mae_cm": 30.7
+  }
+ },
+ "by_event": {
+  "harvey2017": {
+   "n": 50,
+   "n_dangerous": 37,
+   "misses": 0
+  },
+  "helene2024": {
+   "n": 2,
+   "n_dangerous": 2,
+   "misses": 0
+  },
+  "ida2021": {
+   "n": 7,
+   "n_dangerous": 7,
+   "misses": 0
+  },
+  "vermont2023": {
+   "n": 3,
+   "n_dangerous": 3,
+   "misses": 0
+  }
+ },
+ "split": "dev",
+ "prompt_version": "7761260167",
+ "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+ "endpoint": "integrate.api.nvidia.com",
+ "inter_annotator_agreement": {
+  "n_photos": 99,
+  "kappa": 0.5569230769230769,
+  "boundary_agreement": 0.9090909090909091
+ },
+ "note": "MAE is not directly comparable to FloodVision's 8.75 cm: different images and labels."
+}
