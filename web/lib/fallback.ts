@@ -9,7 +9,7 @@ const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").re
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "1";
 const TIMEOUT_MS = 8000;
 const RETRY_MS = 60000;
-// The only event scripts/export_snapshot.py ships a snapshot for; must match backend/events.py DEFAULT.
+// Fallback when no event was picked; must match backend/events.py DEFAULT (every event has a snapshot).
 const SNAPSHOT_EVENT = "harvey2017";
 
 let offline = false;
@@ -26,8 +26,8 @@ export const useOffline = () =>
 export const isOffline = () => !USE_MOCK && offline;
 
 export const OFFLINE_BANNER =
-  "Live service unavailable: showing the archived Harvey replay. Routing, chat, uploads and Drive mode are paused.";
-export const paused = (feature: string) => `${feature} is paused: the live service is unavailable (showing the archived Harvey replay).`;
+  "Live service unavailable: showing the archived replay. Routing, chat, uploads and Drive mode are paused.";
+export const paused = (feature: string) => `${feature} is paused: the live service is unavailable (showing the archived replay).`;
 
 let retryTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -101,7 +101,7 @@ function nearest(times: string[], t?: string | null) {
 export type SnapshotKind = "config" | "events" | "eval" | "segments" | "alerts";
 
 // The static snapshot for a GET the live backend would have served, or null when this replay
-// event has no snapshot (nothing to fall back to; only SNAPSHOT_EVENT is shipped).
+// event has no snapshot (nothing to fall back to).
 export async function snapshotGet<T>(kind: SnapshotKind, t?: string | null): Promise<T | null> {
   const idx = await loadIndex();
   if (!idx) return null;

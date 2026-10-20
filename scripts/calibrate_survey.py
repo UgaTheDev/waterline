@@ -25,9 +25,7 @@ def conformal_q(residuals, alpha):
 
 def main(eid, alpha):
     E = events.registry(include_incomplete=True)[eid]
-    w, s, e, n = E["bbox"]
-    hs = [h for h in S.getj(f"{S.STN}/Events/{E['stn_event_id']}/HWMs.json") if s <= h["latitude_dd"] <= n and w <= h["longitude_dd"] <= e
-          and (h.get("height_above_gnd") or 0) > 0 and h.get("elev_ft") and h.get("vdatum_id") == S.NAVD88
+    hs = [h for h in S.hwms(E) if (h.get("height_above_gnd") or 0) > 0 and h.get("elev_ft") and h.get("vdatum_id") == S.NAVD88
           and (h.get("hwm_quality_id") or 9) <= S.MAX_QUALITY and not BELOW_GRADE.search(h.get("hwm_locationdescription") or "")]
     res, shipped = [], []
     for h in hs:

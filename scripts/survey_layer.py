@@ -15,14 +15,14 @@ Peak timing, in order (recorded per mark in "peak_source" and in each observatio
   3. else the hour of peak rainfall at the mark from the IEM IEMRE hourly point API.
   No time at all: the mark is dropped. A time is never invented silently.
 """
-import io, json, math, time, urllib.error, urllib.parse, urllib.request
+import io, json, math, pathlib, time, urllib.error, urllib.parse, urllib.request
 from datetime import datetime, timedelta, timezone
 import numpy as np
 from PIL import Image
 from shapely.geometry import Point
 from backend import events
 
-STN = "https://stn.wim.usgs.gov/STNServices"
+STN = "https://api.waterdata.usgs.gov/stnservices"  # moved from stn.wim.usgs.gov/STNServices in 2026; old host 301s to a web page
 NWIS = "https://waterservices.usgs.gov/nwis/iv/"
 IEMRE = "https://mesonet.agron.iastate.edu/api/1/iemre/hourly.json"
 DEM = "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer/exportImage"
@@ -44,6 +44,27 @@ TIMING_TEXT = {"usgs_peak_summary": "peak time estimated by USGS",
 def get(url, **kw):
     with urllib.request.urlopen(urllib.request.Request(url, headers=UA, **kw), timeout=120) as r:
         return r.read()
+
+
+def hwms(E):
+    """The event's marks inside its bbox, in the old STNServices field names. The 2026 API's event list has no elevations,
+    so each mark's detail record is fetched (in parallel) and the result cached in the event dir."""
+    cache = E["dir"] / "stn_hwms.json"
+    if cache.exists():
+        return json.loads(cache.read_text())
+    w, s, e, n = E["bbox"]
+    ids = [h["id"] for h in getj(f"{STN}/events/{E['stn_event_id']}/hwms/") if s <= h["latitude_dd"] <= n and w <= h["longitude_dd"] <= e]
+    num = lambda v: float(v) if v not in (None, "") else None
+    def one(i):
+        d = getj(f"{STN}/hwms/{i}/")
+        return {**d, "hwm_id": d["id"], "elev_ft": num(d.get("elev_ft")), "vdatum_id": d.get("vdatum"), "hwm_type_id": d.get("hwm_type"),
+                "hwm_quality_id": d.get("hwm_quality"), "peak_summary_id": d.get("peak_summary"), "height_above_gnd": num(d.get("height_above_ground")),
+                "hwm_locationdescription": d.get("location_description")}
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(8) as ex:  # ponytail: 8 at a time keeps a few hundred marks to ~a minute without hammering USGS
+        out = list(ex.map(one, ids))
+    cache.write_text(json.dumps(out))
+    return out
 
 
 def getj(url, tries=4):
@@ -136,8 +157,7 @@ def marks(E, peaks=True):
     """Usable marks in the event bbox; with peaks=True each gets "peak" (UTC ISO or None) and "peak_source"
     (provenance dict: {"source": usgs_peak_summary|stream_gauge|rainfall_peak, ...})."""
     w, s, e, n = E["bbox"]
-    hs = [h for h in getj(f"{STN}/Events/{E['stn_event_id']}/HWMs.json") if s <= h["latitude_dd"] <= n and w <= h["longitude_dd"] <= e
-          and h.get("elev_ft") and h.get("vdatum_id") == NAVD88 and (h.get("hwm_quality_id") or 9) <= MAX_QUALITY
+    hs = [h for h in hwms(E) if h.get("elev_ft") and h.get("vdatum_id") == NAVD88 and (h.get("hwm_quality_id") or 9) <= MAX_QUALITY
           and h.get("hwm_type_id") != 9]  # type 9 = USACE daily tape-downs of a RECEDING channel (Harvey, Sep 9-16), not peaks
     if not peaks:
         return hs
@@ -146,7 +166,7 @@ def marks(E, peaks=True):
         pid = h.get("peak_summary_id")
         if pid and pid not in summaries:
             try:
-                summaries[pid] = getj(f"{STN}/PeakSummaries/{pid}.json").get("peak_date")
+                summaries[pid] = getj(f"{STN}/peaksummaries/{pid}/").get("peak_date")
             except Exception:
                 summaries[pid] = None
             time.sleep(0.5)
@@ -238,7 +258,7 @@ def main(E, hs=None):
                         "reference": f"USGS high-water mark #{h['hwm_id']}, {dist} m away",
                         "rationale": f"Surveyed water surface {wse:.1f} ft minus lowest road ground {low_ground:.1f} ft (NAVD88); {timing_text(h)}.",
                         "credit": "USGS Short-Term Network + USGS 3DEP 1 m elevation, public domain",
-                        "source_url": f"{STN}/HWMs/{h['hwm_id']}.json", "precision": "exact", "image_url": None})
+                        "source_url": f"{STN}/hwms/{h['hwm_id']}/", "precision": "exact", "image_url": None})
         print(f"\r{i + 1}/{len(hs)} marks, {len(obs)} road observations", end="")
     p = E["dir"] / "survey_observations.json"
     p.write_text(json.dumps(obs, indent=1))
@@ -246,26 +266,47 @@ def main(E, hs=None):
     return obs
 
 
-def validate(E):
-    """Method check: water surface - DEM ground at the mark itself vs the surveyed height above ground."""
+def validate(E, out=None):
+    """Routing gate for this event's survey layer (backend/events.survey_routes reads the JSON). At every mark with a
+    surveyed height above ground: estimate = water surface - 3DEP ground at the mark, upper bound = estimate + the FIXED
+    allowance (not the conformal one: that is fitted on these same marks, so it would pass by construction). A sedan miss
+    = true depth > the sedan limit while the upper bound says it isn't. Street-level marks only: basement/ramp seed lines
+    measure water pooled below grade, which produces no street observation (unknown, never dry)."""
     import statistics
-    w, s, e, n = E["bbox"]
-    hs = [h for h in getj(f"{STN}/Events/{E['stn_event_id']}/HWMs.json") if s <= h["latitude_dd"] <= n and w <= h["longitude_dd"] <= e
-          and (h.get("height_above_gnd") or 0) > 0 and h.get("elev_ft") and h.get("vdatum_id") == NAVD88]
-    err = []
-    for h in hs:
-        try:
-            g = chip(h["latitude_dd"], h["longitude_dd"])(h["longitude_dd"], h["latitude_dd"])
-        except Exception:
-            continue
-        err.append((h["elev_ft"] - g - h["height_above_gnd"]) * FT)
-        time.sleep(0.5)
-    print(f"n={len(err)} median {statistics.median(err):+.0f} cm, MAE {statistics.mean(map(abs, err)):.0f} cm, "
-          f"underestimates >20 cm: {sum(x < -20 for x in err)}")
+    from backend.profiles import VEHICLES
+    from scripts.calibrate_survey import BELOW_GRADE
+    lim = VEHICLES["sedan"]["limit_cm"]
 
+    def stats(hs):
+        rows = []
+        for h in hs:
+            try:
+                g = float(chip(h["latitude_dd"], h["longitude_dd"])(h["longitude_dd"], h["latitude_dd"]))
+            except Exception:
+                continue
+            est, true = (h["elev_ft"] - g) * FT, h["height_above_gnd"] * FT
+            rows.append((est, true, est + (QUALITY_FT[h["hwm_quality_id"]] + DEM_FT + SLOPE_FT) * FT))
+            time.sleep(0.3)
+        if not rows:
+            return {"n": 0}
+        err = [e - t for e, t, _ in rows]
+        return {"n": len(rows), "median_err_cm": round(statistics.median(err)), "mae_cm": round(statistics.mean(map(abs, err))),
+                "upper_bound_covers_truth": f"{sum(t <= hi for _, t, hi in rows)}/{len(rows)}",
+                "dangerous_marks": sum(t > lim for _, t, _ in rows), "sedan_misses": sum(t > lim and hi <= lim for _, t, hi in rows)}
+
+    hs = [h for h in hwms(E) if (h.get("height_above_gnd") or 0) > 0 and h.get("elev_ft") and h.get("vdatum_id") == NAVD88
+          and (h.get("hwm_quality_id") or 9) <= MAX_QUALITY]
+    street = [h for h in hs if not BELOW_GRADE.search(h.get("hwm_locationdescription") or "")]
+    v = {"event": E["id"], **stats(hs), "method": "HWM water surface (STN, NAVD88) minus 3DEP ground at the mark vs surveyed "
+         "height above ground; quality <= 4; upper bound = fixed allowance", "date": time.strftime("%Y-%m-%d"),
+         "street_level_only": {"excluded": "marks described as basement/ramp/stair/inside/below grade", **stats(street)}}
+    p = pathlib.Path(out) if out else events.CACHE.parent.parent / "eval/results" / f"survey_validation_{E['id']}.json"
+    p.write_text(json.dumps(v, indent=1))
+    print(json.dumps(v))
+    return v
 
 if __name__ == "__main__":
     import sys
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     E = events.get(args[0] if args else None)
-    validate(E) if "--validate" in sys.argv else main(E)
+    validate(E, next((a[6:] for a in sys.argv if a.startswith("--out=")), None)) if "--validate" in sys.argv else main(E)

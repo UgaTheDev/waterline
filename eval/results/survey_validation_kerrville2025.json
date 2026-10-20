@@ -1,0 +1,20 @@
+{
+ "event": "kerrville2025",
+ "n": 36,
+ "median_err_cm": 20,
+ "mae_cm": 76,
+ "upper_bound_covers_truth": "32/36",
+ "dangerous_marks": 36,
+ "sedan_misses": 1,
+ "method": "HWM water surface (STN, NAVD88) minus 3DEP ground at the mark vs surveyed height above ground; quality <= 4; upper bound = fixed allowance",
+ "date": "2026-10-20",
+ "street_level_only": {
+  "excluded": "marks described as basement/ramp/stair/inside/below grade",
+  "n": 36,
+  "median_err_cm": 20,
+  "mae_cm": 76,
+  "upper_bound_covers_truth": "32/36",
+  "dangerous_marks": 36,
+  "sedan_misses": 1
+ }
+}

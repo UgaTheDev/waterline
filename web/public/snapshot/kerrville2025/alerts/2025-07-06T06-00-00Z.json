@@ -1,0 +1,1 @@
+{"type":"FeatureCollection","features":[{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-97.77,30.59],[-97.78,30.65],[-97.6,30.7],[-97.4,30.7],[-97.37,30.64],[-97.6,30.62],[-97.77,30.59]]]},"properties":{"event":"Flood Warning","issued":"2025-07-05T07:57:00Z","expires":"2025-07-06T08:08:00Z","source":"NWS via IEM"}}]}

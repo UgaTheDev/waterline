@@ -1,0 +1,1 @@
+{"type":"FeatureCollection","features":[{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-99.18,29.89],[-99.05,29.84],[-99.02,29.83],[-99.15,29.63],[-99.41,29.63],[-99.26,29.9],[-99.18,29.89]]]},"properties":{"event":"Flash Flood Warning","issued":"2025-07-04T04:41:00Z","expires":"2025-07-04T07:30:00Z","source":"NWS via IEM"}}]}

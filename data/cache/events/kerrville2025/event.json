@@ -1,0 +1,34 @@
+{
+  "id": "kerrville2025",
+  "name": "Central Texas floods (July 2025)",
+  "city": "Kerrville, TX",
+  "stn_event_id": 357,
+  "bbox": [
+    -99.3,
+    29.95,
+    -99.08,
+    30.09
+  ],
+  "wfo": [
+    "EWX"
+  ],
+  "replay": {
+    "start": "2025-07-03T18:00:00Z",
+    "end": "2025-07-06T12:00:00Z",
+    "default_t": "2025-07-04T11:45:00Z"
+  },
+  "credits": [
+    "USGS Short-Term Network high-water marks (public domain)",
+    "USGS 3DEP 1 m bare-earth elevation (public domain)",
+    "Road network (c) OpenStreetMap contributors (ODbL)",
+    "NWS flood warnings (EWX) via Iowa Environmental Mesonet (public domain)",
+    "USGS NWIS instantaneous stream gauge data, used for peak timing (public domain)"
+  ],
+  "map_view": {
+    "center": [
+      -99.1897,
+      30.046
+    ],
+    "zoom": 11.1
+  }
+}

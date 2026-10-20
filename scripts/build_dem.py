@@ -1,6 +1,6 @@
 """Bare-earth DEM for an event bbox at ~5 m/px from USGS 3DEP (public domain). Writes data/cache/events/<id>/dem_5m.npz.
 
-Vertical datum: NAVD88, stored as int16 CENTIMETRES (the 3DEP service returns float metres; x100, rounded).
+Vertical datum: NAVD88, stored as int32 CENTIMETRES (int16 overflowed above 327 m: Kerrville wrapped to negative heights) (the 3DEP service returns float metres; x100, rounded).
   metres = z_cm / 100, feet = z_cm / 30.48. STN high-water mark elev_ft values are NAVD88 FEET: convert with * 30.48.
   NODATA = -32768. Grid: EPSG:4326, row 0 = north edge; cell (r, c) centre =
   (lon = w + (c + 0.5) * dx, lat = n - (r + 0.5) * dy), with bbox = [w, s, e, n] and shape = (rows, cols).
@@ -45,18 +45,18 @@ def main(E):
     dx, dy = RES_M / (111320 * math.cos(math.radians(lat0))), RES_M / 110540
     cols, rows = math.ceil((e - w) / dx), math.ceil((n - s) / dy)
     e, s = w + cols * dx, n - rows * dy  # snap the far edges to whole cells
-    z = np.full((rows, cols), NODATA, np.int16)
+    z = np.full((rows, cols), NODATA, np.int32)
     for r0 in range(0, rows, TILE):
         for c0 in range(0, cols, TILE):
             h, wd = min(TILE, rows - r0), min(TILE, cols - c0)
             print(f"tile r{r0} c{c0} ({wd}x{h})")
             a = tile(w + c0 * dx, n - (r0 + h) * dy, w + (c0 + wd) * dx, n - r0 * dy, wd, h)
             ok = a > -1000
-            z[r0:r0 + h, c0:c0 + wd][ok] = np.round(a[ok] * 100).astype(np.int16)
+            z[r0:r0 + h, c0:c0 + wd][ok] = np.round(a[ok] * 100).astype(np.int32)
             time.sleep(0.5)
     out = E["dir"] / "dem_5m.npz"
     np.savez_compressed(out, z_cm=z, bbox=np.array([w, s, e, n]), shape=np.array(z.shape),
-                        datum=np.array("NAVD88 centimetres (int16); nodata -32768; row 0 = north"))
+                        datum=np.array("NAVD88 centimetres (int32); nodata -32768; row 0 = north"))
     print(f"{out} {z.shape} {out.stat().st_size / 1e6:.1f} MB, nodata {np.mean(z == NODATA):.2%}, "
           f"range {z[z != NODATA].min() / 100:.1f}..{z[z != NODATA].max() / 100:.1f} m")
 

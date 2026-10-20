@@ -1,0 +1,9 @@
+{
+ "event": "kerrville2025",
+ "alpha": 0.05,
+ "n": 36,
+ "conformal_allowance_cm": 232.0,
+ "shipped_allowance_cm_median": 37.5,
+ "shipped_covers": 32,
+ "note": "Residual = true - estimated depth at street-level marks (basement/ramp seed lines excluded). If the conformal allowance exceeds the shipped one, the shipped band under-covers at this confidence."
+}

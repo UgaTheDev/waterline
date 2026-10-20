@@ -11,7 +11,7 @@ Multi-event: the DEM and road graph are the ones of obs["event"] (default event 
 
 Stream owner decision: "survey" rows are skipped here; scripts/infer_replay.py seeds from the USGS marks' surveyed
 water surface directly instead (more exact than survey rows, which already subtract DEM ground).
-DEM: data/cache/events/<id>/dem_5m.npz from scripts/build_dem.py, NAVD88 int16 centimetres. All elevations here are NAVD88 cm.
+DEM: data/cache/events/<id>/dem_5m.npz from scripts/build_dem.py, NAVD88 integer centimetres (int16 in older caches, int32 since Kerrville). All elevations here are NAVD88 cm.
 """
 import math
 import os
