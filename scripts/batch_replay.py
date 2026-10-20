@@ -5,7 +5,7 @@ Reads data/cache/events/<id>/replay_manifest.csv; writes data/cache/events/<id>/
 frames to data/cache/media/*.jpg (obs ids are unique across events). Resumable: observations already in the output are
 skipped. If you used the Cosmos VM, stop it afterwards.
 """
-import csv, json, os, sys
+import csv, json, os, sys, urllib.parse
 os.environ.setdefault("WATERLINE_LOAD_ENV", "1")  # read keys from .env (shell values win)
 from backend import depth, events
 from backend.profiles import CACHE, ROOT
@@ -37,7 +37,8 @@ for i, r in enumerate(rows):
     done[r["obs_id"]] = {"obs_id": r["obs_id"], "edge_id": eid, "time": r["time"], "lat": float(r["lat"]), "lon": float(r["lon"]),
                          **depth.estimate(frame, c=c), "credit": r["credit"], "source_url": r["source_url"],
                          "location_source": r.get("location_source") or "exif", "precision": r.get("precision") or "exact",
-                         "image_url": f"/media/{r['obs_id']}.jpg"}
+                         "image_url": f"/media/{r['obs_id']}.jpg",
+                         "model": depth.model(), "endpoint": urllib.parse.urlparse(depth.P.TF_URL if depth.P.DEPTH_PROVIDER != "cosmos" else depth.P.COSMOS_URL).hostname}
     out_p.write_text(json.dumps(list(done.values()), indent=1))  # write every step: safe to interrupt
     print(f"{i + 1}/{len(rows)} {r['obs_id']} {done[r['obs_id']]['status']} high={done[r['obs_id']]['high_cm']}", file=sys.stderr)
 print(f"{len(done)} observations cached; skipped {len(skipped)}: {skipped[:5]}")
