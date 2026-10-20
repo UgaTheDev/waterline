@@ -48,9 +48,11 @@ let a sedan drive through. The target is 0. A prompt change that improves MAE bu
   public-domain/CC BY photos from four US flood events (Harvey 2017, Ida 2021, Helene 2024, July 2023 Vermont floods),
   deduplicated across events and group-split so near-identical photos can't sit on both sides. **Disclosure: the first
   annotator is Claude (an AI model, not a depth model under test)**, labelling from pixels only and taking the deeper band
-  when unsure: 106 of 182 photos labelled, 76 skipped because no road is visible (44 in the test split). A human labelled
-  TODO(eval) of them independently; disagreements score on the deeper (conservative) band. Human-vs-AI agreement: kappa
-  TODO(eval), 15 cm boundary agreement TODO(eval).
+  when unsure: 106 of 182 photos labelled, 76 skipped because no road is visible (44 in the test split). A second, independent
+  AI annotator (Claude Opus, blind to the first) labelled 99 of the same photos: kappa 0.56 (moderate), every disagreement
+  within one band, 91% agreement on the 15 cm sedan boundary; the second annotator read deeper 24 times, shallower 8.
+  Disagreements score on the deeper (conservative) band. Both annotators are AI, so this measures label consistency, not
+  ground truth.
 - USGS survey layer (water surface minus lidar ground), checked against 26 surveyed marks: median error +11 cm (it errs
   deep, the safe side).
 - **The survey method doesn't transfer safely, and we gate it.** Validated in a second city (Hurricane Ida, NYC, 77 surveyed

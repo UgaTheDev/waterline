@@ -1,0 +1,7 @@
+data/raw/eval_pool/61977183.jpg
+data/raw/eval_pool/61973812.jpg
+data/raw/eval_pool/ov-2818a848-d8af-41a0-ad92-2cf606846a32.jpg
+data/raw/eval_pool/62012894.jpg
+data/raw/eval_pool/61977238.jpg
+data/raw/eval_pool/ov-2db6d25f-1ae8-418e-9d3f-5f66dc332606.jpg
+data/raw/eval_pool/ov-f24fae5c-1ce9-4e66-9cad-edc084ca6808.jpg
