@@ -55,11 +55,12 @@ function goOffline() {
 // A GET/POST with an 8 s timeout. Throws (and flips `offline` on) on a network error, a 5xx, or a
 // timeout; an AbortError from the caller's own signal (e.g. React effect cleanup) passes through
 // unchanged, since that's a cancel, not the backend being down.
-export async function liveFetch(path: string, init?: RequestInit): Promise<Response> {
+// timeoutMs: model-backed calls (chat, uploads, dashcam) take 5-60 s; a slow answer must not flip the site offline.
+export async function liveFetch(path: string, init?: RequestInit, timeoutMs = TIMEOUT_MS): Promise<Response> {
   const ctrl = new AbortController();
   const onAbort = () => ctrl.abort();
   init?.signal?.addEventListener("abort", onAbort);
-  const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const r = await fetch(API_BASE + path, { ...init, signal: ctrl.signal });
     if (r.status >= 500) throw new Error(`server error (${r.status})`);

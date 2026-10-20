@@ -61,6 +61,10 @@ def test_router():
 
 def test_depth_parsing():
     assert finalize(parse("sorry, I can't tell"))["status"] == "unknown"
+    nothing = '{"water_visible": true, "reference_objects": [], "depth_cm": 0, "low_cm": 0, "high_cm": 0, "confidence": 0.6}'
+    assert finalize(parse(nothing))["status"] == "unknown", "0 cm with no reference object is unread, never dry"
+    curb = '{"water_visible": false, "reference_objects": [{"name": "curb", "typical_height_cm": 15, "water_line_fraction": 0}], "depth_cm": 0, "low_cm": 0, "high_cm": 0, "confidence": 0.8}'
+    assert finalize(parse(curb))["status"] == "ok", "a dry curb is a real dry reading"
     assert finalize(parse('{"depth_cm": -5}'))["high_cm"] is None, "invalid output must be unknown, not 0"
     e = finalize(parse('<think>tire...</think>{"water_visible": true, "reference_objects": [{"name": "car tire", '
                        '"typical_height_cm": 65, "water_line_fraction": 0.6}], "depth_cm": 39, "low_cm": 50, "high_cm": 30, '

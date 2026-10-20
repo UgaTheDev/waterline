@@ -86,8 +86,18 @@ def finalize(e: Estimate | None) -> dict:
     hi = min(300.0, hi * P.HIGH_SCALE + P.HIGH_MARGIN_CM)
     ref = e.reference_objects[0].name if e.reference_objects else None
     flags = [name for name, on in (("person_in_water", e.people_in_water), ("occupied_vehicle", e.occupied_vehicle)) if on]
-    return {"status": "ok", "water_visible": e.water_visible, "depth_cm": round(mid, 1), "low_cm": round(lo, 1), "high_cm": round(hi, 1),
-            "confidence": round(e.confidence, 2), "reference": ref, "rationale": e.rationale, "flags": flags}
+    return unread_zero({"status": "ok", "water_visible": e.water_visible, "depth_cm": round(mid, 1), "low_cm": round(lo, 1), "high_cm": round(hi, 1),
+                        "confidence": round(e.confidence, 2), "reference": ref, "rationale": e.rationale, "flags": flags})
+
+
+def unread_zero(o: dict) -> dict:
+    """ "0 cm" with nothing measured against it is "couldn't read", not "dry": a dry reading must name what it saw dry
+    (e.g. a curb). Eval 2026-10-20: all 4 test-split misses were no-road / boat / no-reference frames returned as ok 0 cm.
+    Idempotent, so run_eval also applies it to cached predictions."""
+    if o.get("status") == "ok" and (o.get("high_cm") or 0) <= 0 and not o.get("reference"):
+        return {**o, "status": "unknown", "depth_cm": None, "low_cm": None, "high_cm": None, "confidence": None,
+                "rationale": o.get("rationale") or "No reference object to measure against."}
+    return o
 
 
 def model():

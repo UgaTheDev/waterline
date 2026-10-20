@@ -147,6 +147,7 @@ def main():
 
     def predict(lab):
         pred = cache.get(lab["path"])
+        pred = pred and depth.unread_zero(pred)  # rules added after a prediction was cached still apply
         if pred is None:
             try:
                 pred = {"path": lab["path"], **depth.estimate(depth.prepare_image((ROOT / lab["path"]).read_bytes()), c=c)}

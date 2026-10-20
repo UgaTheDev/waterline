@@ -165,13 +165,15 @@ async function liveOrSnapshot<T>(path: string, kind: SnapshotKind, t: string | n
   throw new Error("Live service unavailable and no offline snapshot is available for this view.");
 }
 
+const MODEL_TIMEOUT_MS = 60000; // the depth model and the Nemotron agent reason for 5-60 s
+
 // Anything that needs a live server and has no snapshot (routing, chat, uploads, dashcam, ...):
 // fails fast with a clear "paused" message once the backend is known down, instead of waiting out
 // another 8 s timeout, and never fabricates a result.
-async function liveOnly<T>(path: string, init: RequestInit, feature: string): Promise<T> {
+async function liveOnly<T>(path: string, init: RequestInit, feature: string, timeoutMs?: number): Promise<T> {
   if (isOffline()) throw new Error(paused(feature));
   try {
-    return await toJson<T>(await liveFetch(path, init));
+    return await toJson<T>(await liveFetch(path, init, timeoutMs));
   } catch (e) {
     if ((e as Error).name === "AbortError" && init.signal?.aborted) throw e;
     throw new Error(paused(feature));
@@ -211,10 +213,10 @@ export const api = USE_MOCK
       alerts: (t: string, signal?: AbortSignal) => liveOrSnapshot<Alerts>(`/alerts?t=${encodeURIComponent(t)}`, "alerts", t, signal),
       route: (body: RouteRequest, signal?: AbortSignal) =>
         liveOnly<RouteResponse>("/route", json({ ...body, session: session() }, signal), "Routing"),
-      chat: (body: ChatRequest) => liveOnly<ChatResponse>("/chat", json({ ...body, session: session(), lang: currentLang() }), "The chat assistant"),
-      upload: (form: FormData) => liveOnly<UploadStatus>("/upload", { method: "POST", body: withSession(form) }, "Uploads"),
+      chat: (body: ChatRequest) => liveOnly<ChatResponse>("/chat", json({ ...body, session: session(), lang: currentLang() }), "The chat assistant", MODEL_TIMEOUT_MS),
+      upload: (form: FormData) => liveOnly<UploadStatus>("/upload", { method: "POST", body: withSession(form) }, "Uploads", MODEL_TIMEOUT_MS),
       uploadStatus: (id: string) => liveOnly<UploadStatus>(`/upload/${encodeURIComponent(id)}?session=${session()}&lang=${currentLang()}`, {}, "Upload status"),
-      dashcam: (form: FormData) => liveOnly<DashcamResponse>("/dashcam", { method: "POST", body: withSession(form) }, "Drive mode"),
+      dashcam: (form: FormData) => liveOnly<DashcamResponse>("/dashcam", { method: "POST", body: withSession(form) }, "Drive mode", MODEL_TIMEOUT_MS),
       eval: () => liveOrSnapshot<EvalResult>("/eval", "eval", null),
       risk: (t: string, signal?: AbortSignal) => liveOnly<Risk>(`/risk?t=${encodeURIComponent(t)}&session=${session()}`, { signal }, "Flood risk"),
       simulations: () => liveOnly<Simulation[]>("/simulations", {}, "Simulations"),
