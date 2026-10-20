@@ -2,12 +2,11 @@
 
 <!-- Worker-owned. Update at every checkpoint, blocker, or decision. The orchestrator reads this file; keep the headings exactly. -->
 
-**Updated:** 2026-10-20 17:10  ·  **Stage:** building  ·  **Health:** 🟡 at risk
+**Updated:** 2026-10-20 18:30  ·  **Stage:** building  ·  **Health:** 🟡 at risk
 
 ## Needs Kush
-- **Token Factory card rejected (2026-10-20)** (blocks the live depth model, the agent, eval numbers, and the Nebius requirement itself): check the bank app for a blocked foreign (Nebius B.V., NL) authorization; open a Billing ticket at https://console.nebius.com/support; message organizers via Devpost "Email the hackathon manager" (draft in session). Stopgap for development only: a build.nvidia.com key as `TF_URL=https://integrate.api.nvidia.com/v1` + `TF_KEY=nvapi-...` in .env (eval results record the endpoint; the submission must cite Nebius runs).
+- **Token Factory card rejected (2026-10-20; Nebius Billing ticket opened by Kush, waiting)** (blocks the live depth model, the agent, eval numbers, and the Nebius requirement itself): check the bank app for a blocked foreign (Nebius B.V., NL) authorization; open a Billing ticket at https://console.nebius.com/support; message organizers via Devpost "Email the hackathon manager" (draft in session). Stopgap for development only: a build.nvidia.com key as `TF_URL=https://integrate.api.nvidia.com/v1` + `TF_KEY=nvapi-...` in .env (eval results record the endpoint; the submission must cite Nebius runs).
 - **Token Factory key: $50 free credit** (once the card works): (1) redeem the hackathon promo form https://nebius.com/promo-code?utm_promo_event_code=2026-devpost-global-ai-hack&utm_promo_code_type=Token_Factory&utm_promo_activation_code=NEBIUS-DEVPOST-GLOBAL26 with code `NEBIUS-DEVPOST-GLOBAL26` ($25); (2) join https://dev.nebius.com/builders and claim another $25; (3) create an API key and add `TF_KEY=...` to `.env` in this repo (never paste it in chat).
-- **Tavily key** ($25 free via the same Builder Program): claim it there, then add `TAVILY_KEY=...` to `.env`.
 - **Eval agreement pass (~15 min, optional but raises credibility)**: Claude labelled the pool (106 labelled, 76 no-road skips; disclosed as annotator "claude"). Run `python3 eval/label.py`, handle `kush`, open http://localhost:8766/?mode=agreement and label ~30 photos: gives a human-vs-AI kappa; consensus takes the deeper band.
 - **Nebius AI Cloud + $25 deposit** (no free AI Cloud credits for remote participants; only in-person Builders & Brews events get them) (blocks backend hosting on a CPU VM, the Cosmos Reason 2 benchmark and the Cosmos Transfer spike): create the account and deposit, then tell this session so it can set up the VMs with you watching.
 - **Accept the Cosmos licenses on Hugging Face** (your HF token works, but both models return 403 until you do): open https://huggingface.co/nvidia/Cosmos-Reason2-8B and https://huggingface.co/nvidia/Cosmos-Transfer2.5-2B and accept each. Then run `.venv/bin/python -m scripts.check_keys` to confirm.
@@ -18,6 +17,7 @@
 - **Oct 28: make the repo public** (Nebius requires public + license): `gh repo edit UgaTheDev/waterline --visibility public --accept-visibility-change-consequences`
 
 ## Done since last update
+- 2026-10-20: build.nvidia.com key works (dev stand-in): agent on nemotron-3.5-lightning-30b-a3b, depth on nemotron-3.5-super-vl-120b-a12b (needed DEPTH_MAX_TOKENS: reasoning ate 1,200). Tavily key OK. First 3 real Harvey replay readings (40/38/12 cm), tagged model+endpoint. Test-split eval running (free tier 500s at 8 workers; retrying at 2).
 - 2026-10-20: Kerrville 2025 (TX Hill Country) event: graph from Geofabrik PBF, 904 survey obs on 409 streets, 2,535 inferred on 886; survey gate FAILS (1/36 sedan miss; conformal 95% allowance 232 cm vs 37.5 shipped) -> display-only. Bbox excludes Camp Mystic; featuring this event in the video is Kush's call (deaths, children).
 - 2026-10-20: USGS moved the STN API (stn.wim.usgs.gov -> api.waterdata.usgs.gov/stnservices, new fields); ported, verified by reproducing Harvey calibration byte-for-byte and Ida validation exactly. Validation JSON is now produced by `python -m scripts.survey_layer <id> --validate` (was a one-off).
 - 2026-10-20: DEM cache bug fixed: int16 cm overflowed above 327 m (Kerrville wrapped negative -> 0 inferred); now int32. Harvey/Ida unaffected (< 327 m).
