@@ -120,7 +120,7 @@ const en = {
   "risk.body":
     "Heavy recent rain over low ground near a bayou makes water likely to collect here. Nobody has measured it. A low or missing risk does not mean the street is dry; check the depth reports and look before you drive.",
   // evidence card
-  "ev.photo": "Photo · depth read by Cosmos Reason 2",
+  "ev.photo": "Photo · depth read by an NVIDIA vision model",
   "ev.survey": "USGS survey · estimated peak depth, surveyed after the flood",
   "ev.dashcam": "Dashcam frame · not stored",
   "ev.voice": "Voice report · low confidence",
@@ -284,7 +284,7 @@ const en = {
   "up.h1a": "One photo of the street ",
   "up.h1b": "is a depth gauge.",
   "up.intro":
-    "Cosmos Reason 2 finds something in the frame with a known height (a curb, a tire, a car door) and reads where the waterline sits on it. Your report joins the map and changes the routes other drivers get.",
+    "The NVIDIA vision model finds something in the frame with a known height (a curb, a tire, a car door) and reads where the waterline sits on it. Your report joins the map and changes the routes other drivers get.",
   "up.s1": "Frame it",
   "up.s1b": "Get the water and a car, curb or sign post in the same shot.",
   "up.s2": "Tag the spot",
@@ -460,7 +460,7 @@ const es: Record<Key, string> = {
   "risk.close": "Cerrar estimación de riesgo",
   "risk.body":
     "La lluvia fuerte reciente sobre terreno bajo cerca de un bayou hace probable que el agua se acumule aquí. Nadie la ha medido. Un riesgo bajo o ausente no significa que la calle esté seca; revise los reportes de profundidad y mire antes de manejar.",
-  "ev.photo": "Foto · profundidad leída por Cosmos Reason 2",
+  "ev.photo": "Foto · profundidad leída por un modelo de visión de NVIDIA",
   "ev.survey": "Medición del USGS · profundidad máxima estimada, medida después de la inundación",
   "ev.dashcam": "Imagen de cámara del auto · no se guarda",
   "ev.voice": "Reporte de voz · confianza baja",
@@ -622,7 +622,7 @@ const es: Record<Key, string> = {
   "up.h1a": "Una foto de la calle ",
   "up.h1b": "es un medidor de profundidad.",
   "up.intro":
-    "Cosmos Reason 2 encuentra algo en la imagen con una altura conocida (una banqueta, una llanta, la puerta de un auto) y lee dónde queda la línea del agua. Su reporte se suma al mapa y cambia las rutas que reciben otros conductores.",
+    "El modelo de visión de NVIDIA encuentra algo en la imagen con una altura conocida (una banqueta, una llanta, la puerta de un auto) y lee dónde queda la línea del agua. Su reporte se suma al mapa y cambia las rutas que reciben otros conductores.",
   "up.s1": "Encuádrela",
   "up.s1b": "Capte el agua y un auto, una banqueta o un poste en la misma foto.",
   "up.s2": "Marque el lugar",

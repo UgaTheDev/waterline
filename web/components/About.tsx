@@ -26,9 +26,9 @@ const COPY = {
     steps: [
       { k: "Ingest", title: "Photos and video come in", text: "From people on the street. For the demo, public-domain and CC BY imagery from Hurricane Harvey, replayed in time order." },
       {
-        k: "Cosmos Reason 2 · Nebius AI Cloud",
+        k: "Nemotron Nano 2 VL · Nebius",
         title: "The model reads the waterline",
-        text: "NVIDIA Cosmos Reason 2, self-hosted on Nebius AI Cloud, finds objects of known height in the frame (curb, tire, door sill, hydrant) and returns a depth range with a confidence. If it can't read the depth, it says so, and that is never treated as zero.",
+        text: "NVIDIA Nemotron Nano 2 VL on Nebius Token Factory (benchmarked against Cosmos Reason 2 self-hosted on Nebius AI Cloud; we ship whichever misses fewer dangerous roads) finds objects of known height in the frame (curb, tire, door sill, hydrant) and returns a depth range with a confidence. If it can't read the depth, it says so, and that is never treated as zero.",
       },
       { k: "Fusion", title: "Reports land on streets", text: "Each estimate snaps to the nearest road within 30 m. Reports fade over time. A street with no reports stays uncoloured: unknown, never dry." },
       {
@@ -58,7 +58,7 @@ const COPY = {
     simTitle: "Simulations",
     sim: "To show what a depth means, NVIDIA Cosmos Transfer renders a street at a given depth. These clips are generated, labeled on every frame, and never used as evidence or for routing.",
     evalTitle: "How well it works",
-    eval: "We score the depth model on public-domain photos with measured depths. The number that matters most is the dangerous-road miss rate, and we never trade it for a better average error.",
+    eval: "We score the depth model on public-domain and CC BY flood photos labelled in depth bands, from four US flood events. The number that matters most is the dangerous-road miss rate, and we never trade it for a better average error.",
     creditsTitle: "Data and credits",
     credits: [
       ["Flood imagery", "USGS, NOAA, NWS and FEMA (US federal works, public domain); Wikimedia Commons under their stated CC licences. Credited on every report."],
@@ -94,9 +94,9 @@ const COPY = {
     steps: [
       { k: "Entrada", title: "Llegan fotos y videos", text: "De personas en la calle. Para la demostración, imágenes de dominio público y CC BY del huracán Harvey, repetidas en orden cronológico." },
       {
-        k: "Cosmos Reason 2 · Nebius AI Cloud",
+        k: "Nemotron Nano 2 VL · Nebius",
         title: "El modelo lee la línea del agua",
-        text: "NVIDIA Cosmos Reason 2, alojado en Nebius AI Cloud, encuentra objetos de altura conocida en la imagen (banqueta, llanta, estribo de la puerta, hidrante) y devuelve un rango de profundidad con un nivel de confianza. Si no puede leer la profundidad, lo dice, y eso nunca se toma como cero.",
+        text: "NVIDIA Nemotron Nano 2 VL en Nebius Token Factory (comparado con Cosmos Reason 2 alojado en Nebius AI Cloud; usamos el que falla menos en calles peligrosas) encuentra objetos de altura conocida en la imagen (banqueta, llanta, estribo de la puerta, hidrante) y devuelve un rango de profundidad con un nivel de confianza. Si no puede leer la profundidad, lo dice, y eso nunca se toma como cero.",
       },
       {
         k: "Fusión",
@@ -130,7 +130,7 @@ const COPY = {
     simTitle: "Simulaciones",
     sim: "Para mostrar lo que significa una profundidad, NVIDIA Cosmos Transfer genera una calle a esa profundidad. Estos clips son generados, llevan una etiqueta en cada cuadro y nunca se usan como evidencia ni para las rutas.",
     evalTitle: "Qué tan bien funciona",
-    eval: "Calificamos el modelo de profundidad con fotos de dominio público con profundidades medidas. El número que más importa es la tasa de fallos en calles peligrosas, y nunca la cambiamos por un mejor error promedio.",
+    eval: "Calificamos el modelo de profundidad con fotos de inundaciones de dominio público y CC BY, etiquetadas por rangos de profundidad, de cuatro eventos en EE. UU. El número que más importa es la tasa de fallos en calles peligrosas, y nunca la cambiamos por un mejor error promedio.",
     creditsTitle: "Datos y créditos",
     credits: [
       ["Imágenes de inundación", "USGS, NOAA, NWS y FEMA (obras federales de EE. UU., dominio público); Wikimedia Commons bajo sus licencias CC indicadas. Con crédito en cada reporte."],
