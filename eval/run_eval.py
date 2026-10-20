@@ -10,7 +10,7 @@ Consensus: when a photo has labels from more than one annotator, the label used 
 scoring is the DEEPER band (conservative -- matches the "unknown is not dry" posture).
 See consensus_row().
 """
-import argparse, csv, hashlib, json, math, pathlib, statistics, sys
+import argparse, csv, urllib.parse, hashlib, json, math, pathlib, statistics, sys
 from collections import defaultdict
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -147,7 +147,7 @@ def main():
                 fh.write(json.dumps(pred) + "\n")
         rows.append({**pred, "true_cm": float(lab["true_cm"]), "event": event_by_path.get(lab["path"], "")})
         print(f"\r{i + 1}/{len(labels)}", end="", file=sys.stderr)
-    m = {**metrics(rows), "split": a.split, "prompt_version": version, "model": depth.model(),
+    m = {**metrics(rows), "split": a.split, "prompt_version": version, "model": depth.model(), "endpoint": urllib.parse.urlparse(depth.P.COSMOS_URL if depth.P.DEPTH_PROVIDER == "cosmos" else depth.P.TF_URL).hostname,  # Nebius vs build.nvidia.com: the submission must cite Nebius runs
          "inter_annotator_agreement": agreement,
          "note": "MAE is not directly comparable to FloodVision's 8.75 cm: different images and labels."}
     (RESULTS / f"{a.split}.json").write_text(json.dumps(m, indent=1))

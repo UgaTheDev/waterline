@@ -197,7 +197,12 @@ function Queue({ token, onUnauthorized }: { token: string; onUnauthorized: () =>
           token={token}
           done={done[it.obs_id]}
           onReview={async (a) => {
-            await api.responderReview(token, it.obs_id, a);
+            try {
+              await api.responderReview(token, it.obs_id, a);
+            } catch (e) {
+              if ((e as ApiError).status === 401) return onUnauthorized(); // token revoked mid-session: back to the form
+              throw e;
+            }
             setDone((d) => ({ ...d, [it.obs_id]: a === "seen" ? "seen" : "dismissed" }));
           }}
         />
