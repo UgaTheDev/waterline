@@ -3,6 +3,20 @@ import json, os, pathlib
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 CACHE = ROOT / "data/cache"
+
+
+def load_env():
+    """Read ROOT/.env into os.environ (shell values win). Called explicitly by the CLI scripts that need keys, before
+    importing this module's settings; not on import, so the test suites never see real keys. The server gets its env
+    from Docker's --env-file."""
+    for line in (ROOT / ".env").read_text().splitlines() if (ROOT / ".env").exists() else []:
+        k, _, v = line.partition("=")
+        if k.strip() and not k.lstrip().startswith("#") and v.split("#")[0].strip():
+            os.environ.setdefault(k.strip(), v.split("#")[0].strip())
+
+
+if os.getenv("WATERLINE_LOAD_ENV") == "1":
+    load_env()
 DB_PATH = pathlib.Path(os.getenv("DB_PATH", ROOT / "data/uploads.db"))
 
 # City/event settings live in data/cache/events/<id>/event.json (backend/events.py). These are read-only aliases for
@@ -37,6 +51,7 @@ HIGH_SCALE = max(1.0, float(os.getenv("HIGH_SCALE", "1.0")))
 # "cosmos": Cosmos Reason 2 self-hosted on Nebius AI Cloud, run as a benchmark on the same eval; ship the lower miss rate.
 DEPTH_PROVIDER = os.getenv("DEPTH_PROVIDER", "tokenfactory")
 DEPTH_MODEL = os.getenv("DEPTH_MODEL", "nvidia/NVIDIA-Nemotron-Nano-12B-v2-VL")  # confirm the exact id with GET /v1/models
+DEPTH_MAX_TOKENS = int(os.getenv("DEPTH_MAX_TOKENS", "6000"))  # reasoning VLMs (Nemotron 3.5 Super VL) think ~1-3k tokens before the JSON
 COSMOS_URL = os.getenv("COSMOS_URL")  # e.g. http://<vm-ip>:8000/v1
 COSMOS_KEY = os.getenv("COSMOS_KEY", "EMPTY")
 COSMOS_MODEL = os.getenv("COSMOS_MODEL", "nvidia/Cosmos-Reason2-8B")

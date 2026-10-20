@@ -11,10 +11,7 @@ Writes eval/results/keys_check.json (no secrets). Exit 1 if a configured service
 import json, os, pathlib, sys, tempfile, time
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-for line in (ROOT / ".env").read_text().splitlines() if (ROOT / ".env").exists() else []:
-    k, _, v = line.partition("=")
-    if k.strip() and not k.lstrip().startswith("#") and v.split("#")[0].strip():
-        os.environ.setdefault(k.strip(), v.split("#")[0].strip())
+os.environ.setdefault("WATERLINE_LOAD_ENV", "1")  # backend/profiles.py reads .env (shell values win)
 os.environ.setdefault("DB_PATH", os.path.join(tempfile.mkdtemp(), "check.db"))  # never touch real uploads
 
 import httpx  # noqa: E402

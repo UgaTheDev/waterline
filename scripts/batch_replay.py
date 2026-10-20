@@ -5,7 +5,8 @@ Reads data/cache/events/<id>/replay_manifest.csv; writes data/cache/events/<id>/
 frames to data/cache/media/*.jpg (obs ids are unique across events). Resumable: observations already in the output are
 skipped. If you used the Cosmos VM, stop it afterwards.
 """
-import csv, json, sys
+import csv, json, os, sys
+os.environ.setdefault("WATERLINE_LOAD_ENV", "1")  # read keys from .env (shell values win)
 from backend import depth, events
 from backend.profiles import CACHE, ROOT
 

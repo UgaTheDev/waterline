@@ -118,7 +118,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--split", choices=["dev", "test"], required=True)
     ap.add_argument("--labels", default=str(ROOT / "eval/labels.csv"))
+    ap.add_argument("--workers", type=int, default=8)
     a = ap.parse_args()
+    import os
+    os.environ.setdefault("WATERLINE_LOAD_ENV", "1")  # read keys from .env (shell values win)
     from backend import depth, profiles as P  # imported here so metrics() needs no deps
 
     all_labels = list(csv.DictReader(open(a.labels)))
@@ -138,15 +141,27 @@ def main():
     cache_p = RESULTS / f"preds_{version}.jsonl"
     cache = {json.loads(l)["path"]: json.loads(l) for l in cache_p.open()} if cache_p.exists() else {}
     c = depth.client()
-    rows = []
-    for i, lab in enumerate(labels):
+    import threading
+    from concurrent.futures import ThreadPoolExecutor
+    lock, failed = threading.Lock(), []
+
+    def predict(lab):
         pred = cache.get(lab["path"])
         if pred is None:
-            pred = {"path": lab["path"], **depth.estimate(depth.prepare_image((ROOT / lab["path"]).read_bytes()), c=c)}
-            with cache_p.open("a") as fh:
+            try:
+                pred = {"path": lab["path"], **depth.estimate(depth.prepare_image((ROOT / lab["path"]).read_bytes()), c=c)}
+            except Exception as ex:  # network/rate limit: not cached, so a re-run retries it; never scored as a guess
+                failed.append((lab["path"], f"{type(ex).__name__}: {str(ex)[:80]}"))
+                return None
+            with lock, cache_p.open("a") as fh:
                 fh.write(json.dumps(pred) + "\n")
-        rows.append({**pred, "true_cm": float(lab["true_cm"]), "event": event_by_path.get(lab["path"], "")})
-        print(f"\r{i + 1}/{len(labels)}", end="", file=sys.stderr)
+        return {**pred, "true_cm": float(lab["true_cm"]), "event": event_by_path.get(lab["path"], "")}
+
+    # ponytail: fixed pool; reasoning VLMs take ~1 min a photo, so serial would be an hour
+    with ThreadPoolExecutor(a.workers) as ex:
+        rows = [r for r in ex.map(predict, labels) if r]
+    if failed:
+        sys.exit(f"{len(failed)} photo(s) failed, rerun to retry (cached ones are free): {failed[:3]}")
     m = {**metrics(rows), "split": a.split, "prompt_version": version, "model": depth.model(), "endpoint": urllib.parse.urlparse(depth.P.COSMOS_URL if depth.P.DEPTH_PROVIDER == "cosmos" else depth.P.TF_URL).hostname,  # Nebius vs build.nvidia.com: the submission must cite Nebius runs
          "inter_annotator_agreement": agreement,
          "note": "MAE is not directly comparable to FloodVision's 8.75 cm: different images and labels."}

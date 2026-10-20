@@ -109,7 +109,7 @@ def estimate(media: bytes, mime="image/jpeg", c=None) -> dict:
     url = f"data:{mime};base64,{base64.b64encode(media).decode()}"
     part = {"type": "video_url", "video_url": {"url": url}} if mime.startswith("video") else {"type": "image_url", "image_url": {"url": url}}
     for _ in range(2):  # one retry on unparseable output
-        r = c.chat.completions.create(model=model(), temperature=0.2, max_tokens=1200,
+        r = c.chat.completions.create(model=model(), temperature=0.2, max_tokens=P.DEPTH_MAX_TOKENS,
                                       messages=[{"role": "user", "content": [part, {"type": "text", "text": PROMPT}]}])
         e = parse(r.choices[0].message.content or "")
         if e:
