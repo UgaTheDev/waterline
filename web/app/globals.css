@@ -196,3 +196,71 @@ input[type="range"].scrub:focus-visible { outline: 2px solid var(--accent); outl
 /* Scrubber playhead: a 2 px bar in the text colour (design 02 Map), over the report histogram. */
 input[type="range"].scrub::-webkit-slider-thumb { width: 2px; background: var(--text); box-shadow: none; }
 input[type="range"].scrub::-moz-range-thumb { width: 2px; background: var(--text); }
+/* stream: evidence */
+/* Vehicle gauge colours. The hero gauge sits on dark glass over a photo in both themes, so its colours are fixed; the card uses theme tokens. */
+.vg-hero {
+  --vg-stroke: rgb(230 237 243 / 0.85);
+  --vg-fill: rgb(7 11 16 / 0.55);
+  --vg-blockfill: rgb(251 113 133 / 0.18);
+  --vg-wheel: #05080c;
+  --vg-coral: #fb7185;
+  --vg-water: #67e8f9;
+  --vg-text: #e6edf3;
+  --vg-label: #c4ccd6;
+  --vg-tick: rgb(230 237 243 / 0.3);
+  --vg-ground: rgb(230 237 243 / 0.4);
+  --vg-selected: #a5f3fc;
+}
+.vg-card {
+  --vg-stroke: var(--muted);
+  --vg-fill: color-mix(in srgb, var(--muted) 10%, transparent);
+  --vg-blockfill: color-mix(in srgb, var(--danger) 14%, transparent);
+  --vg-wheel: var(--bg);
+  --vg-coral: var(--danger);
+  --vg-water: var(--accent);
+  --vg-text: var(--text);
+  --vg-label: var(--muted);
+  --vg-tick: var(--line-strong);
+  --vg-ground: var(--muted);
+  --vg-selected: var(--accent);
+}
+/* Range band fades in at 40% once the line has risen (900-1400 ms). */
+@keyframes vg-band { from { opacity: 0; } to { opacity: 0.4; } }
+.vg-band { opacity: 0.4; animation: vg-band 0.5s ease 0.9s both; }
+
+/* Desktop depth ruler */
+.dr-water {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 25%, transparent), color-mix(in srgb, var(--accent) 6%, transparent));
+  border-top: 2px solid var(--accent);
+}
+/* Unknown depth looks like the deepest water, never dry. */
+.dr-unknown {
+  background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--danger) 35%, transparent) 0 3px, transparent 3px 8px);
+  border-top: 2px solid var(--danger);
+}
+
+/* Hero: the real photo full-bleed and fading into the page (dark); an inset night card on paper (light). */
+.hero-photo { position: relative; height: min(64vh, 520px); min-height: 460px; overflow: hidden; background: #070b10; }
+.hero-photo::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 120px;
+  background: linear-gradient(to bottom, transparent, var(--bg));
+  pointer-events: none;
+}
+.hero-photo > header, .hero-photo > a, .hero-photo > .hero-glass { z-index: 1; }
+/* Daytime photo: the scrim keeps the light header text and credit at AA. */
+.hero-scrim { position: absolute; inset: 0; background: linear-gradient(180deg, rgb(7 11 16 / 0.8) 0, rgb(7 11 16 / 0.2) 150px, rgb(7 11 16 / 0.1) 60%, rgb(7 11 16 / 0.35) 100%); }
+.hero-glass {
+  background: rgb(7 11 16 / 0.74);
+  border: 1px solid rgb(103 232 249 / 0.28);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+:root[data-theme="light"] .hero-photo { margin: 12px 12px 0; border-radius: 28px; height: min(58vh, 452px); }
+:root[data-theme="light"] .hero-photo::after { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .vg-band { animation: none; }
+}
