@@ -58,12 +58,19 @@ per-event breakdown. Labels are split 60/40 into dev and test and frozen; prompt
 
 The eval pool spans multiple US flood events (Hurricane Harvey 2017, Hurricane Ida 2021, Hurricane Helene
 2024, the July 2023 Vermont/northeastern floods), all public-domain or CC BY, deduplicated across events.
-Photos are labeled independently by up to two annotators; where they disagree, the deeper (more
-conservative) band is used for scoring, and we report Cohen's kappa plus raw agreement on the 15 cm
-sedan-passable boundary between them.
+Labels come from two independent AI annotators (Claude Sonnet, then Claude Opus blind to the first; disclosed,
+and neither is a model under test): 106 of 182 photos have a visible road. Kappa 0.56, 91% agreement on the 15 cm
+sedan boundary, every disagreement within one band; scoring uses the deeper band. This measures label consistency,
+not ground truth.
 
-Results: TODO(eval) -- pending labels from the second annotator (see `eval/results/test.json`, and the
-About page in the app).
+Results (**provisional**: Nemotron 3.5 Super VL via build.nvidia.com while Nebius billing is sorted; the Nebius run
+replaces them):
+- First test run: 4 of 38 dangerous photos missed, all "0 cm" readings with no reference object (a boat, a patio):
+  "can't measure" had become "dry". Fix: a 0 cm reading must name what it saw dry, else it is unknown and blocks
+  every vehicle (`backend/depth.py: unread_zero`).
+- **Dev split, the clean check (rule fixed before scoring): 0 of 49 dangerous photos missed, 95% CI 0-7.3%.**
+  Cost: 15% abstain, 12 of 13 shallow-water roads blocked anyway, MAE 23 cm. Test with the rule: 0/38 (contaminated).
+  See `eval/results/dev.json` and the About page.
 
 MAE is not directly comparable to prior work such as FloodVision (8.75 cm), because the images and labels differ.
 
