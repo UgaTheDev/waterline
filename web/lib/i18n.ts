@@ -368,6 +368,7 @@ const en = {
   "evd.range": "range {r}",
   "evd.reference": "Reference",
   "evd.taken": "Taken",
+  "evd.peak": "Estimated peak",
   "evd.confLow": "low",
   "evd.confMed": "medium",
   "evd.confMedHigh": "medium-high",
@@ -798,6 +799,7 @@ const es: Record<Key, string> = {
   "evd.range": "rango {r}",
   "evd.reference": "Referencia",
   "evd.taken": "Tomada",
+  "evd.peak": "Pico estimado",
   "evd.confLow": "baja",
   "evd.confMed": "media",
   "evd.confMedHigh": "media-alta",
@@ -927,13 +929,13 @@ export function useT(): T {
 
 // Vehicle names by id; the /config label is the English fallback. English keeps its old casing rules exactly.
 export function vehicleName(t: T, lang: Lang, v: { id: string; label: string }, lower = false) {
-  if (lang === "en") return lower ? v.label.toLowerCase() : v.label;
+  if (lang === "en") return lower ? lowerName(lang, v.label) : v.label;
   const k = `veh.${v.id}` as Key;
   const n = k in en ? t(k) : v.label;
   return lower ? lowerName(lang, n) : n;
 }
-// Mid-sentence form: Spanish keeps acronyms ("SUV") as they are.
-export const lowerName = (lang: Lang, n: string) => (lang === "es" && n === n.toUpperCase() ? n : n.toLowerCase());
+// Mid-sentence form: acronyms ("SUV") stay as they are in every language ("Find a SUV route" read as "suv" before).
+export const lowerName = (_lang: Lang, n: string) => (n === n.toUpperCase() ? n : n.toLowerCase());
 
 // The router's English strings (backend/router.py), rebuilt in Spanish; anything unrecognised is shown as sent.
 export function routerText(lang: Lang, s: string) {

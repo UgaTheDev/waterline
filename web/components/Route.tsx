@@ -56,7 +56,7 @@ function Rows({ route, onEvidence }: { route: RouteResponse; onEvidence: (s: Sel
   const theme = useTheme();
   const t = useT();
   const lang = useLang();
-  if (!route.avoided.length && !(route.found && route.unknown_m > 0)) return null;
+  if (!route.avoided.length && !(route.found && (route.unknown_m > 0 || route.segments?.length))) return null;
   return (
     <div>
       {route.avoided.length > 0 && <p className="eyebrow mb-1">{t("rt.avoidedN", { n: route.avoided.length })}</p>}

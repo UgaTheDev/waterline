@@ -283,6 +283,9 @@ export default function MapApp() {
   const showRoute = useCallback((r: RouteResponse) => {
     setRoute(r);
     if (r.avoided.length) setFlash({ ids: r.avoided.map((a) => a.edge_id), key: Date.now() });
+    // No route at all: open the street that blocks it, so the map shows why (FloodMap brings it into view).
+    const b = !r.found ? r.avoided[0] : undefined;
+    if (b) setSelected({ id: b.edge_id, name: b.name, state: b.state, low: b.evidence[0]?.low_cm ?? null, high: b.high_cm, evidence: b.evidence });
   }, []);
 
   const findRoute = useCallback(
@@ -373,6 +376,11 @@ export default function MapApp() {
   const sources = derived.length
     ? (segments?.features ?? []).filter((f) => !isInferred(f.properties) && f.properties.evidence.some((e) => derived.includes(e.obs_id))).map((f) => toSel(f.properties))
     : [];
+
+  // The agent's starting point: a picked point, typed "lat, lon", or the start of the last route found (a place name
+  // stays on the Route tab, where the backend geocodes it).
+  const typedFrom = parsePoint(fromText);
+  const chatFrom = fromPt ?? (typeof typedFrom === "object" ? typedFrom : route?.found && route.from ? route.from : null);
 
   // Other observed streets with reported water within 200 m of the selected one: corroboration the card can show.
   const nearby = (() => {
@@ -501,11 +509,11 @@ export default function MapApp() {
         )}
 
         {selected && (
-          <div className="hidden lg:block absolute z-10 bottom-[6.75rem] right-3 w-[260px] pointer-events-none rounded-xl border border-line bg-panel/95 p-3">
+          <div className="hidden lg:block absolute z-10 bottom-[9rem] right-3 w-[260px] pointer-events-none rounded-xl border border-line bg-panel/95 p-3">
             <DepthRuler depthCm={selected.high} unknown={selected.state === "reported_unknown" || selected.high === null} />
           </div>
         )}
-        <div className={`hidden md:block absolute bottom-[6.75rem] left-3 w-[300px] transition-opacity ${selected || riskSel ? "opacity-0 pointer-events-none" : ""}`}>
+        <div className={`hidden md:block absolute bottom-[9rem] left-3 w-[300px] transition-opacity ${selected || riskSel ? "opacity-0 pointer-events-none" : ""}`}>
           <Legend open={legendOpen} onToggle={() => setLegendOpen(!legendOpen)} risk={riskOn} />
         </div>
 
@@ -643,7 +651,7 @@ export default function MapApp() {
               </div>
             </>
           ) : (
-            <Chat vehicle={vehicle} vehicleLabel={current ? vehicleName(t_, lang, current) : t_("veh.car")} t={iso} location={fromPt} onRoute={showRoute} onEvidence={open} onFiled={() => setReload((n) => n + 1)} />
+            <Chat vehicle={vehicle} vehicleLabel={current ? vehicleName(t_, lang, current) : t_("veh.car")} t={iso} location={chatFrom} onRoute={showRoute} onEvidence={open} onFiled={() => setReload((n) => n + 1)} />
           )}
 
           <div className="md:hidden">

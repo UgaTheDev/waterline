@@ -405,6 +405,17 @@ export default function FloodMap(props: Props) {
   useEffect(() => pushPins(), [props.segments, props.time, props.live]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => pushSelected(), [props.selectedId, props.segments]);
+  // Bring the selected street into view (a report opened from the list, or the street that blocks every route) when
+  // it's off-screen or under the side card; never re-centre a street the user is already looking at.
+  useEffect(() => {
+    const m = map.current, id = props.selectedId;
+    const f = id ? props.segments?.features.find((x) => x.properties.edge_id === id) : undefined;
+    if (!m || !f) return;
+    const c = f.geometry.coordinates[Math.floor(f.geometry.coordinates.length / 2)] as [number, number];
+    const p = m.project(c), { width, height } = m.getContainer().getBoundingClientRect();
+    if (p.x > width * 0.45 && p.x < width - 40 && p.y > 60 && p.y < height - 160) return;
+    m.easeTo({ center: c, zoom: Math.max(m.getZoom(), 14), offset: [width > 768 ? width * 0.18 : 0, height > 600 ? -60 : 0], duration: props.reduced ? 0 : 700 });
+  }, [props.selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
   const { from, to } = props.endpoints;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => pushEndpoints(), [from, to]);

@@ -49,7 +49,7 @@ const COPY = {
     inferRules: [
       ["Additive only", "An inferred street only ever adds water. It is never 0 cm, never dry, and never lowers a real report."],
       ["Always labeled", "Inferred streets are dashed and dimmer than observed ones, and their report card says which reports they came from."],
-      ["Uncertainty grows", "The further a street is from the reports behind it, the wider its range. Routing uses the upper bound."],
+      ["Uncertainty grows", "The further a street is from the reports behind it, the wider its range. Inferred streets are shown, never used for routing."],
     ],
     riskTitle: "Flood risk",
     risk: "We built a “flood risk next hour” layer from Harvey rainfall, low ground that holds water, and height above the nearest bayou, then tested it on streets it had never seen. It didn't beat a terrain-only baseline: the rain data is about 12 km coarse, and Harvey's worst street flooding came days after the rain, from reservoir releases. So it's switched off. A risk layer that isn't better than a guess would send people the wrong way, and we'd rather tell you that than show you a pretty haze.",
@@ -121,7 +121,7 @@ const COPY = {
     inferRules: [
       ["Solo suma", "Una calle inferida solo agrega agua. Nunca es 0 cm, nunca es seca y nunca rebaja un reporte real."],
       ["Siempre marcada", "Las calles inferidas se dibujan con guiones y más tenues que las observadas, y su tarjeta dice de qué reportes vienen."],
-      ["La incertidumbre crece", "Mientras más lejos está una calle de sus reportes, más amplio es su rango. Las rutas usan el límite superior."],
+      ["La incertidumbre crece", "Mientras más lejos está una calle de sus reportes, más amplio es su rango. Las calles inferidas se muestran, pero nunca deciden una ruta."],
     ],
     riskTitle: "Riesgo de inundación",
     risk: "Construimos una capa de “riesgo de inundación en la próxima hora” con la lluvia de Harvey, el terreno bajo que retiene agua y la altura sobre el bayou más cercano, y la probamos en calles que nunca había visto. No superó a una referencia basada solo en el terreno: los datos de lluvia tienen una resolución de unos 12 km, y las peores inundaciones de calles en Harvey llegaron días después de la lluvia, por las descargas de las presas. Por eso está apagada. Una capa de riesgo que no es mejor que adivinar mandaría a la gente por el camino equivocado, y preferimos decírselo antes que mostrarle una neblina bonita.",

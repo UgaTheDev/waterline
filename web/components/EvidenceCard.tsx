@@ -183,7 +183,8 @@ export default function EvidenceCard(props: {
         : t(high > vehicle.limit_cm ? "ev.vOver" : "ev.vUnder", { v: vName, n: vehicle.limit_cm });
 
   // Every vehicle class, with the user's from /config taking precedence over the backend-default list.
-  const fleet = VEHICLES.map((v) => (v.id === vehicle?.id ? vehicle : v));
+  // rescue is responder-only (/responder); the public card compares the three vehicles people drive
+  const fleet = VEHICLES.filter((v) => v.id !== "rescue").map((v) => (v.id === vehicle?.id ? vehicle : v));
   // The gauge and the blocked count use the conservative upper bound (high_cm), the same number routing uses.
   const est = latest?.depth_cm ?? high;
   const p = useRising(unknown ? 0 : 1);
@@ -248,7 +249,7 @@ export default function EvidenceCard(props: {
               </p>
             </div>
             <div>
-              <p className="eyebrow">{t(inferred ? "ev.asOf" : "evd.taken")}</p>
+              <p className="eyebrow">{t(inferred ? "ev.asOf" : latest.kind === "survey" ? "evd.peak" : "evd.taken")}</p>
               <p className="font-mono text-[14px] text-text mt-1">{fmtTime(latest.time, false, lang)}</p>
             </div>
             <div className="col-span-2">

@@ -189,12 +189,19 @@ export default function VehicleGauge({
           return [
             i > 0 && <span key={`g${v.id}`} />,
             <div key={v.id} className="min-w-0">
-              <div className="text-[11.5px] font-medium leading-tight" style={{ color: v.id === selected ? "var(--vg-selected)" : "var(--vg-text)" }}>
+              <div className="text-[11.5px] font-medium leading-tight whitespace-nowrap overflow-hidden text-ellipsis" style={{ color: v.id === selected ? "var(--vg-selected)" : "var(--vg-text)" }}>
                 {v.id === "rescue" ? t("vg.rescue") : vehicleName(t, lang, v)}
                 {v.id === selected && <span className="sr-only"> ({t("evd.you")})</span>}
               </div>
-              <div className="font-mono text-[10px] mt-px" style={{ color: b ? "var(--vg-coral)" : "var(--vg-label)", transition: "color 120ms" }}>
-                {b ? t("vg.blocked", { n: v.limit_cm }) : t("veh.limitCm", { n: v.limit_cm })}
+              <div className="font-mono text-[10px] mt-px whitespace-nowrap" style={{ color: b ? "var(--vg-coral)" : "var(--vg-label)", transition: "color 120ms" }}>
+                {b ? (
+                  <>
+                    <span aria-hidden>✕ {v.limit_cm} cm</span>
+                    <span className="sr-only">{t("vg.blocked", { n: v.limit_cm })}</span>
+                  </>
+                ) : (
+                  t("veh.limitCm", { n: v.limit_cm })
+                )}
               </div>
             </div>,
           ];

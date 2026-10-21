@@ -19,6 +19,10 @@ moment. Run `scripts/batch_replay.py` first (needs a Token Factory key), or Aug 
 | 2:15-2:30 | Eval slide: miss rate (Nano 2 VL vs Cosmos Reason 2), survey +11 cm, inference display-only, the nowcast that didn't work; one line "survey layer earns routing in 1 of 3 events (Harvey yes; Ida NYC, Kerrville TX no)" | Honest numbers, including the negative result |
 | 2:30-2:45 | Responder view flash (rescue truck route), then the tagline | "Know how deep the street is before you drive into it." |
 
+**Eval line (say exactly this, it matches the About panel):** "On 49 photos with dangerous water that we never tuned
+on, the model missed none (provisional, until our Nebius run)." The panel says "dev split": that split was never used
+for tuning; the rule that fixed the first run's misses was found on the test split, which is why test isn't the headline.
+
 **Kerrville 2025 stays out of the video (Kush, 2026-10-20).** About 135 people died in the July 4, 2025 Guadalupe River
 flood, including children at Camp Mystic. It appears only as text on the eval slide (the survey gate result). No Kerrville map
 footage and no "Waterline would have saved them" framing: it was a fast river flood, deaths were at camps and riverside homes,
