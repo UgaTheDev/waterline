@@ -17,7 +17,7 @@ Hard constraints:
   headline metric: never trade it for a better MAE.
 - Only public-domain (USGS/NOAA/NWS/FEMA) or CC-BY media, credited. Check the license of any
   research dataset before using it.
-- Repo must be public with an Apache-2.0 LICENSE by submission (private while building; Kush makes it public Oct 28). Never commit secrets.
+- Repo is PUBLIC (since 2026-10-21) with an Apache-2.0 LICENSE: every push is published. Never commit secrets.
 
 ## Worker protocol (orchestrator)
 
