@@ -2,7 +2,7 @@
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, parsePoint, type ApiError, type Config, type DashcamResponse, type Point, type RouteResponse, type Segments } from "@/lib/api";
-import { PALETTE, bandFor, describe, fmtDistance, range } from "@/lib/depth";
+import { fmtDistance } from "@/lib/depth";
 import { BRAND } from "@/lib/brand";
 import { routerText, useLang, useT, vehicleName } from "@/lib/i18n";
 import { speak, stopSpeaking, useSpeaking } from "@/lib/speech";
@@ -20,37 +20,68 @@ const MAX_SIDE = 1024;
 
 type Mode = "camera" | "demo";
 
-function ResultCard({ result, vehicleLabel, limit, next }: { result: DashcamResponse; vehicleLabel: string; limit: number; next: string }) {
-  const theme = useTheme();
+// Design handoff "05 Drive mode": three HUD states. Over the limit, or depth unknown, is "Turn around": unknown blocks every vehicle.
+function hudState(result: DashcamResponse) {
+  if (!result.water) return "clear" as const;
+  const high = result.evidence?.high_cm ?? null;
+  return result.over_limit || high === null ? ("turn" as const) : ("ahead" as const);
+}
+
+// Depth against the wading limit; the limit marker sits at the middle, so a full bar is twice the limit.
+function DepthBar({ high, limit, color }: { high: number | null; limit: number; color: string }) {
   const t = useT();
+  const fill = high === null ? 100 : Math.min(100, (high / (limit * 2)) * 100);
+  return (
+    <div role="img" aria-label={t("dr.depthBar", { d: high === null ? t("d.rangeUnknown") : `${Math.round(high)} cm`, n: limit })} className="relative h-3 w-full rounded-md bg-line">
+      <div className="h-full rounded-md" style={{ width: `${fill}%`, background: color }} />
+      <span className="absolute left-1/2 -top-1.5 -bottom-1.5 w-[3px] -ml-px rounded-sm bg-text" aria-hidden />
+    </div>
+  );
+}
+
+// Plates are bg/90 (>= .86 opaque, per the handoff) so contrast is measured against the plate, not the rain or the video.
+function ResultCard({ result, vehicleLabel, limit, next }: { result: DashcamResponse; vehicleLabel: string; limit: number; next: string }) {
+  const t = useT();
+  const state = hudState(result);
   if (!result.water)
     return (
-      <div className="bg-bg/90 backdrop-blur rounded-2xl border border-line p-5">
-        <p className="font-display text-[34px] sm:text-[44px] leading-none text-text">{t("dr.noWater")}</p>
+      <div className="bg-bg/90 rounded-[20px] border border-line p-5 max-w-[440px]">
+        <p className="flex items-center gap-3 text-[24px] sm:text-[30px] font-semibold leading-tight text-text">
+          <span className="w-3 h-3 rounded-full bg-muted shrink-0" aria-hidden />
+          {t("dr.hudClear")}
+        </p>
         <p className="text-[15px] text-muted mt-2">{t("dr.noWaterNote")}</p>
       </div>
     );
   const high = result.evidence?.high_cm ?? null;
-  const state = high === null ? "reported_unknown" : "reported";
-  const color = PALETTE[theme][bandFor(state, high)];
-  return (
-    <div role="alert" className="bg-bg/90 backdrop-blur rounded-2xl border-2 p-5 rise" style={{ borderColor: color }}>
-      <p className="eyebrow">{t("dr.waterAhead")}</p>
-      <p className="font-display text-[36px] sm:text-[48px] leading-none text-text mt-1">{result.street ?? t("dr.nearby")}</p>
-      <p className="font-mono text-[40px] sm:text-[56px] leading-none tabular-nums mt-3" style={{ color }}>
-        {range(result.evidence?.low_cm ?? null, high, t)}
-      </p>
-      <p className="text-[18px] mt-2 font-medium" style={{ color }}>
-        {describe(state, high, t)}
-      </p>
-      {result.over_limit && (
-        <p className="text-[17px] text-text mt-2">
-          {t("dr.over", { v: vehicleLabel, n: limit, next })}
+  const depth = high === null ? t("depth.q") : `${Math.round(high)} cm`; // the upper bound, as routing uses
+  const filed = <p className="font-mono text-[11px] text-muted">{t(result.filed ? "dr.filed" : "dr.notFiled")}</p>;
+  if (state === "ahead")
+    return (
+      <div role="alert" className="bg-bg/90 rounded-[20px] border-[1.5px] border-warn px-5 py-4 max-w-[440px] space-y-2.5 rise">
+        <p className="flex items-baseline justify-between gap-3">
+          <span className="font-mono text-[14px] font-semibold tracking-[0.12em] uppercase text-warn">{t("dr.waterAhead")}</span>
+          <span className="font-mono text-[13px] text-muted truncate">{result.street ?? t("dr.nearby")}</span>
         </p>
-      )}
-      <p className="font-mono text-[11px] text-faint mt-3">
-        {t(result.filed ? "dr.filed" : "dr.notFiled")}
+        <p className="flex items-baseline gap-3.5 font-mono">
+          <span className="text-[48px] sm:text-[64px] font-semibold leading-none text-warn tabular-nums">{depth}</span>
+          <span className="text-[18px] text-text">{t("dr.limit", { n: limit })}</span>
+        </p>
+        <DepthBar high={high} limit={limit} color="var(--warn)" />
+        <p className="text-[16px] font-medium text-text">{t("dr.under")}</p>
+        {filed}
+      </div>
+    );
+  return (
+    <div role="alert" className="mx-auto bg-bg/90 rounded-3xl border-2 border-danger px-6 py-5 w-full max-w-[520px] flex flex-col items-center gap-3 text-center rise">
+      <p className="text-[44px] sm:text-[60px] font-bold leading-none tracking-tight text-danger">{t("dr.turn")}</p>
+      <p className="font-mono text-[20px] sm:text-[26px] font-semibold text-text">
+        {t("dr.aheadLimit", { d: depth, n: limit })}
+        {result.street && <span className="block text-[14px] font-medium text-muted">{result.street}</span>}
       </p>
+      <DepthBar high={high} limit={limit} color="var(--danger)" />
+      <p className="text-[17px] font-medium text-text">{result.over_limit ? t("dr.over", { v: vehicleLabel, n: limit, next }) : `${t("d.unknown")}. ${next}`}</p>
+      {filed}
     </div>
   );
 }
@@ -388,19 +419,22 @@ export default function Drive() {
           </div>
         ) : (
           <>
+            {/* DOM order is the stacking order: rain on the glass, then the coral frame, then the plates. */}
+            <div className="drive-rain" aria-hidden />
+            {result && hudState(result) === "turn" && <div className="hud-turn" aria-hidden />}
             <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2">
-              <span className="glass rounded-full border border-line px-3 py-1.5 text-[13px] text-text flex items-center gap-2">
+              <span className="bg-bg/90 rounded-full border border-line px-3 min-h-11 text-[13px] text-text flex items-center gap-2">
                 <span className={`w-2 h-2 rounded-full live-dot ${offline ? "bg-warn text-warn" : "bg-accent text-accent"}`} />
                 <span className="font-mono uppercase tracking-wider text-[11px]">{mode === "demo" ? t("dr.demoTag") : t("live")}</span>
                 <span className="text-muted hidden sm:inline">{t("dr.cadence", { v: vName })}</span>
               </span>
               <div className="flex gap-2">
                 {speaking && (
-                  <button onClick={stopSpeaking} className="glass rounded-full border border-line px-4 py-2 text-[14px] text-text">
+                  <button onClick={stopSpeaking} className="bg-bg/90 rounded-full border border-line px-4 min-h-11 text-[14px] text-text">
                     {t("dr.quiet")}
                   </button>
                 )}
-                <button onClick={stop} className="rounded-full bg-danger text-white px-5 py-2 text-[15px] font-medium">
+                <button onClick={stop} className="rounded-full bg-danger text-bg px-5 min-h-11 text-[15px] font-semibold">
                   {t("dr.stop")}
                 </button>
               </div>
@@ -430,7 +464,7 @@ export default function Drive() {
                 />
               ) : (
                 !offline && (
-                  <div className="bg-bg/90 backdrop-blur rounded-2xl border border-line p-5">
+                  <div className="bg-bg/90 rounded-[20px] border border-line p-5 max-w-[440px]">
                     <p className="font-display text-[30px] sm:text-[40px] leading-none text-text">{waiting}</p>
                   </div>
                 )

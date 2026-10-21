@@ -2,7 +2,7 @@
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { api, parsePoint, USE_MOCK, type ApiError, type Config, type QueueItem, type ResponderFlag, type RouteResponse, type Segments } from "@/lib/api";
-import { fmtTime } from "@/lib/depth";
+import { PALETTE, bandFor, fmtDistance, fmtTime } from "@/lib/depth";
 import { useLang, useT, vehicleName, type Key } from "@/lib/i18n";
 import { MOCK_TOKEN } from "@/lib/mock";
 import { useReducedMotion, useTheme } from "@/lib/theme";
@@ -79,7 +79,7 @@ function TokenForm({ error }: { error: string | null }) {
 }
 
 // Flagged media is token-guarded, so it is fetched with the header and shown from a blob URL.
-function FlaggedImage({ token, obsId }: { token: string; obsId: string }) {
+function FlaggedImage({ token, obsId, thumb = false }: { token: string; obsId: string; thumb?: boolean }) {
   const [url, setUrl] = useState<string | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
   const t = useT();
@@ -99,19 +99,32 @@ function FlaggedImage({ token, obsId }: { token: string; obsId: string }) {
       if (u) URL.revokeObjectURL(u);
     };
   }, [token, obsId]);
+  if (thumb)
+    // eslint-disable-next-line @next/next/no-img-element -- a blob URL from an authenticated fetch
+    return url ? <img src={url} alt={t("rs.flaggedAlt")} className="w-[52px] h-[52px] rounded-lg object-cover bg-panel-2" /> : <div className={`w-[52px] h-[52px] rounded-lg bg-panel-2 ${failed ? "" : "animate-pulse"}`} />;
   if (failed) return <p className="rounded-md border border-dashed border-line-strong p-3 font-mono text-[11px] text-muted">{failed}</p>;
   if (!url) return <div className="aspect-video rounded-md border border-line bg-panel-2 animate-pulse" />;
   // eslint-disable-next-line @next/next/no-img-element -- a blob URL from an authenticated fetch
   return <img src={url} alt={t("rs.flaggedAlt")} className="w-full max-h-60 object-cover rounded-md border border-line bg-panel-2" />;
 }
 
+// Dense queue card (handoff 07). A possible person in water never loads its image until the reviewer opens the card.
 function QueueCard({ item, token, done, onReview }: { item: QueueItem; token: string; done?: string; onReview: (a: "seen" | "dismissed") => Promise<void> }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
   const t = useT();
   const lang = useLang();
+  const theme = useTheme();
   const ev = item.evidence;
   const reviewed = done ?? (item.reviewed ? "reviewed" : null);
+  const person = item.flags.includes("person_in_water");
+  const unreadable = ev.high_cm === null;
+  const priority = person && !reviewed;
+  const title = person ? t("rs.person") : item.flags.includes("occupied_vehicle") ? t("rs.occupied") : unreadable ? t("rs.unreadable") : (item.label ?? t("rs.needsReview"));
+  const depthColor = PALETTE[theme][bandFor(unreadable ? "reported_unknown" : "reported", ev.high_cm)];
+  const tag = "rounded px-1.5 py-0.5 bg-panel-2 border border-line font-mono text-[11px] text-text";
+  const thumbTile = "w-[52px] h-[52px] rounded-lg bg-panel-2 flex items-center justify-center text-center";
   const act = async (a: "seen" | "dismissed") => {
     setBusy(true);
     setError(null);
@@ -124,22 +137,46 @@ function QueueCard({ item, token, done, onReview }: { item: QueueItem; token: st
     }
   };
   return (
-    <li className={`rise rounded-xl border bg-panel p-4 space-y-3 ${reviewed ? "border-line opacity-70" : "border-danger/50"}`}>
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="rounded-full bg-warn-soft border border-warn/50 px-2 py-0.5 font-mono text-[10.5px] uppercase tracking-wider text-warn">
-          {item.label ?? t("rs.needsReview")}
-        </span>
-        {item.flags.map((f) => (
-          <span key={f} className="rounded-full bg-danger-soft border border-danger/50 px-2 py-0.5 text-[11.5px] text-danger font-medium">
-            {FLAG[f] ? t(FLAG[f]) : f}
-          </span>
-        ))}
-        {reviewed && <span className="ml-auto font-mono text-[10.5px] uppercase tracking-wider text-muted">{DONE[reviewed] ? t(DONE[reviewed]) : reviewed}</span>}
+    <li className={`rise rounded-xl border bg-panel p-2.5 ${priority ? "border-danger" : "border-line"} ${reviewed ? "opacity-70" : ""}`}>
+      <div className="grid grid-cols-[52px_1fr] gap-2.5">
+        {person && !open ? (
+          <div className={`${thumbTile} font-mono text-[10px] leading-tight text-muted uppercase`}>{t("rs.withheld")}</div>
+        ) : unreadable ? (
+          <div className={`${thumbTile} font-mono text-[18px] font-bold`} style={{ color: depthColor }} aria-label={t("d.rangeUnknown")}>
+            ?
+          </div>
+        ) : (
+          <FlaggedImage token={token} obsId={item.obs_id} thumb />
+        )}
+        <div className="min-w-0 space-y-0.5">
+          <p className="flex justify-between gap-2">
+            <span className={`text-[14px] font-semibold ${priority ? "text-danger" : "text-text"}`}>{title}</span>
+            <span className="font-mono text-[11px] text-muted shrink-0">{fmtTime(ev.time, false, lang)}</span>
+          </p>
+          <p className="text-[12.5px] text-text/80 truncate">
+            {ev.street ?? t("rs.noStreet")}
+            {unreadable && ` · ${t("rs.blocksAll")}`}
+          </p>
+          <div className="flex flex-wrap items-center gap-1.5 pt-1">
+            {ev.confidence !== null && <span className={tag}>{t("rs.model", { n: ev.confidence.toFixed(2) })}</span>}
+            <span className={tag} style={unreadable ? undefined : { color: depthColor }}>
+              {unreadable ? t("d.rangeUnknown") : `≤ ${Math.round(ev.high_cm!)} cm`}
+            </span>
+            {item.flags.length > 1 && item.flags.slice(1).map((f) => <span key={f} className={tag}>{FLAG[f] ? t(FLAG[f]) : f}</span>)}
+            {reviewed && <span className="font-mono text-[10.5px] uppercase tracking-wider text-muted">{DONE[reviewed] ? t(DONE[reviewed]) : reviewed}</span>}
+            <button
+              onClick={() => setOpen((o) => !o)}
+              aria-expanded={open}
+              className={`ml-auto min-h-11 rounded-lg px-3 text-[13px] font-semibold ${priority && !open ? "bg-danger text-bg" : "border border-line-strong text-text hover:bg-panel-2"}`}
+            >
+              {open ? t("rs.close") : t("rs.review")}
+            </button>
+          </div>
+        </div>
       </div>
-      <div className="flex items-baseline justify-between gap-3">
-        <p className="font-display text-[24px] leading-tight text-text">{ev.street ?? t("rs.noStreet")}</p>
-        <p className="font-mono text-[11.5px] text-muted shrink-0">{fmtTime(ev.time, true, lang)}</p>
-      </div>
+      {person && !open && <p className="sr-only">{t("rs.withheldNote")}</p>}
+      {open && (
+      <div className="space-y-3 mt-3">
       <FlaggedImage token={token} obsId={item.obs_id} />
       <EvidenceItem ev={ev} noPhoto compact />
       {ev.rationale && <p className="text-[13px] text-muted leading-relaxed">{ev.rationale}</p>}
@@ -148,18 +185,20 @@ function QueueCard({ item, token, done, onReview }: { item: QueueItem; token: st
         <button
           disabled={busy}
           onClick={() => act("seen")}
-          className="flex-1 rounded-lg bg-accent text-accent-ink text-[13.5px] font-medium py-2.5 disabled:opacity-60"
+          className="flex-1 min-h-11 rounded-lg bg-accent text-accent-ink text-[13.5px] font-medium disabled:opacity-60"
         >
           {t("rs.seen")}
         </button>
         <button
           disabled={busy}
           onClick={() => act("dismissed")}
-          className="flex-1 rounded-lg border border-line-strong text-[13.5px] text-text py-2.5 hover:bg-panel-2 disabled:opacity-60"
+          className="flex-1 min-h-11 rounded-lg border border-line-strong text-[13.5px] text-text hover:bg-panel-2 disabled:opacity-60"
         >
           {t("rs.dismiss")}
         </button>
       </div>
+      </div>
+      )}
     </li>
   );
 }
@@ -168,11 +207,17 @@ function Queue({ token, onUnauthorized }: { token: string; onUnauthorized: () =>
   const [items, setItems] = useState<QueueItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<Record<string, string>>({});
+  const [verified, setVerified] = useState<number | null>(null); // when the server last accepted the token
   const t = useT();
+  const lang = useLang();
   useEffect(() => {
     let live = true;
     api.responderQueue(token).then(
-      (q) => live && setItems(q),
+      (q) => {
+        if (!live) return;
+        setItems(q);
+        setVerified(Date.now());
+      },
       (e: ApiError) => {
         if (!live) return;
         if (e.status === 401) onUnauthorized();
@@ -186,10 +231,32 @@ function Queue({ token, onUnauthorized }: { token: string; onUnauthorized: () =>
 
   if (error) return <p className="rounded-lg border border-danger/40 bg-danger-soft p-3 text-[13px] text-text">{t("rs.queueErr", { e: error })}</p>;
   if (!items) return <p className="shimmer-text font-mono text-sm">{t("rs.queueLoading")}</p>;
-  if (!items.length) return <p className="text-[13px] text-muted">{t("rs.queueEmpty")}</p>;
-  const sorted = [...items].sort((a, b) => Number(a.reviewed || !!done[a.obs_id]) - Number(b.reviewed || !!done[b.obs_id]) || b.evidence.time.localeCompare(a.evidence.time));
+  const badge = verified !== null && (
+    <span className="inline-block rounded-[5px] border border-accent/50 px-2 py-1 font-mono text-[10.5px] uppercase tracking-[0.06em] text-accent">
+      {t("rs.verified", { t: new Date(verified).toLocaleTimeString(lang === "es" ? "es-US" : "en-US", { hour: "2-digit", minute: "2-digit", hour12: false }) })}
+    </span>
+  );
+  if (!items.length)
+    return (
+      <div className="space-y-2">
+        {badge}
+        <p className="text-[13px] text-muted">{t("rs.queueEmpty")}</p>
+      </div>
+    );
+  const isDone = (it: QueueItem) => it.reviewed || !!done[it.obs_id];
+  // Unreviewed first; within that, a possible person in water first, then newest.
+  const rank = (it: QueueItem) => Number(isDone(it)) * 2 + Number(!it.flags.includes("person_in_water"));
+  const sorted = [...items].sort((a, b) => rank(a) - rank(b) || b.evidence.time.localeCompare(a.evidence.time));
+  const open = items.filter((it) => !isDone(it)).length;
   return (
-    <ul className="space-y-3">
+    <>
+    <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+      <p className="text-[14px] font-semibold text-text">
+        {t("rs.needsReview")} <span className="font-mono text-danger">{open}</span>
+      </p>
+      {badge}
+    </div>
+    <ul className="space-y-2">
       {sorted.map((it) => (
         <QueueCard
           key={it.obs_id}
@@ -208,6 +275,7 @@ function Queue({ token, onUnauthorized }: { token: string; onUnauthorized: () =>
         />
       ))}
     </ul>
+    </>
   );
 }
 
@@ -276,6 +344,20 @@ function RescueRouting() {
           onSegment={(p) => setSelected({ id: p.edge_id, name: p.name, state: p.state, low: p.low_cm, high: p.high_cm, evidence: p.evidence, basis: p.basis })}
           onPick={() => {}}
         />
+        {/* Rescue route summary over the map (handoff 07); only what the route API returned, no ETA or on-route max. */}
+        {current && (
+          <span className="absolute left-2.5 top-2.5 min-h-7 rounded-full bg-bg/90 border border-accent px-2.5 flex items-center text-[11.5px] font-medium text-text pointer-events-none">
+            {tr("rs.routeChip", { v: vehicleName(tr, lang, current), n: current.limit_cm })}
+          </span>
+        )}
+        {route?.found && (
+          <p className="absolute left-2.5 right-2.5 bottom-2.5 rounded-lg bg-bg/90 px-2.5 py-1.5 font-mono text-[11.5px] text-text flex justify-between gap-3 pointer-events-none">
+            <span className="truncate">
+              → {route.to.label ?? tr("map.dest")} · {fmtDistance(route.distance_m)}
+            </span>
+            {route.unknown_m > 0 && <span className="text-muted shrink-0">{tr("rt.unknownKm", { d: fmtDistance(route.unknown_m) })}</span>}
+          </p>
+        )}
       </div>
       <VehiclePicker
         vehicles={config.vehicles}
