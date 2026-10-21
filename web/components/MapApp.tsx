@@ -14,6 +14,7 @@ import Hero from "./Hero";
 import RiskCard from "./Risk";
 import RouteSummary, { type Selection } from "./Route";
 import Timeline from "./Timeline";
+import DepthRuler from "./DepthRuler";
 import { VehiclePicker } from "./Vehicles";
 
 // MapLibre touches window/WebGL, so it only renders in the browser.
@@ -481,6 +482,11 @@ export default function MapApp() {
           </div>
         )}
 
+        {selected && (
+          <div className="hidden lg:block absolute z-10 bottom-[6.75rem] right-3 w-[260px] pointer-events-none rounded-xl border border-line bg-panel/95 p-3">
+            <DepthRuler depthCm={selected.high} unknown={selected.state === "reported_unknown" || selected.high === null} />
+          </div>
+        )}
         <div className={`hidden md:block absolute bottom-[6.75rem] left-3 w-[300px] transition-opacity ${selected || riskSel ? "opacity-0 pointer-events-none" : ""}`}>
           <Legend open={legendOpen} onToggle={() => setLegendOpen(!legendOpen)} risk={riskOn} />
         </div>

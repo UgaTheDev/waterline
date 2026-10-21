@@ -84,7 +84,7 @@ export default function VehicleGauge({
   crop = 146,
   H = 130,
   ticks = [],
-  gap = 12,
+  gap = 34, // cm; 12 read as one blob at card width
   left = 0,
   lim = false,
 }: {

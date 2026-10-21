@@ -34,7 +34,7 @@ export default function DepthRuler({ depthCm, unknown = false }: { depthCm: numb
         ))}
         <span
           className="absolute left-2 font-mono text-[11px] font-semibold bg-panel px-1 rounded-sm"
-          style={{ bottom: unknown ? "6px" : `calc(${pct(d)} + 6px)`, color: unknown ? "var(--danger)" : "var(--accent)" }}
+          style={{ bottom: unknown ? "6px" : `min(calc(${pct(d)} + 6px), calc(100% - 22px))`, color: unknown ? "var(--danger)" : "var(--accent)" }}
         >
           {unknown ? t("rul.unknown") : depthCm === null ? t("rul.none") : t("rul.at", { n: Math.round(d) })}
         </span>
