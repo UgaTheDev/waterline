@@ -1,12 +1,12 @@
 "use client";
 import { useState } from "react";
 import { mediaUrl, type Evidence, type SegmentState, type Vehicle } from "@/lib/api";
-import { PALETTE, THRESHOLDS, bandFor, describe, fmtTime, inches, range } from "@/lib/depth";
+import { PALETTE, bandFor, describe, fmtTime, range } from "@/lib/depth";
 import { useLang, useT, vehicleName, type Key, type T } from "@/lib/i18n";
 import { useTheme } from "@/lib/theme";
 import type { Selection } from "./Route";
 import { SimulationPlayer, useSimulations } from "./Simulation";
-import { VehicleSilhouette } from "./Vehicles";
+import VehicleGauge, { VEHICLES, isBlocked, refHeight, useRising } from "./VehicleGauge";
 
 const SOURCE: Record<NonNullable<Evidence["kind"]>, Key> = {
   photo: "ev.photo",
@@ -25,34 +25,39 @@ export const sourceLabel = (ev: Evidence, t: T) =>
       : t("ev.inferredN", { n: nReports(ev) })
     : t(SOURCE[ev.kind ?? "photo"] ?? SOURCE.photo);
 
-function DepthGauge({ low, high, color }: { low: number | null; high: number | null; color: string }) {
-  const H = 132;
-  const max = Math.max(90, (high ?? 0) + 10);
-  const y = (cm: number) => H - (Math.min(cm, max) / max) * H;
+// The model returns the reference object's name, not where it is in the photo. So the "reference top / waterline / N cm dry"
+// bracket is a schematic beside the photo, at the object's typical height, never a box or line drawn on the picture.
+function RefSchematic({ refName, refCm, depthCm }: { refName: string; refCm: number; depthCm: number }) {
+  const t = useT();
+  const H = 196;
+  const top = Math.max(refCm, depthCm) * 1.25;
+  const y = (cm: number) => H - 14 - (cm / top) * (H - 28);
+  const gapCm = Math.round(refCm - depthCm);
   return (
-    <svg viewBox={`0 0 64 ${H + 8}`} className="w-16 h-auto shrink-0" aria-hidden>
-      <rect x="22" y="4" width="10" height={H} rx="2" fill="var(--panel-2)" stroke="var(--line)" />
-      {high !== null && (
-        <g className="water-rise" style={{ transformOrigin: `27px ${H + 4}px` }}>
-          <rect x="22" y={y(high) + 4} width="10" height={H - y(high)} rx="2" fill={color} opacity="0.28" />
-          <rect x="22" y={y(high) + 4} width="10" height={Math.max(2, y(low ?? high) - y(high))} fill={color} />
-        </g>
-      )}
-      {THRESHOLDS.map((cm) => (
-        <g key={cm}>
-          <line x1="18" x2="36" y1={y(cm) + 4} y2={y(cm) + 4} stroke="var(--muted)" strokeWidth="1" />
-          <text x="40" y={y(cm) + 7} fontSize="8.5" fill="var(--muted)" fontFamily="var(--font-plex-mono)">
-            {cm}
-          </text>
-          <text x="15" y={y(cm) + 7} fontSize="7.5" fill="var(--faint)" textAnchor="end" fontFamily="var(--font-plex-mono)">
-            {inches(cm)}″
-          </text>
-        </g>
-      ))}
-      {high !== null && <path d={`M34 ${y(high) + 4} l6 -4 v8 z`} fill={color} />}
-    </svg>
+    <figure className="w-[104px] shrink-0 flex flex-col">
+      <svg viewBox={`0 0 104 ${H}`} className="w-full h-[196px]" role="img" aria-label={t("evd.schematicAria", { ref: refName, h: refCm, n: Math.round(depthCm) })}>
+        <rect x="58" y={y(refCm)} width="16" height={y(0) - y(refCm)} rx="2" fill="var(--panel-2)" stroke="var(--line-strong)" strokeDasharray="3 2" />
+        <rect x="0" y={y(depthCm)} width="104" height={y(0) - y(depthCm)} fill="var(--water)" opacity="0.6" />
+        <line x1="0" x2="104" y1={y(depthCm)} y2={y(depthCm)} stroke="var(--text)" strokeWidth="1.5" strokeDasharray="4 3" />
+        <line x1="50" x2="82" y1={y(refCm)} y2={y(refCm)} stroke="var(--accent)" strokeWidth="1.5" />
+        <path d={`M84 ${y(refCm)} h6 V${y(depthCm)} h-6`} fill="none" stroke="var(--accent)" strokeWidth="1.2" />
+        <text x="2" y={y(refCm) - 4} fontSize="9.5" fill="var(--accent)" fontFamily="var(--font-plex-mono)">
+          {t("evd.refTop", { n: refCm })}
+        </text>
+        <text x="2" y={y(depthCm) + 12} fontSize="9.5" fill="var(--text)" fontFamily="var(--font-plex-mono)">
+          {t("evd.water", { n: Math.round(depthCm) })}
+        </text>
+        <line x1="0" x2="104" y1={y(0)} y2={y(0)} stroke="var(--muted)" strokeWidth="1" />
+      </svg>
+      <figcaption className="mt-1 leading-snug">
+        <span className="block font-mono text-[11px] font-semibold text-accent">{gapCm >= 0 ? t("evd.dry", { n: gapCm }) : t("evd.over", { n: -gapCm })}</span>
+        <span className="block font-mono text-[10px] text-faint">{t("evd.schematic", { ref: refName })}</span>
+      </figcaption>
+    </figure>
   );
 }
+
+const confWord = (c: number): Key => (c < 0.4 ? "evd.confLow" : c < 0.6 ? "evd.confMed" : c < 0.8 ? "evd.confMedHigh" : "evd.confHigh");
 
 export function EvidenceItem({
   ev,
@@ -81,9 +86,8 @@ export function EvidenceItem({
             className="w-full max-h-52 object-cover bg-panel-2"
             onError={() => setImgOk(false)}
           />
-          {/* The API gives the reading, not the waterline's pixel position, so this is a labelled readout, not a marker. */}
+          {/* The API gives the reading, not the waterline's pixel position, so this is a text readout: nothing is drawn on the photo. */}
           <figcaption className="absolute inset-x-0 bottom-0 pt-8 pb-2 px-2.5 bg-gradient-to-t from-black/80 to-transparent">
-            <span className="block border-t border-dashed border-[var(--water-line)] mb-1.5" aria-hidden />
             <span className="flex justify-between gap-2 font-mono text-[10.5px] text-white">
               <span>{t("ev.waterline", { ref: ev.reference ?? t("ev.noRef") })}</span>
               <span className="text-[var(--water-line)]">{range(ev.low_cm, ev.high_cm, t)}</span>
@@ -177,6 +181,15 @@ export default function EvidenceCard(props: {
         ? t("ev.vStale")
         : t(high > vehicle.limit_cm ? "ev.vOver" : "ev.vUnder", { v: vName, n: vehicle.limit_cm });
 
+  // Every vehicle class, with the user's from /config taking precedence over the backend-default list.
+  const fleet = VEHICLES.map((v) => (v.id === vehicle?.id ? vehicle : v));
+  // The gauge and the blocked count use the conservative upper bound (high_cm), the same number routing uses.
+  const est = latest?.depth_cm ?? high;
+  const p = useRising(unknown ? 0 : 1);
+  const nBlocked = fleet.filter((v) => isBlocked(unknown ? null : high, v.limit_cm)).length;
+  const hasPhoto = !!latest?.image_url && latest.kind !== "dashcam" && latest.kind !== "voice";
+  const refCm = refHeight(latest?.reference);
+
   return (
     <article
       className="rise bg-panel rounded-xl border border-line shadow-[var(--shadow)] w-full max-h-full overflow-y-auto"
@@ -189,9 +202,12 @@ export default function EvidenceCard(props: {
       <div className="p-4 space-y-4">
         <header className="flex items-start justify-between gap-3">
           <div>
-            <p className="eyebrow">{t(inferred ? "ev.inferredHead" : "ev.streetReport")}</p>
-            <h3 className="font-display text-[26px] leading-tight text-text">{name ?? t("unnamed")}</h3>
-            <p className="text-[13px] mt-0.5 flex items-center gap-2" style={{ color }}>
+            <h3 className="text-[18px] font-semibold leading-tight text-text">{name ?? t("unnamed")}</h3>
+            <p className="text-[12.5px] text-muted mt-0.5">
+              {t(inferred ? "ev.inferredHead" : "ev.streetReport")}
+              {evidence.length > 1 && ` · ${t("evd.latestOf", { n: evidence.length })}`}
+            </p>
+            <p className="text-[13px] mt-1 flex items-center gap-2" style={{ color }}>
               <span className="inline-block w-2 h-2 rounded-full" style={{ background: color }} />
               {describe(state, high, t)}
             </p>
@@ -199,34 +215,98 @@ export default function EvidenceCard(props: {
           <button
             onClick={onClose}
             aria-label={t("ev.close")}
-            className="text-faint hover:text-text w-8 h-8 -mr-1 -mt-1 rounded-md hover:bg-panel-2 text-xl leading-none"
+            className="shrink-0 text-faint hover:text-text w-9 h-9 -mr-1 -mt-1 rounded-full border border-line hover:bg-panel-2 text-xl leading-none"
           >
             ×
           </button>
         </header>
 
-        {latest?.image_url && latest.kind !== "dashcam" && latest.kind !== "voice" && <EvidenceItem ev={latest} photoOnly />}
-
-        <div className="flex items-end gap-3 rounded-lg border border-line bg-panel-2/60 p-3">
-          <DepthGauge low={low} high={high} color={color} />
-          <div className="flex-1 min-w-0">
-            <p className="font-mono text-[26px] leading-none text-text tabular-nums">{unknown ? "?" : range(low, high, t).replace(" cm", "")}</p>
-            <p className="eyebrow mt-1">{t(unknown ? "ev.unreadable" : "ev.range")}</p>
-            <VehicleSilhouette
-              id={vehicle?.id ?? "sedan"}
-              waterCm={unknown ? null : (latest?.depth_cm ?? high)}
-              lowCm={unknown ? null : low}
-              highCm={unknown ? null : high}
-              limitCm={vehicle?.limit_cm}
-              unknown={unknown}
-              className="w-full h-auto mt-2"
-            />
-            <p className="font-mono text-[10px] text-faint mt-1">{t("ev.key")}</p>
+        {hasPhoto && (
+          <div className="flex gap-3 items-start">
+            <div className="flex-1 min-w-0">
+              <EvidenceItem ev={latest} photoOnly />
+            </div>
+            {refCm !== null && !unknown && est !== null && <RefSchematic refName={latest.reference!} refCm={refCm} depthCm={est} />}
           </div>
+        )}
+
+        <div className="flex items-baseline gap-2.5 flex-wrap">
+          <span className="font-mono text-[38px] leading-none font-semibold tabular-nums" style={{ color }}>
+            {unknown ? "?" : `${Math.round(p * (est ?? 0))} cm`}
+          </span>
+          <span className="font-mono text-[15px] text-muted">· {unknown ? t("ev.unreadable") : t("evd.range", { r: range(low, high, t) })}</span>
         </div>
+
+        {latest && (
+          <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+            <div className={(latest.reference?.length ?? 0) > 26 ? "col-span-2" : ""}>
+              <p className="eyebrow">{t("evd.reference")}</p>
+              <p className="text-[14px] text-text mt-1">
+                {latest.reference ? (refCm !== null ? `${latest.reference} · ${refCm} cm` : latest.reference) : t("ev.noRefFrame")}
+              </p>
+            </div>
+            <div>
+              <p className="eyebrow">{t(inferred ? "ev.asOf" : "evd.taken")}</p>
+              <p className="font-mono text-[14px] text-text mt-1">{fmtTime(latest.time, false, lang)}</p>
+            </div>
+            <div className="col-span-2">
+              <p className="eyebrow">{t("source")}</p>
+              <p className="text-[13px] text-text mt-1">{sourceLabel(latest, t)}</p>
+            </div>
+            {latest.location_precision && latest.location_precision !== "exact" && (
+              <p className="col-span-2 text-[12.5px] text-warn">{t("ev.approx", { p: latest.location_precision })}</p>
+            )}
+            {latest.confidence !== null && (
+              <div className="col-span-2">
+                <p className="eyebrow flex justify-between gap-2">
+                  <span>{t("ev.confidence")}</span>
+                  <span className="text-text">
+                    {latest.confidence.toFixed(2)} · {t(confWord(latest.confidence))}
+                  </span>
+                </p>
+                <div className="h-1.5 rounded-full bg-line mt-1.5 overflow-hidden">
+                  <div className="h-full bg-accent" style={{ width: `${Math.round(latest.confidence * 100)}%` }} />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        <section className="rounded-xl border border-line p-3 flex flex-col gap-2" aria-label={t("evd.vehiclesAria")}>
+          <div className="flex justify-between gap-2">
+            <span className="eyebrow">{unknown ? t("evd.vehiclesUnknown") : t("evd.vehiclesAt", { n: Math.round(high ?? 0) })}</span>
+            <span className={`font-mono text-[11px] ${nBlocked ? "text-danger" : "text-muted"}`}>{t("evd.blocked", { n: nBlocked })}</span>
+          </div>
+          <VehicleGauge
+            depthCm={p * (high ?? 0)}
+            unknown={unknown}
+            range={!unknown && low !== null && high !== null ? [low, high] : null}
+            vehicles={fleet}
+            selected={vehicle?.id}
+            lim
+          />
+        </section>
         {verdict && <p className="text-[13px] text-text leading-snug">{verdict}</p>}
 
-        {latest ? <EvidenceItem ev={latest} noPhoto /> : <p className="text-sm text-muted">{t("ev.none")}</p>}
+        {latest ? (
+          <>
+            {latest.rationale && <p className="text-[13px] text-muted leading-relaxed">{latest.rationale}</p>}
+            <p className="text-[11.5px] leading-snug text-muted">
+              {latest.credit ? t("ev.credit", { c: latest.credit }) : t("ev.noCredit")}
+              {hasPhoto && (latest.kind ?? "photo") === "photo" && latest.reference && ` · ${t("evd.readBy")}`}
+              {latest.source_url && (
+                <>
+                  {" · "}
+                  <a href={latest.source_url} target="_blank" rel="noopener noreferrer" className="underline hover:text-text">
+                    {t("ev.sourceLink")}
+                  </a>
+                </>
+              )}
+            </p>
+          </>
+        ) : (
+          <p className="text-sm text-muted">{t("ev.none")}</p>
+        )}
 
         {inferred && sources.length > 0 && (
           <div>
