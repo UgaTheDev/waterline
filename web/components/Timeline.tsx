@@ -4,6 +4,7 @@ import { useLang, useT } from "@/lib/i18n";
 
 export const SPEEDS = [1, 4, 16];
 const STEP = 15 * 60_000;
+const BARS = 48;
 
 export default function Timeline(props: {
   start: number;
@@ -14,15 +15,19 @@ export default function Timeline(props: {
   onPlay: () => void;
   speed: number;
   onSpeed: (s: number) => void;
-  hist: number[]; // reports per hour, from start
+  times: number[]; // time of every report the replay will show (ms); the histogram and count are built from these
   live: boolean;
 }) {
-  const { start, end, t, onScrub, playing, onPlay, speed, onSpeed, hist, live } = props;
+  const { start, end, t, onScrub, playing, onPlay, speed, onSpeed, times, live } = props;
   const tr = useT();
   const lang = useLang();
   const frac = (t - start) / (end - start);
   const hours = Math.round((t - start) / 3_600_000);
+  const span = Math.max(1, end - start);
+  const hist = new Array(BARS).fill(0);
+  for (const x of times) if (x >= start && x <= end) hist[Math.min(BARS - 1, Math.floor(((x - start) / span) * BARS))]++;
   const peak = Math.max(1, ...hist);
+  const sofar = times.filter((x) => x <= t).length; // real reports up to the scrubber time
   const days: number[] = [];
   for (let d = new Date(start).setUTCHours(5, 0, 0, 0); d <= end; d += 86_400_000) if (d >= start) days.push(d); // local midnight (CDT = UTC-5)
 
@@ -45,24 +50,24 @@ export default function Timeline(props: {
         <p className="font-mono text-[10px] sm:text-[10.5px] text-muted mt-1 tracking-wide whitespace-nowrap">
           <span className="uppercase">{fmtDate(t, lang)}</span> · <span className="text-accent">{live ? tr("tl.live") : `T+${hours}h`}</span>
         </p>
+        <p className="font-mono text-[10px] sm:text-[10.5px] text-muted mt-0.5 tabular-nums whitespace-nowrap">{tr("tl.reports", { n: sofar })}</p>
       </div>
 
       <div className="relative flex-1 min-w-0 h-11">
-        {/* Report-density sparkline; the played part is lit. */}
-        <svg className="absolute inset-x-0 top-0 h-7 w-full" viewBox={`0 0 ${Math.max(1, hist.length)} 10`} preserveAspectRatio="none" aria-hidden>
+        {/* Real report counts per time bucket; the played part is lit. Empty buckets keep a hairline, never a fake bar. */}
+        <svg className="absolute inset-x-0 top-0 h-7 w-full" viewBox={`0 0 ${BARS} 10`} preserveAspectRatio="none" aria-hidden>
           {hist.map((n, i) => (
             <rect
               key={i}
-              x={i + 0.12}
-              width="0.76"
-              y={10 - Math.max(0.5, (n / peak) * 10)}
-              height={Math.max(0.5, (n / peak) * 10)}
-              fill={i / hist.length <= frac ? "var(--accent)" : "var(--line-strong)"}
-              opacity={i / hist.length <= frac ? 0.75 : 1}
+              x={i + 0.1}
+              width="0.8"
+              y={10 - Math.max(0.4, (n / peak) * 10)}
+              height={Math.max(0.4, (n / peak) * 10)}
+              fill={i / BARS <= frac ? "var(--accent)" : "var(--line-strong)"}
+              opacity={i / BARS <= frac ? 0.8 : 1}
             />
           ))}
-        </svg>
-        <div className="absolute inset-x-0 top-7 h-px bg-line-strong" />
+        </svg>        <div className="absolute inset-x-0 top-7 h-px bg-line-strong" />
         {days.map((d) => (
           <span key={d} className="absolute top-7 font-mono text-[9.5px] text-faint -translate-x-1/2 pt-1 whitespace-nowrap hidden sm:block" style={{ left: `${((d - start) / (end - start)) * 100}%` }}>
             {fmtTick(d, lang)}
