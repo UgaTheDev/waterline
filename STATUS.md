@@ -2,7 +2,7 @@
 
 <!-- Worker-owned. Update at every checkpoint, blocker, or decision. The orchestrator reads this file; keep the headings exactly. -->
 
-**Updated:** 2026-10-20 18:30  ·  **Stage:** building  ·  **Health:** 🟡 at risk
+**Updated:** 2026-10-21 12:00  ·  **Stage:** building  ·  **Health:** 🟡 at risk
 
 ## Needs Kush
 - **Token Factory card rejected (2026-10-20; Nebius Billing ticket opened by Kush, waiting)** (blocks the live depth model, the agent, eval numbers, and the Nebius requirement itself): check the bank app for a blocked foreign (Nebius B.V., NL) authorization; open a Billing ticket at https://console.nebius.com/support; message organizers via Devpost "Email the hackathon manager" (draft in session). Stopgap for development only: a build.nvidia.com key as `TF_URL=https://integrate.api.nvidia.com/v1` + `TF_KEY=nvapi-...` in .env (eval results record the endpoint; the submission must cite Nebius runs).
@@ -16,6 +16,7 @@
 - **Oct 28: make the repo public** (Nebius requires public + license): `gh repo edit UgaTheDev/waterline --visibility public --accept-visibility-change-consequences`
 
 ## Done since last update
+- 2026-10-21: Claude Design handoff built (map glow/hatch/freshness pins, real-count scrubber, true-scale vehicle gauge, evidence card, depth ruler, hero, drive HUD states, voice orb, responder cards); 0 axe violations (20 combos + hero). Route ETA + street-by-street segments, drive "water ahead · N m", nearby-report count. About/README/live site show the provisional dev eval (0/49). Box probe queued for Nebius. Video draft v2 in progress.
 - 2026-10-20: first eval (test, Nemotron 3.5 Super VL via build.nvidia.com): 4/38 misses, all "ok 0 cm" with no reference object -> new rule depth.unread_zero (unread, not dry) -> 0/38 (CI 0-9.2%), abstain 27%; contaminated (rule found on test), dev split running as the clean check. Web: model-backed calls 60 s (an 8 s chat timeout flipped the whole site offline). Video draft v1 (1:22 storyboard) sent to Kush.
 - 2026-10-20: build.nvidia.com key works (dev stand-in): agent on nemotron-3.5-lightning-30b-a3b, depth on nemotron-3.5-super-vl-120b-a12b (needed DEPTH_MAX_TOKENS: reasoning ate 1,200). Tavily key OK. Cosmos Reason2 + Transfer2.5 licenses granted (HF user KushZ). First 3 real Harvey replay readings (40/38/12 cm), tagged model+endpoint. Test-split eval running (free tier 500s at 8 workers; retrying at 2).
 - 2026-10-20: Kerrville 2025 (TX Hill Country) event: graph from Geofabrik PBF, 904 survey obs on 409 streets, 2,535 inferred on 886; survey gate FAILS (1/36 sedan miss; conformal 95% allowance 232 cm vs 37.5 shipped) -> display-only. Bbox excludes Camp Mystic; Decision (Kush, 2026-10-20): out of the video; mentioned only as text on the eval slide (docs/VIDEO.md).
