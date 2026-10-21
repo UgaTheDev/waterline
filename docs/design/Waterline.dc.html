@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#04070a;color:#e6edf3;font-family:"IBM Plex Sans",sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#67e8f9;text-decoration:none}a:hover{color:#a5f3fc;text-decoration:underline}
+@keyframes wl-rain{to{background-position:0 122px,0 194px}}
+@keyframes wl-drops{to{background-position:0 90px,0 140px,0 60px}}
+@keyframes wl-rise{0%{height:0}55%{height:42.2%}100%{height:42.2%}}
+@keyframes wl-pulse{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.6);opacity:0}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</helmet>
+<div style="padding:72px 80px 120px;display:flex;flex-direction:column;gap:110px;min-width:1500px;width:max-content;background:#04070a;color:#e6edf3">
+
+<header style="display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:64px;align-items:end;border-bottom:1px solid #1c2733;padding-bottom:40px">
+<div>
+<div style="font:500 12px 'IBM Plex Mono';letter-spacing:.14em;color:#67e8f9">WATERLINE · UI CONCEPT · v1</div>
+<h1 style="font:400 72px/1 Newsreader,serif;margin:18px 0 0;letter-spacing:-.01em">Street-level flood depth, read from photos.</h1>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:1.55;color:#8c99a8;text-wrap:pretty">
+<p style="margin:0">Night-storm instrument panel: near-black asphalt, sodium and cyan only as reflections, depth always in mono. Amber→coral is reserved for water. The best a road can be is <span style="color:#c4ccd6">“No deep water reported”</span> in neutral grey. No green, no checks, no “safe”.</p>
+<p style="margin:0">All imagery here is rendered, not photographed, and is labelled <span style="font:500 12px 'IBM Plex Mono';color:#e6edf3">SIMULATION</span>. Replay data shown is illustrative.</p>
+</div>
+</header>
+
+<section data-screen-label="Hero" style="display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;align-items:baseline;gap:14px"><span style="font:600 11px 'IBM Plex Mono';padding:4px 8px;background:#67e8f9;color:#070b10;border-radius:4px">01</span><h2 style="margin:0;font:500 22px 'IBM Plex Sans'">Hero · dark and light</h2></div>
+<div style="display:flex;gap:64px;align-items:flex-start;flex-wrap:wrap">
+
+<div data-screen-label="01 Hero dark" style="width:390px;height:844px;border-radius:48px;overflow:hidden;position:relative;background:#070b10;box-shadow:0 0 0 1px #1c2733,0 0 0 9px #0a0e13,0 0 0 10px #1c2733,0 40px 90px rgba(0,0,0,.6)">
+<div style="position:absolute;left:0;right:0;top:0;height:520px;overflow:hidden;background:linear-gradient(180deg,#04070b 0%,#091018 40%,#0b131b 58%,#050a0f 100%)">
+<div style="position:absolute;left:-10px;bottom:212px;width:150px;height:250px;background:repeating-linear-gradient(0deg,transparent 0 16px,#080d12 16px 30px),repeating-linear-gradient(90deg,rgba(255,166,77,.16) 0 7px,transparent 7px 20px),#080d12"></div>
+<div style="position:absolute;right:-10px;bottom:212px;width:130px;height:300px;background:repeating-linear-gradient(0deg,transparent 0 18px,#070b10 18px 34px),repeating-linear-gradient(90deg,rgba(103,232,249,.10) 0 6px,transparent 6px 19px),#070b10"></div>
+<div style="position:absolute;right:30px;bottom:400px;width:70px;height:6px;background:#67e8f9;box-shadow:0 0 18px 4px rgba(103,232,249,.55);border-radius:2px;opacity:.8"></div>
+<div style="position:absolute;left:150px;bottom:212px;width:110px;height:150px;background:#060a0e"></div>
+<div style="position:absolute;left:86px;bottom:212px;width:3px;height:210px;background:#11171d"></div>
+<div style="position:absolute;left:30px;top:40px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(255,196,120,.95) 0,rgba(255,150,60,.45) 14px,rgba(255,140,40,.12) 46px,transparent 70px)"></div>
+<div style="position:absolute;left:250px;top:150px;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle,rgba(255,190,110,.8) 0,rgba(255,150,60,.3) 9px,transparent 40px)"></div>
+<div style="position:absolute;left:-40px;right:-40px;top:120px;height:220px;background:radial-gradient(60% 70% at 25% 100%,rgba(255,150,60,.14),transparent 70%)"></div>
+<div style="position:absolute;left:0;right:0;bottom:205px;height:14px;background:linear-gradient(180deg,#1d242b,#12181e)"></div>
+<div style="position:absolute;left:0;right:0;bottom:0;height:212px;background:linear-gradient(180deg,rgba(26,46,58,.82) 0,rgba(10,22,30,.94) 40%,#050b10 100%);border-top:1px solid rgba(160,210,230,.35)"></div>
+<div style="position:absolute;left:0;right:0;bottom:0;height:212px;background:repeating-linear-gradient(0deg,rgba(230,240,250,.05) 0 1px,transparent 1px 7px)"></div>
+<div style="position:absolute;left:70px;bottom:20px;width:40px;height:192px;background:linear-gradient(180deg,rgba(255,170,80,.75),rgba(255,140,50,.15) 70%,transparent);filter:blur(7px)"></div>
+<div style="position:absolute;left:278px;bottom:70px;width:18px;height:142px;background:linear-gradient(180deg,rgba(255,170,80,.55),transparent);filter:blur(5px)"></div>
+<div style="position:absolute;right:46px;bottom:40px;width:40px;height:172px;background:linear-gradient(180deg,rgba(103,232,249,.45),transparent 80%);filter:blur(7px)"></div>
+<div style="position:absolute;inset:0">{{ rainHero }}</div>
+<div style="position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 40%,transparent 55%,rgba(4,7,11,.75))"></div>
+<div style="position:absolute;left:0;right:0;bottom:0;height:120px;background:linear-gradient(180deg,transparent,#070b10)"></div>
+</div>
+<div style="position:absolute;top:0;left:0;right:0;height:50px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;font:500 15px 'IBM Plex Mono';color:#e6edf3"><span>23:14</span><span style="display:flex;gap:6px;align-items:center;font-size:12px">5G<span style="width:22px;height:11px;border:1.5px solid #e6edf3;border-radius:3px;display:flex;padding:1px"><span style="width:60%;background:#e6edf3;border-radius:1px"></span></span></span></div>
+<div style="position:absolute;top:58px;left:22px;right:22px;display:flex;justify-content:space-between;align-items:center">
+<span style="font:500 24px Newsreader,serif;letter-spacing:-.01em">Waterline</span>
+<span style="font:500 13px 'IBM Plex Sans';padding:8px 14px;border:1px solid rgba(230,237,243,.35);border-radius:999px;background:rgba(7,11,16,.55)">Report water</span>
+</div>
+<div style="position:absolute;top:108px;left:22px;font:600 10.5px 'IBM Plex Mono';letter-spacing:.08em;padding:5px 8px;border-radius:4px;background:rgba(7,11,16,.8);border:1px solid rgba(230,237,243,.3);color:#e6edf3">SIMULATION, not a real photo</div>
+<div style="position:absolute;left:16px;right:16px;top:296px;padding:12px 12px 10px;border-radius:16px;background:rgba(7,11,16,.42);border:1px solid rgba(103,232,249,.28);backdrop-filter:blur(3px)">
+<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px"><span style="font:500 10.5px 'IBM Plex Mono';letter-spacing:.1em;color:#a5f3fc">DEPTH GAUGE</span><span style="font:600 15px 'IBM Plex Mono';color:#e6edf3">{{ heroDepth }} cm <span style="font-weight:400;color:#c4ccd6;font-size:12px">· {{ heroNote }}</span></span></div>
+{{ gaugeHero }}
+</div>
+<div style="position:absolute;left:24px;right:24px;top:530px;display:flex;flex-direction:column;gap:14px">
+<div style="font:500 11px 'IBM Plex Mono';letter-spacing:.14em;color:#67e8f9">HOUSTON · LIVE REPORTS + REPLAY</div>
+<h3 style="margin:0;font:400 35px/1.07 Newsreader,serif;letter-spacing:-.01em;text-wrap:balance">Know how deep the street is before you drive into it.</h3>
+<p style="margin:0;font-size:15px;line-height:1.5;color:#8c99a8;text-wrap:pretty">Photos read against curbs, door sills and tires. Routes around water too deep for your vehicle.</p>
+<div style="display:flex;gap:10px;margin-top:6px">
+<span style="flex:1;height:52px;border-radius:14px;background:#67e8f9;color:#070b10;font:600 16px 'IBM Plex Sans';display:flex;align-items:center;justify-content:center">Open the map</span>
+<span style="height:52px;padding:0 18px;border-radius:14px;border:1px solid #1c2733;background:#0c1218;font:500 15px 'IBM Plex Sans';display:flex;align-items:center">How it reads depth</span>
+</div>
+</div>
+</div>
+
+<div data-screen-label="01 Hero light" style="width:390px;height:844px;border-radius:48px;overflow:hidden;position:relative;background:#f3f0e8;color:#12161b;box-shadow:0 0 0 1px #d9d3c4,0 0 0 9px #0a0e13,0 0 0 10px #1c2733,0 40px 90px rgba(0,0,0,.6)">
+<div style="position:absolute;left:12px;right:12px;top:52px;height:452px;border-radius:28px;overflow:hidden;background:linear-gradient(180deg,#04070b 0%,#091018 40%,#0b131b 58%,#050a0f 100%)">
+<div style="position:absolute;left:-10px;bottom:160px;width:140px;height:230px;background:repeating-linear-gradient(0deg,transparent 0 16px,#080d12 16px 30px),repeating-linear-gradient(90deg,rgba(255,166,77,.16) 0 7px,transparent 7px 20px),#080d12"></div>
+<div style="position:absolute;right:-10px;bottom:160px;width:120px;height:270px;background:repeating-linear-gradient(0deg,transparent 0 18px,#070b10 18px 34px),repeating-linear-gradient(90deg,rgba(103,232,249,.10) 0 6px,transparent 6px 19px),#070b10"></div>
+<div style="position:absolute;right:26px;bottom:330px;width:64px;height:6px;background:#67e8f9;box-shadow:0 0 18px 4px rgba(103,232,249,.55);border-radius:2px;opacity:.8"></div>
+<div style="position:absolute;left:20px;top:10px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(255,196,120,.95) 0,rgba(255,150,60,.45) 14px,rgba(255,140,40,.12) 46px,transparent 70px)"></div>
+<div style="position:absolute;left:0;right:0;bottom:153px;height:12px;background:linear-gradient(180deg,#1d242b,#12181e)"></div>
+<div style="position:absolute;left:0;right:0;bottom:0;height:160px;background:linear-gradient(180deg,rgba(26,46,58,.82) 0,rgba(10,22,30,.94) 40%,#050b10 100%);border-top:1px solid rgba(160,210,230,.35)"></div>
+<div style="position:absolute;left:0;right:0;bottom:0;height:160px;background:repeating-linear-gradient(0deg,rgba(230,240,250,.05) 0 1px,transparent 1px 7px)"></div>
+<div style="position:absolute;left:60px;bottom:10px;width:40px;height:150px;background:linear-gradient(180deg,rgba(255,170,80,.75),rgba(255,140,50,.15) 70%,transparent);filter:blur(7px)"></div>
+<div style="position:absolute;right:38px;bottom:30px;width:36px;height:130px;background:linear-gradient(180deg,rgba(103,232,249,.45),transparent 80%);filter:blur(7px)"></div>
+<div style="position:absolute;inset:0">{{ rainHero }}</div>
+<div style="position:absolute;top:14px;left:14px;font:600 10.5px 'IBM Plex Mono';letter-spacing:.08em;padding:5px 8px;border-radius:4px;background:rgba(7,11,16,.8);border:1px solid rgba(230,237,243,.3);color:#e6edf3">SIMULATION, not a real photo</div>
+<div style="position:absolute;left:10px;right:10px;bottom:16px;padding:12px 12px 10px;border-radius:16px;background:rgba(7,11,16,.45);border:1px solid rgba(103,232,249,.28);color:#e6edf3">
+<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px"><span style="font:500 10.5px 'IBM Plex Mono';letter-spacing:.1em;color:#a5f3fc">DEPTH GAUGE</span><span style="font:600 15px 'IBM Plex Mono'">{{ heroDepth }} cm <span style="font-weight:400;color:#c4ccd6;font-size:12px">· {{ heroNote }}</span></span></div>
+{{ gaugeHeroL }}
+</div>
+</div>
+<div style="position:absolute;top:0;left:0;right:0;height:50px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;font:500 15px 'IBM Plex Mono'"><span>23:14</span><span style="font-size:12px">5G</span></div>
+<div style="position:absolute;left:24px;right:24px;top:524px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font:500 24px Newsreader,serif">Waterline</span><span style="font:500 11px 'IBM Plex Mono';letter-spacing:.12em;color:#0c6680">HOUSTON</span></div>
+<h3 style="margin:0;font:400 35px/1.07 Newsreader,serif;letter-spacing:-.01em;text-wrap:balance">Know how deep the street is before you drive into it.</h3>
+<p style="margin:0;font-size:15px;line-height:1.5;color:#4f5964;text-wrap:pretty">Photos read against curbs, door sills and tires. Routes around water too deep for your vehicle.</p>
+<div style="display:flex;gap:10px;margin-top:4px">
+<span style="flex:1;height:52px;border-radius:14px;background:#0c6680;color:#f3f0e8;font:600 16px 'IBM Plex Sans';display:flex;align-items:center;justify-content:center">Open the map</span>
+<span style="height:52px;padding:0 18px;border-radius:14px;border:1px solid #cfc8b8;font:500 15px 'IBM Plex Sans';display:flex;align-items:center">Report water</span>
+</div>
+</div>
+</div>
+
+<div style="width:340px;display:flex;flex-direction:column;gap:18px;font-size:13.5px;line-height:1.55;color:#8c99a8">
+<div style="font:500 11px 'IBM Plex Mono';letter-spacing:.12em;color:#e6edf3">NOTES</div>
+<p style="margin:0">The gauge sits on the water itself. Vehicles are front-end silhouettes at true scale (1 cm = 0.75 px), so the waterline reads against the bumper and wheel, not against an abstract bar.</p>
+<p style="margin:0">Light theme keeps the photo night-dark inside an inset card; paper and ink carry the UI. Accent <span style="font-family:'IBM Plex Mono';color:#e6edf3">#0c6680</span> on paper is 6.2:1.</p>
+<p style="margin:0">Use the <span style="color:#e6edf3">heroDepth</span> tweak to slide the waterline and watch vehicles flip to BLOCKED.</p>
+</div>
+</div>
+</section>
+
+<section data-screen-label="Mobile" style="display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;align-items:baseline;gap:14px"><span style="font:600 11px 'IBM Plex Mono';padding:4px 8px;background:#67e8f9;color:#070b10;border-radius:4px">02–07</span><h2 style="margin:0;font:500 22px 'IBM Plex Sans'">Mobile flow · 390</h2></div>
+<div style="display:flex;gap:56px;flex-wrap:wrap;align-items:flex-start">
+
+<div style="display:flex;flex-direction:column;gap:12px"><span style="font:500 12px 'IBM Plex Mono';color:#8c99a8">02 · Map (replay)</span>
+<div data-screen-label="02 Map" style="width:390px;height:844px;border-radius:48px;overflow:hidden;position:relative;background:#070b10;box-shadow:0 0 0 1px #1c2733,0 0 0 9px #0a0e13,0 0 0 10px #1c2733,0 40px 90px rgba(0,0,0,.6)">
+<div style="position:absolute;inset:0">{{ mapMain }}</div>
+<div style="position:absolute;left:0;right:0;top:0;height:200px;background:linear-gradient(180deg,#070b10 30%,rgba(7,11,16,0))"></div>
+<div style="position:absolute;top:0;left:0;right:0;height:50px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;font:500 15px 'IBM Plex Mono'"><span>23:14</span><span style="font-size:12px">5G</span></div>
+<div style="position:absolute;top:54px;left:16px;right:16px;display:flex;flex-direction:column;gap:10px">
+<div style="height:48px;border-radius:14px;background:#0c1218;border:1px solid #1c2733;display:flex;align-items:center;gap:12px;padding:0 14px"><span style="width:13px;height:13px;border:2px solid #8c99a8;border-radius:50%"></span><span style="font-size:15px;color:#8c99a8;flex:1">Search a street or place</span><span style="width:30px;height:30px;border-radius:50%;background:#1c2733;font:600 12px 'IBM Plex Sans';display:flex;align-items:center;justify-content:center">AV</span></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<span style="height:36px;padding:0 12px;border-radius:999px;background:#0c1218;border:1px solid #67e8f9;display:flex;align-items:center;gap:8px;font:500 13px 'IBM Plex Sans'">{{ icSuvC }}SUV<span style="font:500 12px 'IBM Plex Mono';color:#67e8f9">30 cm</span><span style="color:#8c99a8;font-size:10px">▼</span></span>
+<span style="height:36px;padding:0 12px;border-radius:999px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.6);display:flex;align-items:center;gap:7px;font:500 11px 'IBM Plex Mono';letter-spacing:.04em;color:#fbbf24"><span style="width:6px;height:6px;border-radius:50%;background:#fbbf24"></span>REPLAY · Hurricane Harvey · Aug 28 2017</span>
+</div>
+</div>
+<div style="position:absolute;right:16px;top:300px;display:flex;flex-direction:column;gap:8px">
+<span style="width:44px;height:44px;border-radius:12px;background:#0c1218;border:1px solid #1c2733;display:flex;align-items:center;justify-content:center"><span style="width:14px;height:14px;border:2px solid #e6edf3;border-radius:50%;box-shadow:inset 0 0 0 3px #0c1218,inset 0 0 0 7px #e6edf3"></span></span>
+<span style="width:44px;height:44px;border-radius:12px;background:#0c1218;border:1px solid #1c2733;display:flex;align-items:center;justify-content:center;font:600 12px 'IBM Plex Mono'">3D</span>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0;padding:10px 18px 30px;border-radius:26px 26px 0 0;background:rgba(12,18,24,.97);border-top:1px solid #1c2733;display:flex;flex-direction:column;gap:14px">
+<span style="align-self:center;width:36px;height:4px;border-radius:2px;background:#2a3644"></span>
+<div style="display:flex;gap:12px;align-items:center">
+<span style="width:44px;height:44px;flex:none;border-radius:50%;border:1.5px solid #67e8f9;display:flex;align-items:center;justify-content:center"><span style="width:0;height:0;border-left:11px solid #67e8f9;border-top:7px solid transparent;border-bottom:7px solid transparent;margin-left:3px"></span></span>
+<div style="flex:1;display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;justify-content:space-between;font:500 12px 'IBM Plex Mono'"><span>Aug 28 · 06:40 CDT</span><span style="color:#8c99a8">412 reports</span></div>
+<div style="position:relative">{{ barsMap }}<span style="position:absolute;left:58%;top:-4px;bottom:-4px;width:2px;background:#e6edf3;border-radius:1px;box-shadow:0 0 0 3px rgba(230,237,243,.15)"></span></div>
+<div style="display:flex;justify-content:space-between;font:400 10px 'IBM Plex Mono';color:#8c99a8"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span></div>
+</div>
+</div>
+<div style="height:1px;background:#1c2733"></div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;height:8px;border-radius:4px;overflow:hidden;gap:2px"><span style="flex:1;background:#fbbf24"></span><span style="flex:1;background:#fb923c"></span><span style="flex:1;background:#fb7185"></span><span style="flex:1;background:#f43f5e"></span></div>
+<div style="display:flex;font:500 10.5px 'IBM Plex Mono';color:#c4ccd6"><span style="flex:1">&lt;15</span><span style="flex:1">15–30</span><span style="flex:1">30–45</span><span style="flex:1">45+ cm</span></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;font-size:12px;color:#c4ccd6">
+<span style="display:flex;align-items:center;gap:8px"><span style="width:22px;height:5px;border-radius:3px;background:#fb7185"></span>Observed</span>
+<span style="display:flex;align-items:center;gap:8px"><span style="width:22px;height:6px;opacity:.75;background:repeating-linear-gradient(45deg,#fb7185 0 2px,transparent 2px 5px)"></span>Inferred</span>
+<span style="display:flex;align-items:center;gap:8px"><span style="width:16px;height:16px;border-radius:50%;border:2px solid #f43f5e;font:700 9px 'IBM Plex Mono';color:#f43f5e;display:flex;align-items:center;justify-content:center">?</span>Unknown depth · blocks all</span>
+<span style="display:flex;align-items:center;gap:8px"><span style="width:16px;height:16px;border-radius:50%;border:2px solid #2a3644;border-top-color:#e6edf3;border-right-color:#e6edf3"></span>Ring = freshness</span>
+</div>
+<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;border:1px dashed #2a3644;font-size:13px"><span style="width:22px;height:5px;border-radius:3px;background:#1f2a36;flex:none"></span><span>No reports doesn't mean dry.</span></div>
+</div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:12px"><span style="font:500 12px 'IBM Plex Mono';color:#8c99a8">03 · Evidence card</span>
+<div data-screen-label="03 Evidence" style="width:390px;height:844px;border-radius:48px;overflow:hidden;position:relative;background:#070b10;box-shadow:0 0 0 1px #1c2733,0 0 0 9px #0a0e13,0 0 0 10px #1c2733,0 40px 90px rgba(0,0,0,.6)">
+<div style="position:absolute;inset:0;opacity:.45">{{ mapEv }}</div>
+<div style="position:absolute;top:0;left:0;right:0;height:50px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;font:500 15px 'IBM Plex Mono'"><span>23:14</span><span style="font-size:12px">5G</span></div>
+<div style="position:absolute;left:0;right:0;top:64px;bottom:0;border-radius:26px 26px 0 0;background:#0c1218;border-top:1px solid #1c2733;padding:10px 20px 28px;display:flex;flex-direction:column;gap:13px">
+<span style="align-self:center;width:36px;height:4px;border-radius:2px;background:#2a3644"></span>
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+<div><div style="font:600 18px 'IBM Plex Sans'">Allen Pkwy at Studemont</div><div style="font-size:12.5px;color:#8c99a8;margin-top:2px">Observed report · 1 of 3 within 200 m</div></div>
+<span style="width:36px;height:36px;border-radius:50%;background:#1c2733;display:flex;align-items:center;justify-content:center;font-size:16px;color:#c4ccd6">✕</span>
+</div>
+<div style="position:relative;height:196px;border-radius:14px;overflow:hidden;background:radial-gradient(80% 70% at 85% 0%,rgba(255,150,60,.28),transparent 60%),linear-gradient(180deg,#0a0f15,#05080c)">
+<div style="position:absolute;left:-20px;right:-20px;top:0;height:112px;background:linear-gradient(180deg,#151b22 0%,#1b222a 60%,#0f1419 100%);border-bottom:2px solid #232b34"></div>
+<div style="position:absolute;left:150px;right:-20px;top:30px;height:2px;background:linear-gradient(90deg,transparent,rgba(255,180,100,.55),transparent)"></div>
+<div style="position:absolute;left:50px;top:56px;width:150px;height:76px;border-radius:80px 80px 0 0;background:#06090c"></div>
+<div style="position:absolute;left:62px;top:64px;width:126px;height:126px;border-radius:50%;background:radial-gradient(circle,#3a424b 0 13%,#14191e 14% 26%,#2a3139 27% 33%,#0b0e11 34% 62%,#181d22 63% 66%,#090b0d 67% 100%)"></div>
+<div style="position:absolute;left:0;right:0;top:118px;bottom:0;background:linear-gradient(180deg,rgba(40,78,96,.78),rgba(8,20,28,.95));border-top:1px solid rgba(170,220,235,.45)"></div>
+<div style="position:absolute;left:0;right:0;top:118px;bottom:0;background:repeating-linear-gradient(0deg,rgba(230,240,250,.06) 0 1px,transparent 1px 6px)"></div>
+<div style="position:absolute;left:230px;top:118px;width:30px;height:78px;background:linear-gradient(180deg,rgba(255,170,80,.6),transparent);filter:blur(5px)"></div>
+<div style="position:absolute;left:58px;top:60px;width:134px;height:134px;border:1.5px solid #67e8f9;border-radius:4px"></div>
+<span style="position:absolute;left:58px;top:40px;font:600 10px 'IBM Plex Mono';letter-spacing:.06em;padding:3px 6px;background:#67e8f9;color:#070b10;border-radius:3px">TIRE · top 65 cm</span>
+<div style="position:absolute;left:0;right:0;top:117px;border-top:2px dashed #e6edf3"></div>
+<span style="position:absolute;right:10px;top:126px;font:600 10px 'IBM Plex Mono';letter-spacing:.06em;padding:3px 6px;background:rgba(7,11,16,.85);border:1px solid #e6edf3;color:#e6edf3;border-radius:3px">WATERLINE · 38 cm</span>
+<div style="position:absolute;left:202px;top:64px;width:10px;height:54px;border:1.5px solid #a5f3fc;border-left:none"></div>
+<span style="position:absolute;left:218px;top:80px;font:500 10px 'IBM Plex Mono';color:#a5f3fc">27 cm dry</span>
+<span style="position:absolute;left:10px;top:10px;font:600 10px 'IBM Plex Mono';letter-spacing:.06em;padding:4px 7px;background:rgba(7,11,16,.85);border:1px solid rgba(230,237,243,.3);color:#e6edf3;border-radius:4px">SIMULATION, not a real photo</span>
+</div>
+<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+<span style="font:600 38px/1 'IBM Plex Mono';color:#fb7185">38 cm</span>
+<span style="font:500 15px 'IBM Plex Mono';color:#c4ccd6">· range 30–50</span>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 16px">
+<div><div style="font:500 10.5px 'IBM Plex Mono';letter-spacing:.1em;color:#8c99a8">REFERENCE</div><div style="font-size:14px;margin-top:3px">Tire top · 65 cm</div></div>
+<div><div style="font:500 10.5px 'IBM Plex Mono';letter-spacing:.1em;color:#8c99a8">TAKEN</div><div style="font:500 14px 'IBM Plex Mono';margin-top:3px">06:12 CDT <span style="color:#8c99a8">· 28 min</span></div></div>
+<div style="grid-column:1 / -1"><div style="display:flex;justify-content:space-between;font:500 10.5px 'IBM Plex Mono';letter-spacing:.1em;color:#8c99a8"><span>CONFIDENCE</span><span style="color:#e6edf3">0.72 · medium-high</span></div><div style="height:6px;border-radius:3px;background:#1c2733;margin-top:6px;overflow:hidden"><div style="width:72%;height:100%;background:#67e8f9"></div></div></div>
+</div>
+<div style="border:1px solid #1c2733;border-radius:12px;padding:12px 12px 10px;display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;justify-content:space-between"><span style="font:500 10.5px 'IBM Plex Mono';letter-spacing:.1em;color:#8c99a8">VEHICLES AT 38 CM</span><span style="font:500 11px 'IBM Plex Mono';color:#fb7185">2 blocked</span></div>
+{{ gaugeEv }}
+</div>
+<div style="font-size:11.5px;line-height:1.45;color:#8c99a8">Photo by reporter #A41F · CC BY 4.0 · depth read by NVIDIA vision model, checked against 2 nearby reports</div>
+<div style="display:flex;gap:10px;margin-top:auto">
+<span style="flex:1;height:50px;border-radius:14px;background:#67e8f9;color:#070b10;font:600 15px 'IBM Plex Sans';display:flex;align-items:center;justify-content:center">Route around this</span>
+<span style="height:50px;padding:0 16px;border-radius:14px;border:1px solid #1c2733;font:500 14px 'IBM Plex Sans';display:flex;align-items:center">Flag photo</span>
+</div>
+</div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:12px"><span style="font:500 12px 'IBM Plex Mono';color:#8c99a8">04 · Route sheet</span>
+<div data-screen-label="04 Route" style="width:390px;height:844px;border-radius:48px;overflow:hidden;position:relative;background:#070b10;box-shadow:0 0 0 1px #1c2733,0 0 0 9px #0a0e13,0 0 0 10px #1c2733,0 40px 90px rgba(0,0,0,.6)">
+<div style="position:absolute;left:0;right:0;top:0;height:420px">{{ mapRoute }}</div>
+<div style="position:absolute;left:0;right:0;top:0;height:150px;background:linear-gradient(180deg,#070b10 35%,rgba(7,11,16,0))"></div>
+<div style="position:absolute;top:0;left:0;right:0;height:50px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;font:500 15px 'IBM Plex Mono'"><span>23:14</span><span style="font-size:12px">5G</span></div>
+<div style="position:absolute;top:54px;left:16px;right:16px;border-radius:14px;background:#0c1218;border:1px solid #1c2733;padding:10px 14px;display:grid;grid-template-columns:14px 1fr;gap:6px 10px;align-items:center;font-size:14px">
+<span style="width:10px;height:10px;border-radius:50%;border:2px solid #e6edf3"></span><span>Heights · W 11th St</span>
+<span style="width:10px;height:10px;border-radius:2px;background:#67e8f9"></span><span>Memorial Hermann – TMC</span>
+</div>
+<span style="position:absolute;left:206px;top:178px;display:flex;align-items:center;gap:6px;font:500 11px 'IBM Plex Mono';padding:5px 8px;border-radius:6px;background:rgba(7,11,16,.9);border:1px solid #fb7185;color:#fb7185">Memorial Dr · 52 cm · avoided</span>
+<div style="position:absolute;left:0;right:0;top:384px;bottom:0;border-radius:26px 26px 0 0;background:#0c1218;border-top:1px solid #1c2733;padding:10px 20px 26px;display:flex;flex-direction:column;gap:12px">
+<span style="align-self:center;width:36px;height:4px;border-radius:2px;background:#2a3644"></span>
+<div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px"><span style="font:600 26px 'IBM Plex Mono';white-space:nowrap">24 min</span><span style="font:500 13px 'IBM Plex Mono';color:#8c99a8;white-space:nowrap">11.2 km · via Waugh · +4 min</span></div>
+<div style="display:flex;flex-direction:column;gap:6px;padding:11px 12px;border-radius:12px;background:#111a23">
+<div style="display:flex;align-items:center;gap:10px;font:500 14px 'IBM Plex Sans';color:#c4ccd6"><span style="width:10px;height:10px;border-radius:50%;background:#8c99a8;flex:none"></span>No deep water reported on this route</div>
+<div style="display:flex;align-items:center;gap:10px;font:500 12.5px 'IBM Plex Mono';color:#8c99a8"><span style="width:10px;height:10px;border-radius:50%;border:1.5px dashed #8c99a8;flex:none"></span>4.3 km without reports: unknown, not dry</div>
+</div>
+<div style="display:flex;flex-direction:column">
+<div style="display:grid;grid-template-columns:4px 1fr auto;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid #1c2733"><span style="height:32px;border-radius:2px;background:#f43f5e"></span><div><div style="font-size:14px;text-decoration:line-through;text-decoration-color:#fb7185;color:#c4ccd6">Memorial Dr</div><div style="font:500 11.5px 'IBM Plex Mono';color:#fb7185">52 cm · over SUV limit 30 · avoided</div></div><span style="font:500 11px 'IBM Plex Mono';color:#8c99a8">—</span></div>
+<div style="display:grid;grid-template-columns:4px 1fr auto;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid #1c2733"><span style="height:32px;border-radius:2px;background:#8c99a8"></span><div><div style="font-size:14px">Studemont St</div><div style="font:500 11.5px 'IBM Plex Mono';color:#8c99a8">No deep water reported · 3 reports</div></div><span style="font:500 12px 'IBM Plex Mono'">1.4 km</span></div>
+<div style="display:grid;grid-template-columns:4px 1fr auto;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid #1c2733"><span style="height:32px;border-radius:2px;border:1px dashed #8c99a8;box-sizing:border-box"></span><div><div style="font-size:14px">Washington Ave</div><div style="font:500 11.5px 'IBM Plex Mono';color:#8c99a8">No reports · unknown, not dry</div></div><span style="font:500 12px 'IBM Plex Mono'">0.9 km</span></div>
+<div style="display:grid;grid-template-columns:4px 1fr auto;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid #1c2733"><span style="height:32px;border-radius:2px;background:#fbbf24"></span><div><div style="font-size:14px">Waugh Dr</div><div style="font:500 11.5px 'IBM Plex Mono';color:#fbbf24">14 cm · under SUV limit 30</div></div><span style="font:500 12px 'IBM Plex Mono'">1.1 km</span></div>
+<div style="display:grid;grid-template-columns:4px 1fr auto;gap:12px;align-items:center;padding:8px 0"><span style="height:32px;border-radius:2px;border:1px dashed #8c99a8;box-sizing:border-box"></span><div><div style="font-size:14px">Montrose Blvd</div><div style="font:500 11.5px 'IBM Plex Mono';color:#8c99a8">No reports · unknown, not dry</div></div><span style="font:500 12px 'IBM Plex Mono'">3.4 km</span></div>
+</div>
+<span style="margin-top:auto;height:52px;border-radius:14px;background:#67e8f9;color:#070b10;font:600 16px 'IBM Plex Sans';display:flex;align-items:center;justify-content:center">Start drive mode</span>
+</div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:12px"><span style="font:500 12px 'IBM Plex Mono';color:#8c99a8">06 · Agent (voice-first)</span>
+<div data-screen-label="06 Agent" style="width:390px;height:844px;border-radius:48px;overflow:hidden;position:relative;background:radial-gradient(90% 50% at 50% 100%,rgba(103,232,249,.10),transparent 70%),#070b10;box-shadow:0 0 0 1px #1c2733,0 0 0 9px #0a0e13,0 0 0 10px #1c2733,0 40px 90px rgba(0,0,0,.6)">
+<div style="position:absolute;top:0;left:0;right:0;height:50px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;font:500 15px 'IBM Plex Mono'"><span>23:14</span><span style="font-size:12px">5G</span></div>
+<div style="position:absolute;top:56px;left:20px;right:20px;display:flex;justify-content:space-between;align-items:center"><span style="font:500 22px Newsreader,serif">Ask Waterline</span><span style="height:32px;padding:0 10px;border-radius:999px;border:1px solid #1c2733;display:flex;align-items:center;gap:6px;font:500 12px 'IBM Plex Sans'">{{ icSuvC }}SUV · <span style="font-family:'IBM Plex Mono';color:#67e8f9">30</span></span></div>
+<div style="position:absolute;top:112px;left:20px;right:20px;display:flex;flex-direction:column;gap:16px">
+<div style="align-self:flex-end;max-width:84%;padding:12px 14px;border-radius:16px 16px 4px 16px;background:#111a23;border:1px solid #1c2733">
+<div style="font-size:15px;line-height:1.45">Can I get to Memorial Hermann from the Heights in my SUV?</div>
+<div style="font:500 11px 'IBM Plex Mono';color:#8c99a8;margin-top:6px">VOICE · 0:04</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="font-size:16px;line-height:1.5;text-wrap:pretty">There's a route with <span style="color:#c4ccd6">no deep water reported</span>. Memorial Dr has 52 cm at Studemont, over your 30 cm limit, so I'd go down Waugh Dr instead: 14 cm, reported 28 min ago.</div>
+<div style="display:flex;flex-wrap:wrap;gap:8px">
+<span style="height:32px;padding:0 10px;border-radius:8px;background:#0c1218;border:1px solid #1c2733;display:flex;align-items:center;gap:8px;font:500 12.5px 'IBM Plex Sans'"><span style="width:14px;height:4px;border-radius:2px;background:#f43f5e"></span>Memorial Dr<span style="font-family:'IBM Plex Mono';color:#fb7185">52 cm</span></span>
+<span style="height:32px;padding:0 10px;border-radius:8px;background:#0c1218;border:1px solid #1c2733;display:flex;align-items:center;gap:8px;font:500 12.5px 'IBM Plex Sans'"><span style="width:14px;height:4px;border-radius:2px;background:#fbbf24"></span>Waugh Dr<span style="font-family:'IBM Plex Mono';color:#fbbf24">14 cm</span></span>
+<span style="height:32px;padding:0 10px 0 4px;border-radius:8px;background:#0c1218;border:1px solid #1c2733;display:flex;align-items:center;gap:8px;font:500 12px 'IBM Plex Mono'"><span style="width:24px;height:24px;border-radius:5px;background:linear-gradient(180deg,#1b222a 50%,#28495a 50%)"></span>Photo · 06:12</span>
+<span style="height:32px;padding:0 10px 0 4px;border-radius:8px;background:#0c1218;border:1px solid #1c2733;display:flex;align-items:center;gap:8px;font:500 12px 'IBM Plex Mono'"><span style="width:24px;height:24px;border-radius:5px;background:linear-gradient(180deg,#151b22 62%,#28495a 62%)"></span>Photo · 05:48</span>
+</div>
+<div style="font-size:14px;line-height:1.5;color:#8c99a8">Montrose Blvd has no reports. That's unknown, not dry.</div>
+<div style="display:flex;gap:8px"><span style="height:40px;padding:0 16px;border-radius:12px;background:#67e8f9;color:#070b10;font:600 14px 'IBM Plex Sans';display:flex;align-items:center">Open route</span><span style="height:40px;padding:0 14px;border-radius:12px;border:1px solid #1c2733;font:500 14px 'IBM Plex Sans';display:flex;align-items:center">Read it again</span></div>
+</div>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:34px;display:flex;flex-direction:column;align-items:center;gap:16px">
+<div style="position:relative;width:200px;height:200px;display:flex;align-items:center;justify-content:center">
+{{ orbRings }}
+<div style="width:128px;height:128px;border-radius:50%;background:radial-gradient(circle at 50% 35%,#cffafe 0,#67e8f9 30%,#0e7490 72%,#083344 100%);box-shadow:0 0 50px rgba(103,232,249,.4),inset 0 -10px 30px rgba(8,51,68,.6);display:flex;align-items:center;justify-content:center">
+<div style="display:flex;gap:4px;align-items:center"><span style="width:4px;height:14px;border-radius:2px;background:#070b10"></span><span style="width:4px;height:26px;border-radius:2px;background:#070b10"></span><span style="width:4px;height:36px;border-radius:2px;background:#070b10"></span><span style="width:4px;height:22px;border-radius:2px;background:#070b10"></span><span style="width:4px;height:12px;border-radius:2px;background:#070b10"></span></div>
+</div>
+</div>
+<div style="display:flex;align-items:center;gap:16px"><span style="font:500 16px 'IBM Plex Sans'">Hold to talk</span><span style="width:1px;height:16px;background:#1c2733"></span><span style="font:500 14px 'IBM Plex Sans';color:#8c99a8">Type instead</span></div>
+</div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:12px"><span style="font:500 12px 'IBM Plex Mono';color:#8c99a8">07 · Responder (token-gated)</span>
+<div data-screen-label="07 Responder" style="width:390px;height:844px;border-radius:48px;overflow:hidden;position:relative;background:#070b10;box-shadow:0 0 0 1px #1c2733,0 0 0 9px #0a0e13,0 0 0 10px #1c2733,0 40px 90px rgba(0,0,0,.6)">
+<div style="position:absolute;top:0;left:0;right:0;height:50px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;font:500 15px 'IBM Plex Mono'"><span>23:14</span><span style="font-size:12px">5G</span></div>
+<div style="position:absolute;top:52px;left:16px;right:16px;display:flex;justify-content:space-between;align-items:center">
+<span style="font:600 17px 'IBM Plex Sans'">Responder</span>
+<span style="font:500 10.5px 'IBM Plex Mono';letter-spacing:.06em;padding:5px 8px;border-radius:5px;border:1px solid rgba(103,232,249,.5);color:#67e8f9">TOKEN · HFD-06 · VERIFIED 23:02</span>
+</div>
+<div style="position:absolute;top:90px;left:16px;right:16px;height:230px;border-radius:16px;overflow:hidden;border:1px solid #1c2733">
+{{ mapResp }}
+<span style="position:absolute;left:10px;top:10px;height:28px;padding:0 10px;border-radius:999px;background:rgba(7,11,16,.9);border:1px solid #67e8f9;display:flex;align-items:center;gap:6px;font:500 11.5px 'IBM Plex Sans'">{{ icRescueC }}Rescue truck · <span style="font-family:'IBM Plex Mono';color:#67e8f9">90 cm</span></span>
+<span style="position:absolute;left:10px;right:10px;bottom:10px;padding:7px 10px;border-radius:8px;background:rgba(7,11,16,.92);font:500 11.5px 'IBM Plex Mono';display:flex;justify-content:space-between"><span>→ Shepherd Dr · 9 min</span><span style="color:#fb7185">max 52 cm on route</span></span>
+</div>
+<div style="position:absolute;top:334px;left:16px;right:16px;bottom:0;display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:600 14px 'IBM Plex Sans'">Needs human review <span style="font-family:'IBM Plex Mono';color:#fb7185">6</span></span><span style="font:500 12px 'IBM Plex Mono';color:#8c99a8">Newest ▾</span></div>
+<div style="display:grid;grid-template-columns:52px 1fr;gap:10px;padding:10px;border-radius:12px;background:#0c1218;border:1px solid #fb7185">
+<div style="height:52px;border-radius:8px;background:linear-gradient(160deg,#1a2530,#0a1118);display:flex;align-items:center;justify-content:center;font:500 8.5px 'IBM Plex Mono';color:#8c99a8;text-align:center;line-height:1.2">IMAGE<br>WITHHELD</div>
+<div style="display:flex;flex-direction:column;gap:3px;min-width:0">
+<div style="display:flex;justify-content:space-between;gap:8px"><span style="font:600 14px 'IBM Plex Sans';color:#fb7185">Possible person in water</span><span style="font:500 11px 'IBM Plex Mono';color:#8c99a8">3 min</span></div>
+<div style="font-size:12.5px;color:#c4ccd6">Buffalo Bayou at Shepherd Dr</div>
+<div style="display:flex;gap:6px;margin-top:3px;font:500 11px 'IBM Plex Mono'"><span style="padding:3px 6px;border-radius:4px;background:#1c2733">model 0.41</span><span style="padding:3px 6px;border-radius:4px;background:#1c2733">depth unknown</span><span style="margin-left:auto;padding:3px 8px;border-radius:4px;background:#fb7185;color:#070b10;font-weight:600">Review</span></div>
+</div></div>
+<div style="display:grid;grid-template-columns:52px 1fr;gap:10px;padding:10px;border-radius:12px;background:#0c1218;border:1px solid #1c2733">
+<div style="height:52px;border-radius:8px;background:linear-gradient(180deg,#141b22 55%,#24465a 55%)"></div>
+<div style="display:flex;flex-direction:column;gap:3px;min-width:0">
+<div style="display:flex;justify-content:space-between;gap:8px"><span style="font:600 14px 'IBM Plex Sans'">Occupied vehicle</span><span style="font:500 11px 'IBM Plex Mono';color:#8c99a8">7 min</span></div>
+<div style="font-size:12.5px;color:#c4ccd6">I-10 underpass at Heights Blvd</div>
+<div style="display:flex;gap:6px;margin-top:3px;font:500 11px 'IBM Plex Mono'"><span style="padding:3px 6px;border-radius:4px;background:#1c2733;color:#fb7185">110 cm</span><span style="padding:3px 6px;border-radius:4px;background:#1c2733">over 90 · boat unit</span><span style="margin-left:auto;padding:3px 8px;border-radius:4px;border:1px solid #2a3644">Review</span></div>
+</div></div>
+<div style="display:grid;grid-template-columns:52px 1fr;gap:10px;padding:10px;border-radius:12px;background:#0c1218;border:1px solid #1c2733">
+<div style="height:52px;border-radius:8px;background:linear-gradient(180deg,#171e25 70%,#24465a 70%)"></div>
+<div style="display:flex;flex-direction:column;gap:3px;min-width:0">
+<div style="display:flex;justify-content:space-between;gap:8px"><span style="font:600 14px 'IBM Plex Sans'">Occupied vehicle</span><span style="font:500 11px 'IBM Plex Mono';color:#8c99a8">12 min</span></div>
+<div style="font-size:12.5px;color:#c4ccd6">Memorial Dr at Studemont</div>
+<div style="display:flex;gap:6px;margin-top:3px;font:500 11px 'IBM Plex Mono'"><span style="padding:3px 6px;border-radius:4px;background:#1c2733;color:#fb7185">52 cm</span><span style="padding:3px 6px;border-radius:4px;background:#1c2733">2 photos</span><span style="margin-left:auto;padding:3px 8px;border-radius:4px;border:1px solid #2a3644">Review</span></div>
+</div></div>
+<div style="display:grid;grid-template-columns:52px 1fr;gap:10px;padding:10px;border-radius:12px;background:#0c1218;border:1px solid #1c2733">
+<div style="height:52px;border-radius:8px;background:#111a23;display:flex;align-items:center;justify-content:center;font:700 18px 'IBM Plex Mono';color:#f43f5e">?</div>
+<div style="display:flex;flex-direction:column;gap:3px;min-width:0">
+<div style="display:flex;justify-content:space-between;gap:8px"><span style="font:600 14px 'IBM Plex Sans'">Depth unreadable</span><span style="font:500 11px 'IBM Plex Mono';color:#8c99a8">15 min</span></div>
+<div style="font-size:12.5px;color:#c4ccd6">Shepherd Dr · treated as deep, blocks all</div>
+<div style="display:flex;gap:6px;margin-top:3px;font:500 11px 'IBM Plex Mono'"><span style="padding:3px 6px;border-radius:4px;background:#1c2733">no reference object</span><span style="margin-left:auto;padding:3px 8px;border-radius:4px;border:1px solid #2a3644">Review</span></div>
+</div></div>
+</div>
+</div></div>
+
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px"><span style="font:500 12px 'IBM Plex Mono';color:#8c99a8">05 · Drive mode · landscape · rain on glass sits beneath solid HUD plates</span>
+<div style="display:flex;gap:48px;flex-wrap:wrap">
+
+<div data-screen-label="05 Drive · water ahead" style="width:844px;height:390px;border-radius:44px;overflow:hidden;position:relative;background:#04070b;box-shadow:0 0 0 1px #1c2733,0 0 0 9px #0a0e13,0 0 0 10px #1c2733,0 40px 90px rgba(0,0,0,.6)">
+<div style="position:absolute;inset:0;background:linear-gradient(180deg,#04070b 0%,#0a1118 44%,#05080c 100%)">
+<div style="position:absolute;left:0;bottom:55%;width:34%;height:34%;background:repeating-linear-gradient(90deg,rgba(255,166,77,.12) 0 6px,transparent 6px 22px),#070b10"></div>
+<div style="position:absolute;right:0;bottom:55%;width:30%;height:42%;background:repeating-linear-gradient(90deg,rgba(103,232,249,.08) 0 5px,transparent 5px 20px),#060a0e"></div>
+<div style="position:absolute;left:16%;top:18%;width:110px;height:110px;border-radius:50%;background:radial-gradient(circle,rgba(255,196,120,.9) 0,rgba(255,150,60,.35) 12px,transparent 55px)"></div>
+<div style="position:absolute;left:41%;top:34%;width:40px;height:40px;border-radius:50%;background:radial-gradient(circle,rgba(255,190,110,.8) 0,transparent 18px)"></div>
+<div style="position:absolute;right:20%;top:22%;width:90px;height:90px;border-radius:50%;background:radial-gradient(circle,rgba(255,190,110,.8) 0,rgba(255,150,60,.25) 10px,transparent 45px)"></div>
+<div style="position:absolute;left:0;right:0;top:45%;bottom:0;background:linear-gradient(180deg,#0e151c,#05080b);clip-path:polygon(44% 0,56% 0,100% 100%,0 100%)"></div>
+<div style="position:absolute;left:0;right:0;top:52%;height:20%;clip-path:polygon(42% 0,58% 0,84% 100%,16% 100%);background:linear-gradient(180deg,rgba(70,110,130,.45),rgba(24,56,70,.7));border-top:1px solid rgba(170,220,235,.4)"></div>
+<div style="position:absolute;left:38%;top:52%;width:16px;height:20%;background:linear-gradient(180deg,rgba(255,170,80,.7),transparent);filter:blur(4px)"></div>
+<div style="position:absolute;left:60%;top:52%;width:12px;height:18%;background:linear-gradient(180deg,rgba(255,170,80,.6),transparent);filter:blur(4px)"></div>
+<div style="position:absolute;left:49.6%;top:78%;width:8px;height:40px;background:#3a4450;transform:perspective(200px) rotateX(50deg)"></div>
+<div style="position:absolute;left:-10%;right:-10%;bottom:-80px;height:130px;border-radius:50%;background:#020406"></div>
+<div style="position:absolute;inset:0">{{ dropsA }}</div>
+</div>
+<span style="position:absolute;left:50%;bottom:14px;transform:translateX(-50%);font:600 10px 'IBM Plex Mono';letter-spacing:.06em;padding:4px 8px;border-radius:4px;background:rgba(7,11,16,.85);border:1px solid rgba(230,237,243,.3)">DASHCAM · SIMULATION, not a real photo</span>
+<div style="position:absolute;left:28px;top:24px;padding:14px 18px;border-radius:18px;background:rgba(7,11,16,.86);border:1px solid #1c2733;display:flex;align-items:center;gap:14px">
+<span style="font:600 34px 'IBM Plex Sans'">↱</span><div><div style="font:600 22px 'IBM Plex Sans'">Waugh Dr</div><div style="font:500 16px 'IBM Plex Mono';color:#c4ccd6">in 400 m</div></div>
+</div>
+<div style="position:absolute;right:28px;top:24px;padding:12px 16px;border-radius:16px;background:rgba(7,11,16,.86);border:1px solid #1c2733;text-align:right"><div style="font:600 22px 'IBM Plex Mono'">06:58</div><div style="font:500 13px 'IBM Plex Mono';color:#c4ccd6">18 min · 8.4 km</div></div>
+<div style="position:absolute;left:28px;bottom:44px;width:400px;padding:16px 20px 18px;border-radius:20px;background:rgba(7,11,16,.9);border:1.5px solid #fbbf24;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:600 14px 'IBM Plex Mono';letter-spacing:.12em;color:#fbbf24">WATER AHEAD · 180 m</span><span style="font:500 13px 'IBM Plex Mono';color:#c4ccd6">Waugh Dr</span></div>
+<div style="display:flex;align-items:baseline;gap:14px"><span style="font:600 64px/1 'IBM Plex Mono';color:#fbbf24">14 cm</span><span style="font:500 18px 'IBM Plex Mono';color:#e6edf3">/ limit 30</span></div>
+<div style="position:relative;height:12px;border-radius:6px;background:#1c2733"><div style="width:23%;height:100%;border-radius:6px;background:#fbbf24"></div><span style="position:absolute;left:50%;top:-6px;bottom:-6px;width:3px;background:#e6edf3"></span></div>
+<div style="font:500 16px 'IBM Plex Sans';color:#e6edf3">Under your limit. Slow to walking pace.</div>
+</div>
+</div>
+
+<div data-screen-label="05 Drive · turn around" style="width:844px;height:390px;border-radius:44px;overflow:hidden;position:relative;background:#04070b;box-shadow:0 0 0 1px #1c2733,0 0 0 9px #0a0e13,0 0 0 10px #1c2733,0 40px 90px rgba(0,0,0,.6)">
+<div style="position:absolute;inset:0;background:linear-gradient(180deg,#04070b 0%,#0a1118 44%,#05080c 100%)">
+<div style="position:absolute;left:0;bottom:55%;width:34%;height:34%;background:repeating-linear-gradient(90deg,rgba(255,166,77,.12) 0 6px,transparent 6px 22px),#070b10"></div>
+<div style="position:absolute;left:16%;top:18%;width:110px;height:110px;border-radius:50%;background:radial-gradient(circle,rgba(255,196,120,.9) 0,rgba(255,150,60,.35) 12px,transparent 55px)"></div>
+<div style="position:absolute;left:0;right:0;top:45%;bottom:0;background:linear-gradient(180deg,#0e151c,#05080b);clip-path:polygon(44% 0,56% 0,100% 100%,0 100%)"></div>
+<div style="position:absolute;left:0;right:0;top:48%;height:40%;clip-path:polygon(43% 0,57% 0,96% 100%,4% 100%);background:linear-gradient(180deg,rgba(70,110,130,.5),rgba(24,56,70,.8));border-top:1px solid rgba(170,220,235,.4)"></div>
+<div style="position:absolute;left:30%;top:48%;width:22px;height:38%;background:linear-gradient(180deg,rgba(255,170,80,.7),transparent);filter:blur(5px)"></div>
+<div style="position:absolute;left:-10%;right:-10%;bottom:-80px;height:130px;border-radius:50%;background:#020406"></div>
+<div style="position:absolute;inset:0">{{ dropsA }}</div>
+</div>
+<div style="position:absolute;inset:0;box-shadow:inset 0 0 0 6px #fb7185,inset 0 0 80px rgba(251,113,133,.35);border-radius:44px"></div>
+<div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:520px;padding:22px 28px;border-radius:24px;background:rgba(7,11,16,.92);border:2px solid #fb7185;display:flex;flex-direction:column;gap:12px;align-items:center;text-align:center">
+<span style="font:700 60px/1 'IBM Plex Sans';color:#fb7185;letter-spacing:-.01em">Turn around</span>
+<span style="font:600 26px 'IBM Plex Mono'">52 cm ahead <span style="color:#c4ccd6;font-weight:500">· limit 30</span></span>
+<div style="position:relative;width:100%;height:12px;border-radius:6px;background:#1c2733"><div style="width:87%;height:100%;border-radius:6px;background:#fb7185"></div><span style="position:absolute;left:50%;top:-6px;bottom:-6px;width:3px;background:#e6edf3"></span></div>
+<span style="font:500 18px 'IBM Plex Sans'">Rerouting via Waugh Dr · <span style="font-family:'IBM Plex Mono'">+4 min</span></span>
+</div>
+<span style="position:absolute;left:50%;bottom:14px;transform:translateX(-50%);font:600 10px 'IBM Plex Mono';letter-spacing:.06em;padding:4px 8px;border-radius:4px;background:rgba(7,11,16,.85);border:1px solid rgba(230,237,243,.3)">DASHCAM · SIMULATION, not a real photo</span>
+</div>
+
+</div></div>
+</section>
+
+<section data-screen-label="Desktop" style="display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;align-items:baseline;gap:14px"><span style="font:600 11px 'IBM Plex Mono';padding:4px 8px;background:#67e8f9;color:#070b10;border-radius:4px">08</span><h2 style="margin:0;font:500 22px 'IBM Plex Sans'">Desktop map · 1440</h2></div>
+<div data-screen-label="08 Desktop map" style="width:1440px;height:900px;border-radius:14px;overflow:hidden;position:relative;background:#070b10;border:1px solid #1c2733;display:grid;grid-template-columns:360px 1fr 384px;box-shadow:0 40px 90px rgba(0,0,0,.6)">
+<aside style="border-right:1px solid #1c2733;background:#0c1218;padding:24px 24px;display:flex;flex-direction:column;gap:22px;overflow:hidden">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:500 28px Newsreader,serif">Waterline</span><span style="font:500 11px 'IBM Plex Mono';letter-spacing:.1em;color:#8c99a8">HOUSTON</span></div>
+<div style="border-radius:12px;background:#070b10;border:1px solid #1c2733;padding:12px 14px;display:grid;grid-template-columns:12px 1fr;gap:10px 12px;align-items:center;font-size:14px">
+<span style="width:10px;height:10px;border-radius:50%;border:2px solid #e6edf3"></span><span>Heights · W 11th St</span>
+<span style="width:10px;height:10px;border-radius:2px;background:#67e8f9"></span><span>Memorial Hermann – TMC</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<span style="font:500 10.5px 'IBM Plex Mono';letter-spacing:.12em;color:#8c99a8">YOUR VEHICLE</span>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+<div style="padding:10px 4px;border-radius:10px;border:1px solid #1c2733;display:flex;flex-direction:column;align-items:center;gap:6px;height:72px;justify-content:flex-end">{{ icSedan }}<span style="font-size:12px">Sedan</span><span style="font:500 11px 'IBM Plex Mono';color:#8c99a8">15</span></div>
+<div style="padding:10px 4px;border-radius:10px;border:1.5px solid #67e8f9;background:rgba(103,232,249,.07);display:flex;flex-direction:column;align-items:center;gap:6px;height:72px;justify-content:flex-end">{{ icSuvC }}<span style="font-size:12px;font-weight:600">SUV</span><span style="font:500 11px 'IBM Plex Mono';color:#67e8f9">30</span></div>
+<div style="padding:10px 4px;border-radius:10px;border:1px solid #1c2733;display:flex;flex-direction:column;align-items:center;gap:6px;height:72px;justify-content:flex-end">{{ icTruck }}<span style="font-size:12px">Truck</span><span style="font:500 11px 'IBM Plex Mono';color:#8c99a8">45</span></div>
+<div style="padding:10px 4px;border-radius:10px;border:1px solid #1c2733;display:flex;flex-direction:column;align-items:center;gap:6px;height:72px;justify-content:flex-end">{{ icRescue }}<span style="font-size:12px">Rescue</span><span style="font:500 11px 'IBM Plex Mono';color:#8c99a8">90</span></div>
+</div>
+</div>
+<div style="border-radius:14px;background:#111a23;padding:14px 16px;display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:600 24px 'IBM Plex Mono'">24 min</span><span style="font:500 13px 'IBM Plex Mono';color:#8c99a8">11.2 km · +4 min</span></div>
+<div style="display:flex;align-items:center;gap:10px;font:500 14px 'IBM Plex Sans';color:#c4ccd6"><span style="width:10px;height:10px;border-radius:50%;background:#8c99a8"></span>No deep water reported on this route</div>
+<div style="display:flex;align-items:center;gap:10px;font:500 12px 'IBM Plex Mono';color:#8c99a8"><span style="width:10px;height:10px;border-radius:50%;border:1.5px dashed #8c99a8"></span>4.3 km without reports: unknown, not dry</div>
+<div style="display:flex;height:6px;gap:2px;margin-top:4px"><span style="flex:14;background:#8c99a8;border-radius:2px"></span><span style="flex:9;border:1px dashed #8c99a8;border-radius:2px"></span><span style="flex:11;background:#fbbf24;border-radius:2px"></span><span style="flex:16;background:#fbbf24;opacity:.7;border-radius:2px"></span><span style="flex:34;border:1px dashed #8c99a8;border-radius:2px"></span></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;margin-top:auto">
+<span style="font:500 10.5px 'IBM Plex Mono';letter-spacing:.12em;color:#8c99a8">DEPTH RULER</span>
+<div style="position:relative;height:150px;border-left:1px solid #2a3644;margin-left:28px">
+<div style="position:absolute;left:0;right:0;bottom:0;height:42.2%;background:linear-gradient(180deg,rgba(103,232,249,.25),rgba(103,232,249,.06));border-top:2px solid #67e8f9"></div>
+<div style="position:absolute;left:0;right:0;bottom:16.7%;border-top:1px dashed #2a3644;display:flex;justify-content:space-between"><span style="font:500 10.5px 'IBM Plex Mono';color:#c4ccd6;margin:-8px 0 0 -30px">15</span><span style="font-size:12px;margin-top:-9px;background:#0c1218;padding-left:6px">Curb</span></div>
+<div style="position:absolute;left:0;right:0;bottom:33.3%;border-top:1px dashed #2a3644;display:flex;justify-content:space-between"><span style="font:500 10.5px 'IBM Plex Mono';color:#c4ccd6;margin:-8px 0 0 -30px">30</span><span style="font-size:12px;margin-top:-9px;background:#0c1218;padding-left:6px">Car door sill</span></div>
+<div style="position:absolute;left:0;right:0;bottom:72.2%;border-top:1px dashed #2a3644;display:flex;justify-content:space-between"><span style="font:500 10.5px 'IBM Plex Mono';color:#c4ccd6;margin:-8px 0 0 -30px">65</span><span style="font-size:12px;margin-top:-9px;background:#0c1218;padding-left:6px">Tire top</span></div>
+<div style="position:absolute;left:0;right:0;bottom:83.3%;border-top:1px dashed #2a3644;display:flex;justify-content:space-between"><span style="font:500 10.5px 'IBM Plex Mono';color:#c4ccd6;margin:-8px 0 0 -30px">75</span><span style="font-size:12px;margin-top:-9px;background:#0c1218;padding-left:6px">Hydrant top</span></div>
+<span style="position:absolute;left:8px;bottom:calc(42.2% + 6px);font:600 11px 'IBM Plex Mono';color:#67e8f9">38 cm selected</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:7px;font-size:12.5px;color:#c4ccd6">
+<span style="display:flex;align-items:center;gap:8px"><span style="width:22px;height:6px;opacity:.75;background:repeating-linear-gradient(45deg,#fb7185 0 2px,transparent 2px 5px)"></span>Inferred, dimmer than observed</span>
+<span style="display:flex;align-items:center;gap:8px"><span style="width:22px;height:5px;background:#f43f5e;border-radius:3px"></span>Unknown depth draws as deep · blocks all</span>
+<span style="display:flex;align-items:center;gap:8px"><span style="width:22px;height:5px;background:#1f2a36;border-radius:3px"></span>No reports doesn't mean dry</span>
+</div>
+</div>
+</aside>
+<main style="position:relative;overflow:hidden">
+{{ mapDesk }}
+<div style="position:absolute;top:20px;left:20px;right:20px;display:flex;gap:10px;align-items:center">
+<span style="height:38px;padding:0 14px;border-radius:999px;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.6);display:flex;align-items:center;gap:8px;font:500 12px 'IBM Plex Mono';letter-spacing:.04em;color:#fbbf24"><span style="width:7px;height:7px;border-radius:50%;background:#fbbf24"></span>REPLAY · Hurricane Harvey · Aug 28 2017</span>
+<span style="margin-left:auto;height:38px;padding:0 14px;border-radius:999px;background:#0c1218;border:1px solid #1c2733;display:flex;align-items:center;font:500 13px 'IBM Plex Sans'">Live</span>
+<span style="height:38px;padding:0 14px;border-radius:999px;background:#0c1218;border:1px solid #1c2733;display:flex;align-items:center;font:500 13px 'IBM Plex Mono'">2D · 3D</span>
+</div>
+<div style="position:absolute;left:20px;right:20px;bottom:20px;padding:14px 18px;border-radius:16px;background:rgba(12,18,24,.95);border:1px solid #1c2733;display:flex;gap:16px;align-items:center">
+<span style="width:44px;height:44px;flex:none;border-radius:50%;border:1.5px solid #67e8f9;display:flex;align-items:center;justify-content:center"><span style="width:0;height:0;border-left:11px solid #67e8f9;border-top:7px solid transparent;border-bottom:7px solid transparent;margin-left:3px"></span></span>
+<div style="flex:1;display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;justify-content:space-between;font:500 12px 'IBM Plex Mono'"><span>Mon Aug 28 2017 · 06:40 CDT</span><span style="color:#8c99a8">412 reports · 1× · half-life 6 h</span></div>
+<div style="position:relative">{{ barsDesk }}<span style="position:absolute;left:58%;top:-4px;bottom:-4px;width:2px;background:#e6edf3"></span></div>
+<div style="display:flex;justify-content:space-between;font:400 10.5px 'IBM Plex Mono';color:#8c99a8"><span>Aug 27 18:00</span><span>Aug 28 00:00</span><span>06:00</span><span>12:00</span><span>18:00</span></div>
+</div>
+</div>
+</main>
+<aside style="border-left:1px solid #1c2733;background:#0c1218;padding:22px;display:flex;flex-direction:column;gap:14px;overflow:hidden">
+<div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font:600 18px 'IBM Plex Sans'">Allen Pkwy at Studemont</div><div style="font-size:12.5px;color:#8c99a8;margin-top:2px">Observed report · 1 of 3 within 200 m</div></div><span style="font-size:15px;color:#8c99a8">✕</span></div>
+<div style="position:relative;height:200px;border-radius:12px;overflow:hidden;background:radial-gradient(80% 70% at 85% 0%,rgba(255,150,60,.28),transparent 60%),linear-gradient(180deg,#0a0f15,#05080c)">
+<div style="position:absolute;left:-20px;right:-20px;top:0;height:114px;background:linear-gradient(180deg,#151b22 0%,#1b222a 60%,#0f1419 100%);border-bottom:2px solid #232b34"></div>
+<div style="position:absolute;left:56px;top:58px;width:150px;height:76px;border-radius:80px 80px 0 0;background:#06090c"></div>
+<div style="position:absolute;left:68px;top:66px;width:126px;height:126px;border-radius:50%;background:radial-gradient(circle,#3a424b 0 13%,#14191e 14% 26%,#2a3139 27% 33%,#0b0e11 34% 62%,#181d22 63% 66%,#090b0d 67% 100%)"></div>
+<div style="position:absolute;left:0;right:0;top:120px;bottom:0;background:linear-gradient(180deg,rgba(40,78,96,.78),rgba(8,20,28,.95));border-top:1px solid rgba(170,220,235,.45)"></div>
+<div style="position:absolute;left:240px;top:120px;width:30px;height:80px;background:linear-gradient(180deg,rgba(255,170,80,.6),transparent);filter:blur(5px)"></div>
+<div style="position:absolute;left:64px;top:62px;width:134px;height:134px;border:1.5px solid #67e8f9;border-radius:4px"></div>
+<span style="position:absolute;left:64px;top:42px;font:600 10px 'IBM Plex Mono';padding:3px 6px;background:#67e8f9;color:#070b10;border-radius:3px">TIRE · top 65 cm</span>
+<div style="position:absolute;left:0;right:0;top:119px;border-top:2px dashed #e6edf3"></div>
+<span style="position:absolute;right:10px;top:128px;font:600 10px 'IBM Plex Mono';padding:3px 6px;background:rgba(7,11,16,.85);border:1px solid #e6edf3;border-radius:3px">WATERLINE · 38 cm</span>
+<span style="position:absolute;left:10px;top:10px;font:600 10px 'IBM Plex Mono';padding:4px 7px;background:rgba(7,11,16,.85);border:1px solid rgba(230,237,243,.3);border-radius:4px">SIMULATION, not a real photo</span>
+</div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:600 36px/1 'IBM Plex Mono';color:#fb7185">38 cm</span><span style="font:500 15px 'IBM Plex Mono';color:#c4ccd6">· range 30–50</span></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+<div><div style="font:500 10.5px 'IBM Plex Mono';letter-spacing:.1em;color:#8c99a8">REFERENCE</div><div style="font-size:14px;margin-top:3px">Tire top · 65 cm</div></div>
+<div><div style="font:500 10.5px 'IBM Plex Mono';letter-spacing:.1em;color:#8c99a8">TAKEN</div><div style="font:500 14px 'IBM Plex Mono';margin-top:3px">06:12 · 28 min</div></div>
+<div style="grid-column:1 / -1"><div style="display:flex;justify-content:space-between;font:500 10.5px 'IBM Plex Mono';letter-spacing:.1em;color:#8c99a8"><span>CONFIDENCE</span><span style="color:#e6edf3">0.72</span></div><div style="height:6px;border-radius:3px;background:#1c2733;margin-top:6px"><div style="width:72%;height:100%;border-radius:3px;background:#67e8f9"></div></div></div>
+</div>
+<div style="border:1px solid #1c2733;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px"><span style="font:500 10.5px 'IBM Plex Mono';letter-spacing:.1em;color:#8c99a8">VEHICLES AT 38 CM</span>{{ gaugeEvD }}</div>
+<div style="font-size:11.5px;line-height:1.45;color:#8c99a8">Photo by reporter #A41F · CC BY 4.0 · read by NVIDIA vision model</div>
+</aside>
+</div>
+</section>
+
+<section data-screen-label="Components" style="display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;align-items:baseline;gap:14px"><span style="font:600 11px 'IBM Plex Mono';padding:4px 8px;background:#67e8f9;color:#070b10;border-radius:4px">09</span><h2 style="margin:0;font:500 22px 'IBM Plex Sans'">Component sheet</h2></div>
+<div style="width:1440px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px">
+
+<div style="grid-column:span 1;padding:24px;border-radius:18px;background:#0c1218;border:1px solid #1c2733;display:flex;flex-direction:column;gap:16px">
+<span style="font:500 11px 'IBM Plex Mono';letter-spacing:.12em;color:#8c99a8">TOKENS</span>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;font:500 10.5px 'IBM Plex Mono';color:#c4ccd6">
+<div style="display:flex;flex-direction:column;gap:6px"><span style="height:40px;border-radius:8px;background:#070b10;border:1px solid #1c2733"></span>bg #070b10</div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="height:40px;border-radius:8px;background:#0c1218;border:1px solid #1c2733"></span>panel #0c1218</div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="height:40px;border-radius:8px;background:#111a23"></span>raised #111a23</div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="height:40px;border-radius:8px;background:#1c2733"></span>line #1c2733</div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="height:40px;border-radius:8px;background:#67e8f9"></span>accent #67e8f9</div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="height:40px;border-radius:8px;background:#8c99a8"></span>neutral #8c99a8</div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="height:40px;border-radius:8px;background:#c4ccd6"></span>soft text #c4ccd6</div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="height:40px;border-radius:8px;background:#e6edf3"></span>text #e6edf3</div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="height:40px;border-radius:8px;background:#fbbf24"></span>d1 &lt;15</div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="height:40px;border-radius:8px;background:#fb923c"></span>d2 15–30</div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="height:40px;border-radius:8px;background:#fb7185"></span>d3 30–45</div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="height:40px;border-radius:8px;background:#f43f5e"></span>d4 45+ / ?</div>
+</div>
+<div style="font-size:12px;line-height:1.5;color:#8c99a8">All text pairs ≥ 4.5:1 on bg and panel. d4 #f43f5e is 5.1:1 on bg. Light: ink on paper 16.8:1, muted #4f5964 6.4:1, accent #0c6680 6.2:1.</div>
+</div>
+
+<div style="padding:24px;border-radius:18px;background:#0c1218;border:1px solid #1c2733;display:flex;flex-direction:column;gap:14px">
+<span style="font:500 11px 'IBM Plex Mono';letter-spacing:.12em;color:#8c99a8">DEPTH CHIPS</span>
+<div style="display:flex;flex-wrap:wrap;gap:8px">
+<span style="height:30px;padding:0 10px;border-radius:7px;display:flex;align-items:center;gap:7px;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.5);font:600 12.5px 'IBM Plex Mono';color:#fbbf24">9 cm</span>
+<span style="height:30px;padding:0 10px;border-radius:7px;display:flex;align-items:center;gap:7px;background:rgba(251,146,60,.12);border:1px solid rgba(251,146,60,.5);font:600 12.5px 'IBM Plex Mono';color:#fb923c">22 cm</span>
+<span style="height:30px;padding:0 10px;border-radius:7px;display:flex;align-items:center;gap:7px;background:rgba(251,113,133,.12);border:1px solid rgba(251,113,133,.5);font:600 12.5px 'IBM Plex Mono';color:#fb7185">38 cm</span>
+<span style="height:30px;padding:0 10px;border-radius:7px;display:flex;align-items:center;gap:7px;background:rgba(244,63,94,.14);border:1px solid #f43f5e;font:600 12.5px 'IBM Plex Mono';color:#f43f5e">52 cm</span>
+<span style="height:30px;padding:0 10px;border-radius:7px;display:flex;align-items:center;gap:7px;background:rgba(244,63,94,.14);border:1px solid #f43f5e;font:600 12.5px 'IBM Plex Mono';color:#f43f5e">? Unknown depth</span>
+<span style="height:30px;padding:0 10px;border-radius:7px;display:flex;align-items:center;gap:7px;border:1px dashed #8c99a8;font:500 12.5px 'IBM Plex Mono';color:#8c99a8">No reports · unknown</span>
+<span style="height:30px;padding:0 10px;border-radius:7px;display:flex;align-items:center;gap:7px;background:#111a23;border:1px solid #2a3644;font:500 12.5px 'IBM Plex Sans';color:#c4ccd6"><span style="width:8px;height:8px;border-radius:50%;background:#8c99a8"></span>No deep water reported</span>
+<span style="height:30px;padding:0 10px;border-radius:7px;display:flex;align-items:center;gap:7px;background:rgba(251,113,133,.12);border:1px solid rgba(251,113,133,.5);font:600 12.5px 'IBM Plex Mono';color:#fb7185;opacity:.75;background-image:repeating-linear-gradient(45deg,rgba(251,113,133,.18) 0 2px,transparent 2px 6px)">~34 cm inferred</span>
+</div>
+<span style="font:500 11px 'IBM Plex Mono';letter-spacing:.12em;color:#8c99a8;margin-top:6px">PINS · FRESHNESS RING (half-life 6 h)</span>
+<div style="display:flex;gap:22px;align-items:center">{{ pinRow }}</div>
+<div style="font-size:12px;line-height:1.5;color:#8c99a8">Ring arc = weight remaining. A report at 1 half-life draws half a ring; past 3 it drops off the map but stays in replay.</div>
+</div>
+
+<div style="padding:24px;border-radius:18px;background:#0c1218;border:1px solid #1c2733;display:flex;flex-direction:column;gap:14px">
+<span style="font:500 11px 'IBM Plex Mono';letter-spacing:.12em;color:#8c99a8">VEHICLE PICKER</span>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+<div style="padding:10px 4px;border-radius:10px;border:1px solid #1c2733;display:flex;flex-direction:column;align-items:center;gap:6px;height:76px;justify-content:flex-end">{{ icSedan }}<span style="font-size:12px">Sedan</span><span style="font:500 11px 'IBM Plex Mono';color:#8c99a8">15 cm</span></div>
+<div style="padding:10px 4px;border-radius:10px;border:1.5px solid #67e8f9;background:rgba(103,232,249,.07);display:flex;flex-direction:column;align-items:center;gap:6px;height:76px;justify-content:flex-end">{{ icSuvC }}<span style="font-size:12px;font-weight:600">SUV</span><span style="font:500 11px 'IBM Plex Mono';color:#67e8f9">30 cm</span></div>
+<div style="padding:10px 4px;border-radius:10px;border:1px solid #1c2733;display:flex;flex-direction:column;align-items:center;gap:6px;height:76px;justify-content:flex-end">{{ icTruck }}<span style="font-size:12px">Truck</span><span style="font:500 11px 'IBM Plex Mono';color:#8c99a8">45 cm</span></div>
+<div style="padding:10px 4px;border-radius:10px;border:1px solid #1c2733;display:flex;flex-direction:column;align-items:center;gap:6px;height:76px;justify-content:flex-end">{{ icRescue }}<span style="font-size:12px">Rescue</span><span style="font:500 11px 'IBM Plex Mono';color:#8c99a8">90 cm</span></div>
+</div>
+<span style="font:500 11px 'IBM Plex Mono';letter-spacing:.12em;color:#8c99a8;margin-top:6px">CAN MY CAR MAKE IT?</span>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div style="padding:12px;border-radius:12px;border:1px solid #fb7185;display:flex;flex-direction:column;gap:8px">
+<div style="position:relative;height:60px;display:flex;align-items:flex-end;justify-content:center;border-bottom:1px solid #2a3644">{{ canSuv }}<span style="position:absolute;left:0;right:0;bottom:0;height:11px;background:rgba(103,232,249,.22);border-top:2px solid #67e8f9"></span></div>
+<div style="font:600 13px 'IBM Plex Sans';color:#fb7185">SUV · blocked</div>
+<div style="height:6px;border-radius:3px;background:#1c2733;position:relative"><div style="width:100%;height:100%;border-radius:3px;background:#fb7185"></div><span style="position:absolute;left:79%;top:-4px;bottom:-4px;width:2px;background:#e6edf3"></span></div>
+<div style="font:500 11px 'IBM Plex Mono';color:#c4ccd6">38 cm vs limit 30</div>
+</div>
+<div style="padding:12px;border-radius:12px;border:1px solid #2a3644;display:flex;flex-direction:column;gap:8px">
+<div style="position:relative;height:60px;display:flex;align-items:flex-end;justify-content:center;border-bottom:1px solid #2a3644">{{ canTruck }}<span style="position:absolute;left:0;right:0;bottom:0;height:10px;background:rgba(103,232,249,.22);border-top:2px solid #67e8f9"></span></div>
+<div style="font:600 13px 'IBM Plex Sans';color:#c4ccd6">Truck · under limit</div>
+<div style="height:6px;border-radius:3px;background:#1c2733;position:relative"><div style="width:84%;height:100%;border-radius:3px;background:#8c99a8"></div><span style="position:absolute;left:100%;top:-4px;bottom:-4px;width:2px;background:#e6edf3"></span></div>
+<div style="font:500 11px 'IBM Plex Mono';color:#c4ccd6">38 cm vs limit 45 · 7 cm margin</div>
+</div>
+</div>
+</div>
+
+<div style="padding:24px;border-radius:18px;background:#0c1218;border:1px solid #1c2733;display:flex;flex-direction:column;gap:12px">
+<span style="font:500 11px 'IBM Plex Mono';letter-spacing:.12em;color:#8c99a8">ROUTE SEGMENT ROW · STATES</span>
+<div style="display:grid;grid-template-columns:4px 1fr auto;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid #1c2733"><span style="height:32px;border-radius:2px;background:#8c99a8"></span><div><div style="font-size:14px">Studemont St</div><div style="font:500 11.5px 'IBM Plex Mono';color:#8c99a8">No deep water reported · 3 reports</div></div><span style="font:500 12px 'IBM Plex Mono'">1.4 km</span></div>
+<div style="display:grid;grid-template-columns:4px 1fr auto;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid #1c2733"><span style="height:32px;border-radius:2px;border:1px dashed #8c99a8;box-sizing:border-box"></span><div><div style="font-size:14px">Washington Ave</div><div style="font:500 11.5px 'IBM Plex Mono';color:#8c99a8">No reports · unknown, not dry</div></div><span style="font:500 12px 'IBM Plex Mono'">0.9 km</span></div>
+<div style="display:grid;grid-template-columns:4px 1fr auto;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid #1c2733"><span style="height:32px;border-radius:2px;background:#fbbf24"></span><div><div style="font-size:14px">Waugh Dr</div><div style="font:500 11.5px 'IBM Plex Mono';color:#fbbf24">14 cm · under SUV limit 30</div></div><span style="font:500 12px 'IBM Plex Mono'">1.1 km</span></div>
+<div style="display:grid;grid-template-columns:4px 1fr auto;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid #1c2733"><span style="height:32px;border-radius:2px;background:#f43f5e"></span><div><div style="font-size:14px">Shepherd Dr</div><div style="font:500 11.5px 'IBM Plex Mono';color:#f43f5e">? Unknown depth · blocks every vehicle</div></div><span style="font:500 12px 'IBM Plex Mono'">0.6 km</span></div>
+<div style="display:grid;grid-template-columns:4px 1fr auto;gap:12px;align-items:center;padding:8px 0"><span style="height:32px;border-radius:2px;background:#f43f5e"></span><div><div style="font-size:14px;text-decoration:line-through;text-decoration-color:#fb7185;color:#c4ccd6">Memorial Dr</div><div style="font:500 11.5px 'IBM Plex Mono';color:#fb7185">52 cm · over SUV limit 30 · avoided</div></div><span style="font:500 12px 'IBM Plex Mono';color:#8c99a8">—</span></div>
+</div>
+
+<div style="padding:24px;border-radius:18px;background:#0c1218;border:1px solid #1c2733;display:flex;flex-direction:column;gap:14px">
+<span style="font:500 11px 'IBM Plex Mono';letter-spacing:.12em;color:#8c99a8">HUD STATES · glanceable at 1 m</span>
+<div style="padding:14px 16px;border-radius:14px;background:#070b10;border:1.5px solid #2a3644;display:flex;flex-direction:column;gap:4px">
+<span style="font:600 11px 'IBM Plex Mono';letter-spacing:.12em;color:#8c99a8">NEXT 2 KM</span>
+<span style="font:600 24px 'IBM Plex Sans';color:#c4ccd6">No deep water reported</span>
+<span style="font:500 12px 'IBM Plex Mono';color:#8c99a8">0.8 km without reports ahead</span>
+</div>
+<div style="padding:14px 16px;border-radius:14px;background:#070b10;border:1.5px solid #fbbf24;display:flex;align-items:center;justify-content:space-between">
+<div><div style="font:600 11px 'IBM Plex Mono';letter-spacing:.12em;color:#fbbf24">WATER AHEAD · 180 m</div><div style="font:500 13px 'IBM Plex Sans';margin-top:4px">Under limit · walking pace</div></div>
+<span style="font:600 40px/1 'IBM Plex Mono';color:#fbbf24">14<span style="font-size:16px"> cm</span></span>
+</div>
+<div style="padding:14px 16px;border-radius:14px;background:#070b10;border:2px solid #fb7185;box-shadow:0 0 30px rgba(251,113,133,.25);display:flex;align-items:center;justify-content:space-between">
+<div><div style="font:700 26px 'IBM Plex Sans';color:#fb7185">Turn around</div><div style="font:500 13px 'IBM Plex Mono';margin-top:2px">limit 30 · rerouting</div></div>
+<span style="font:600 40px/1 'IBM Plex Mono';color:#fb7185">52<span style="font-size:16px"> cm</span></span>
+</div>
+</div>
+
+<div style="padding:24px;border-radius:18px;background:#0c1218;border:1px solid #1c2733;display:flex;flex-direction:column;gap:14px">
+<span style="font:500 11px 'IBM Plex Mono';letter-spacing:.12em;color:#8c99a8">BANNERS &amp; CHIPS</span>
+<div style="padding:12px 14px;border-radius:12px;background:#111a23;border:1px solid #2a3644;display:flex;gap:12px;align-items:flex-start">
+<span style="width:10px;height:10px;margin-top:5px;border-radius:50%;border:2px solid #c4ccd6;flex:none"></span>
+<div style="flex:1"><div style="font:500 14px 'IBM Plex Sans'">Offline snapshot from <span style="font-family:'IBM Plex Mono'">22:58</span></div><div style="font-size:12.5px;color:#8c99a8;margin-top:2px;line-height:1.45">Showing 16 min old reports. Water can rise since then. We'll refresh when you're back online.</div></div>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:8px">
+<span style="height:34px;padding:0 12px;border-radius:999px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.6);display:flex;align-items:center;gap:7px;font:500 11px 'IBM Plex Mono';color:#fbbf24"><span style="width:6px;height:6px;border-radius:50%;background:#fbbf24"></span>REPLAY · Hurricane Harvey · Aug 28 2017</span>
+<span style="height:28px;padding:0 9px;border-radius:5px;background:rgba(7,11,16,.85);border:1px solid rgba(230,237,243,.3);display:flex;align-items:center;font:600 10.5px 'IBM Plex Mono';letter-spacing:.06em">SIMULATION, not a real photo</span>
+<span style="height:28px;padding:0 9px;border-radius:5px;border:1px solid rgba(103,232,249,.5);display:flex;align-items:center;font:500 10.5px 'IBM Plex Mono';color:#67e8f9">TOKEN · HFD-06 · VERIFIED</span>
+</div>
+</div>
+
+<div style="grid-column:span 2;padding:24px;border-radius:18px;background:#0c1218;border:1px solid #1c2733;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:500 11px 'IBM Plex Mono';letter-spacing:.12em;color:#8c99a8">“YOUR STREET AT 40 CM” · SIMULATION STRIP</span><span style="font:500 12px 'IBM Plex Mono';color:#8c99a8">same street, same car, three water levels</span></div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+<div style="position:relative;height:200px;border-radius:12px;overflow:hidden;background:radial-gradient(60% 80% at 20% 0%,rgba(255,150,60,.25),transparent 60%),linear-gradient(180deg,#05080c,#0b131b 70%,#0d1319)">
+<div style="position:absolute;left:0;right:0;bottom:0;height:46px;background:#0e141a"></div><div style="position:absolute;left:0;right:0;bottom:46px;height:7px;background:#1d242b"></div>
+<div style="position:absolute;left:24px;bottom:0">{{ simCar }}</div>
+<span style="position:absolute;left:10px;top:10px;font:600 10px 'IBM Plex Mono';padding:3px 7px;background:rgba(7,11,16,.85);border:1px solid rgba(230,237,243,.3);border-radius:4px">SIMULATION</span>
+<span style="position:absolute;right:10px;top:10px;font:600 13px 'IBM Plex Mono'">dry</span>
+</div>
+<div style="position:relative;height:200px;border-radius:12px;overflow:hidden;background:radial-gradient(60% 80% at 20% 0%,rgba(255,150,60,.25),transparent 60%),linear-gradient(180deg,#05080c,#0b131b 70%,#0d1319)">
+<div style="position:absolute;left:0;right:0;bottom:0;height:46px;background:#0e141a"></div><div style="position:absolute;left:0;right:0;bottom:46px;height:7px;background:#1d242b"></div>
+<div style="position:absolute;left:24px;bottom:0">{{ simCar }}</div>
+<div style="position:absolute;left:0;right:0;bottom:0;height:6.8px;background:rgba(60,110,130,.7);border-top:1.5px solid #a5f3fc"></div>
+<span style="position:absolute;left:10px;top:10px;font:600 10px 'IBM Plex Mono';padding:3px 7px;background:rgba(7,11,16,.85);border:1px solid rgba(230,237,243,.3);border-radius:4px">SIMULATION</span>
+<span style="position:absolute;right:10px;top:10px;font:600 13px 'IBM Plex Mono';color:#fb923c">15 cm · curb</span>
+</div>
+<div style="position:relative;height:200px;border-radius:12px;overflow:hidden;background:radial-gradient(60% 80% at 20% 0%,rgba(255,150,60,.25),transparent 60%),linear-gradient(180deg,#05080c,#0b131b 70%,#0d1319)">
+<div style="position:absolute;left:0;right:0;bottom:0;height:46px;background:#0e141a"></div><div style="position:absolute;left:0;right:0;bottom:46px;height:7px;background:#1d242b"></div>
+<div style="position:absolute;left:24px;bottom:0">{{ simCar }}</div>
+<div style="position:absolute;left:0;right:0;bottom:0;height:18px;background:rgba(60,110,130,.72);border-top:1.5px solid #a5f3fc"></div>
+<div style="position:absolute;left:150px;bottom:0;width:20px;height:18px;background:linear-gradient(180deg,rgba(255,170,80,.6),transparent);filter:blur(3px)"></div>
+<span style="position:absolute;left:10px;top:10px;font:600 10px 'IBM Plex Mono';padding:3px 7px;background:rgba(7,11,16,.85);border:1px solid rgba(230,237,243,.3);border-radius:4px">SIMULATION</span>
+<span style="position:absolute;right:10px;top:10px;font:600 13px 'IBM Plex Mono';color:#fb7185">40 cm · over sill</span>
+</div>
+</div>
+</div>
+
+<div style="padding:24px;border-radius:18px;background:#0c1218;border:1px solid #1c2733;display:flex;flex-direction:column;gap:12px">
+<span style="font:500 11px 'IBM Plex Mono';letter-spacing:.12em;color:#8c99a8">EVIDENCE CARD · COMPACT</span>
+<div style="display:grid;grid-template-columns:84px 1fr;gap:12px;padding:12px;border-radius:12px;background:#070b10;border:1px solid #1c2733">
+<div style="height:84px;border-radius:8px;position:relative;overflow:hidden;background:linear-gradient(180deg,#151b22 55%,#28495a 55%)"><div style="position:absolute;left:16px;top:20px;width:52px;height:52px;border:1.5px solid #67e8f9;border-radius:3px"></div><div style="position:absolute;left:0;right:0;top:46px;border-top:1.5px dashed #e6edf3"></div></div>
+<div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+<div style="font:600 14px 'IBM Plex Sans'">Allen Pkwy at Studemont</div>
+<div style="font:600 15px 'IBM Plex Mono';color:#fb7185">38 cm <span style="color:#c4ccd6;font-weight:500;font-size:12px">· range 30–50</span></div>
+<div style="font:500 11.5px 'IBM Plex Mono';color:#8c99a8">tire top 65 · 06:12 · conf 0.72</div>
+<div style="height:4px;border-radius:2px;background:#1c2733"><div style="width:72%;height:100%;background:#67e8f9;border-radius:2px"></div></div>
+</div>
+</div>
+</div>
+
+</div>
+</section>
+
+<section data-screen-label="Motion" style="display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;align-items:baseline;gap:14px"><span style="font:600 11px 'IBM Plex Mono';padding:4px 8px;background:#67e8f9;color:#070b10;border-radius:4px">10</span><h2 style="margin:0;font:500 22px 'IBM Plex Sans'">Motion notes</h2></div>
+<div style="width:1440px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px">
+<div style="padding:28px;border-radius:18px;background:#0c1218;border:1px solid #1c2733;display:grid;grid-template-columns:180px 1fr;gap:28px">
+<div style="height:260px">{{ motionDemo }}</div>
+<div style="display:flex;flex-direction:column;gap:12px;font-size:14px;line-height:1.55;color:#c4ccd6">
+<span style="font:600 18px 'IBM Plex Sans';color:#e6edf3">Waterline rising</span>
+<div style="display:grid;grid-template-columns:86px 1fr;gap:8px 14px;font-size:13.5px">
+<span style="font:500 12px 'IBM Plex Mono';color:#67e8f9">0 ms</span><span>Card opens with the photo dry-dimmed; ruler objects already placed.</span>
+<span style="font:500 12px 'IBM Plex Mono';color:#67e8f9">120–900</span><span>Water fill rises from 0 to the reading, cubic-bezier(.2,.7,.2,1). Number ticks up in mono, no overshoot: depth never “bounces” past its value.</span>
+<span style="font:500 12px 'IBM Plex Mono';color:#67e8f9">on cross</span><span>As the line passes each vehicle limit, that silhouette flips to coral with a 120 ms fade. No shake, no sound.</span>
+<span style="font:500 12px 'IBM Plex Mono';color:#67e8f9">900–1400</span><span>Range band (30–50) fades in at 40% opacity around the line.</span>
+<span style="font:500 12px 'IBM Plex Mono';color:#67e8f9">reduced</span><span>prefers-reduced-motion: final state, no rise.</span>
+</div>
+</div>
+</div>
+<div style="padding:28px;border-radius:18px;background:#0c1218;border:1px solid #1c2733;display:flex;flex-direction:column;gap:14px;font-size:14px;line-height:1.55;color:#c4ccd6">
+<span style="font:600 18px 'IBM Plex Sans';color:#e6edf3">Time scrubber</span>
+<div style="position:relative">{{ barsMotion }}<span style="position:absolute;left:58%;top:-6px;bottom:-6px;width:2px;background:#e6edf3"></span></div>
+<div style="display:grid;grid-template-columns:86px 1fr;gap:8px 14px;font-size:13.5px">
+<span style="font:500 12px 'IBM Plex Mono';color:#67e8f9">drag</span><span>Street colours cross-fade 180 ms per step; never cut. Histogram behind shows report volume so scrubbing finds the peak.</span>
+<span style="font:500 12px 'IBM Plex Mono';color:#67e8f9">play 1×</span><span>1 replay hour per 2 s. Pins appear with ring full, then the ring drains on the half-life clock.</span>
+<span style="font:500 12px 'IBM Plex Mono';color:#67e8f9">snap</span><span>Release snaps to the nearest 10 min with a soft 200 ms ease-out; timestamp updates in mono, tabular.</span>
+<span style="font:500 12px 'IBM Plex Mono';color:#67e8f9">mode</span><span>Replay keeps the amber chip pinned; returning to Live fades the chip out over 300 ms.</span>
+<span style="font:500 12px 'IBM Plex Mono';color:#67e8f9">rain</span><span>Rain overlays sit below HUD plates (≥ .86 opaque), so contrast is measured against the plate, not the scene.</span>
+</div>
+</div>
+</div>
+</section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;rain&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Motion&quot;},&quot;heroDepth&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:18,&quot;min&quot;:0,&quot;max&quot;:60,&quot;step&quot;:1,&quot;unit&quot;:&quot;cm&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Hero gauge&quot;}}">
+const h = React.createElement;
+const K = {bg:'#070b10',text:'#e6edf3',muted:'#8c99a8',cyan:'#67e8f9',coral:'#fb7185',d1:'#fbbf24',d2:'#fb923c',d3:'#fb7185',d4:'#f43f5e'};
+const MONO = '"IBM Plex Mono", monospace';
+const V = {
+  sedan:{n:'Sedan',lim:15,len:460,r:30,w:[90,365],b:[[10,30],[10,75],[40,90],[120,95],[170,140],[300,143],[360,100],[445,88],[455,45],[445,30]]},
+  suv:{n:'SUV',lim:30,len:480,r:38,w:[95,385],b:[[10,35],[10,100],[25,115],[80,172],[360,176],[400,120],[470,108],[478,50],[465,35]]},
+  truck:{n:'Truck',lim:45,len:560,r:42,w:[110,450],b:[[10,45],[10,118],[290,118],[300,190],[420,192],[450,125],[550,115],[555,55],[540,45]]},
+  rescue:{n:'Rescue',lim:90,len:700,r:60,w:[150,560],b:[[20,95],[20,300],[480,300],[490,290],[560,290],[600,200],[690,180],[695,100],[680,95]]},
+};
+function vehSvg(t, o) {
+  o = o || {}; const v = V[t]; const H = o.H || 170, k = o.k || .4, full = !!o.full;
+  const crop = o.crop || 300; const W = full ? v.len + 20 : crop, x0 = full ? -10 : v.len - crop;
+  const y = c => H - c; const blocked = o.depth != null && o.depth > v.lim;
+  const stroke = o.color || (o.tone === 'hero' ? 'rgba(230,237,243,.85)' : blocked ? K.coral : '#a3afbd');
+  const fill = o.fill || (o.tone === 'hero' ? 'rgba(7,11,16,.55)' : blocked ? 'rgba(251,113,133,.14)' : 'rgba(140,153,168,.10)');
+  const ns = {vectorEffect:'non-scaling-stroke'};
+  const kids = [h('polygon',Object.assign({key:'b',points:v.b.map(p=>p[0]+','+y(p[1])).join(' '),fill,stroke,strokeWidth:1.5,strokeLinejoin:'round'},ns))];
+  v.w.forEach((x,i)=>{
+    kids.push(h('circle',Object.assign({key:'w'+i,cx:x,cy:y(v.r),r:v.r,fill:'#05080c',stroke,strokeWidth:1.5},ns)));
+    kids.push(h('circle',Object.assign({key:'h'+i,cx:x,cy:y(v.r),r:v.r*.42,fill:'none',stroke,strokeWidth:1,opacity:.6},ns)));
+  });
+  if (o.lim) kids.push(h('line',Object.assign({key:'l',x1:x0,x2:x0+W,y1:y(v.lim),y2:y(v.lim),stroke:blocked?K.coral:K.text,strokeWidth:1,strokeDasharray:'3 3',opacity:.85},ns)));
+  return h('svg',{width:W*k,height:H*k,viewBox:`${x0} 0 ${W} ${H}`,style:{display:'block',flex:'none'}},kids);
+}
+function gauge(o) {
+  const {types,depth,k,crop,H,ticks=[],tone='dark',gap=8,left=24,lim=false} = o;
+  const cw = crop*k, sh = H*k, hero = tone==='hero';
+  const cells = types.map(t=>h('div',{key:t,style:{width:cw,flex:'none'}},vehSvg(t,{crop,H,k,depth,tone,lim})));
+  const water = h('div',{key:'wa',style:{position:'absolute',left:Math.max(0,left-4),right:0,bottom:0,height:depth*k,background:'linear-gradient(180deg,rgba(103,232,249,.32),rgba(103,232,249,.10))',borderTop:depth>0?'2px solid #67e8f9':'none',boxShadow:depth>0?'0 -4px 12px rgba(103,232,249,.25)':'none',transition:'height .6s cubic-bezier(.2,.7,.2,1)'}});
+  const tk = ticks.map(c=>h('div',{key:'t'+c,style:{position:'absolute',left:0,right:0,bottom:c*k,borderTop:'1px dashed rgba(230,237,243,.3)'}},h('span',{style:{position:'absolute',left:0,top:-7,font:`500 10px ${MONO}`,color:'#c4ccd6'}},c)));
+  const stage = h('div',{style:{position:'relative',height:sh,display:'flex',alignItems:'flex-end',gap,paddingLeft:left,borderBottom:'1px solid rgba(230,237,243,.4)'}},cells,water,tk);
+  const lab = h('div',{style:{display:'flex',gap,paddingLeft:left,marginTop:6}},types.map(t=>{const v=V[t],b=depth>v.lim;
+    return h('div',{key:t,style:{width:cw,flex:'none'}},
+      h('div',{style:{font:'500 11.5px "IBM Plex Sans"',color:K.text}},v.n),
+      h('div',{style:{font:`500 10px ${MONO}`,color:b?K.coral:(hero?'#c4ccd6':K.muted),marginTop:1}},b?`BLOCKED · ${v.lim}`:`limit ${v.lim} cm`));}));
+  return h('div',null,stage,lab);
+}
+const ROADS=[
+ {p:[[-300,150],[700,150]],w:9},{p:[[-300,280],[700,280]],w:6},
+ {p:[[-300,395],[-120,405],[-10,400],[80,390],[160,415],[240,405],[320,420],[400,410],[700,415]],w:6},
+ {p:[[-300,490],[-10,485],[100,480],[200,495],[300,487],[400,500],[700,495]],w:6},
+ {p:[[-300,600],[700,600]],w:5},{p:[[-300,720],[700,720]],w:6},
+ {p:[[60,-20],[60,880]],w:6},{p:[[160,-20],[160,880]],w:5},{p:[[240,-20],[240,560]],w:5},
+ {p:[[300,-20],[300,400]],w:5},{p:[[320,490],[320,880]],w:6},{p:[[-60,-20],[-60,880]],w:5},{p:[[440,-20],[460,880]],w:5},{p:[[-180,-20],[-180,880]],w:5}
+];
+const BAYOU=[[-300,445],[-120,452],[-10,440],[70,430],[150,455],[230,443],[310,463],[400,450],[700,458]];
+const FLOOD=[
+ {p:[[200,410],[240,405],[320,420],[400,410]],c:'d4',obs:1},{p:[[-120,405],[-10,400],[80,390],[130,405]],c:'d3'},
+ {p:[[200,495],[300,487],[400,500]],c:'d3',obs:1},{p:[[60,380],[60,520]],c:'unk',obs:1},
+ {p:[[160,460],[160,560]],c:'d1',obs:1},{p:[[40,280],[150,280]],c:'d2'},
+ {p:[[270,150],[340,150]],c:'d4',obs:1},{p:[[180,600],[300,600]],c:'d1',obs:1},
+ {p:[[-60,560],[-60,700]],c:'d2',obs:1},{p:[[-200,720],[-60,720]],c:'d3'},{p:[[440,300],[445,420]],c:'d2'}
+];
+const PINS=[{x:262,y:410,c:'d4',f:.85},{x:60,y:450,c:'unk',f:.5},{x:160,y:505,c:'d1',f:.9},{x:305,y:150,c:'d4',f:.3},{x:240,y:600,c:'d1',f:.6},{x:300,y:487,c:'d3',f:.7,sel:1},{x:-60,y:630,c:'d2',f:.4}];
+const LABELS=[{t:'MEMORIAL DR',x:328,y:438},{t:'ALLEN PKWY',x:-6,y:503},{t:'WASHINGTON AVE',x:170,y:271},{t:'KATY FWY · I-10',x:-20,y:141},{t:'W GRAY ST',x:190,y:592},{t:'WESTHEIMER RD',x:170,y:712},{t:'SHEPHERD DR',x:68,y:200,v:1},{t:'WAUGH DR',x:168,y:180,v:1},{t:'STUDEMONT ST',x:248,y:300,v:1},{t:'MONTROSE BLVD',x:328,y:660,v:1},{t:'BUFFALO BAYOU',x:-150,y:472,b:1}];
+const RU=[[240,40],[240,280],[160,280],[160,600],[320,600],[320,830]];
+const RR=[[240,40],[240,405],[160,415],[80,390],[60,395],[60,440]];
+const ln = p => 'M'+p.map(a=>a.join(',')).join('L');
+function buildMap(o) {
+  const id=o.id, s=o.s||1, E=[];
+  const defs=h('defs',{key:'d'},['d1','d2','d3','d4'].map(c=>h('pattern',{key:c,id:id+c,width:5*s,height:5*s,patternUnits:'userSpaceOnUse',patternTransform:'rotate(45)'},h('rect',{width:2.4*s,height:5*s,fill:K[c]}))),
+    h('filter',{id:id+'g',x:'-50%',y:'-50%',width:'200%',height:'200%'},h('feGaussianBlur',{stdDeviation:4*s})));
+  let g=''; for(let x=-300;x<=700;x+=40) g+=`M${x},-20V880`; for(let y=-20;y<=880;y+=46) g+=`M-300,${y}H700`;
+  E.push(h('rect',{key:'bg',x:-400,y:-100,width:1300,height:1100,fill:K.bg}));
+  E.push(h('path',{key:'gr',d:g,stroke:'#0e151d',strokeWidth:1.2*s}));
+  E.push(h('path',{key:'b1',d:ln(BAYOU),stroke:'#0a1c26',strokeWidth:22,fill:'none',strokeLinecap:'round'}));
+  E.push(h('path',{key:'b2',d:ln(BAYOU),stroke:'#0d2533',strokeWidth:10,fill:'none'}));
+  ROADS.forEach((r,i)=>E.push(h('path',{key:'r'+i,d:ln(r.p),stroke:'#1f2a36',strokeWidth:r.w*s,fill:'none',strokeLinecap:'round',strokeLinejoin:'round'})));
+  FLOOD.forEach((f,i)=>{const col=f.c==='unk'?K.d4:K[f.c],d=ln(f.p);
+    if(f.obs){E.push(h('path',{key:'fg'+i,d,stroke:col,strokeWidth:13*s,opacity:.3,fill:'none',strokeLinecap:'round',filter:`url(#${id}g)`}));
+      E.push(h('path',{key:'f'+i,d,stroke:col,strokeWidth:6*s,fill:'none',strokeLinecap:'round',strokeLinejoin:'round'}));}
+    else E.push(h('path',{key:'f'+i,d,stroke:`url(#${id+f.c})`,strokeWidth:7*s,opacity:.6,fill:'none',strokeLinejoin:'round'}));});
+  if(o.labels!==false) LABELS.forEach((l,i)=>E.push(h('text',{key:'l'+i,x:l.x,y:l.y,fill:l.b?'#7fb3c4':K.muted,fontSize:8.5*s,fontFamily:MONO,letterSpacing:1*s,stroke:K.bg,strokeWidth:3*s,paintOrder:'stroke',transform:l.v?`rotate(90 ${l.x} ${l.y})`:undefined},l.t)));
+  const R = o.route==='rescue'?RR:o.route==='user'?RU:null;
+  if(o.avoid){E.push(h('g',{key:'av'},h('circle',{cx:240,cy:405,r:9*s,fill:K.bg,stroke:K.coral,strokeWidth:2*s}),h('path',{d:`M${240-4*s},${405-4*s}l${8*s},${8*s}M${240+4*s},${405-4*s}l${-8*s},${8*s}`,stroke:K.coral,strokeWidth:2*s,strokeLinecap:'round'})));}
+  if(R){const d=ln(R),e=R[R.length-1];
+    E.push(h('path',{key:'rc',d,stroke:K.bg,strokeWidth:11*s,fill:'none',strokeLinecap:'round',strokeLinejoin:'round'}));
+    E.push(h('path',{key:'rg',d,stroke:K.cyan,strokeWidth:10*s,opacity:.35,fill:'none',filter:`url(#${id}g)`}));
+    E.push(h('path',{key:'rl',d,stroke:K.cyan,strokeWidth:4.5*s,fill:'none',strokeLinecap:'round',strokeLinejoin:'round'}));
+    E.push(h('circle',{key:'rs',cx:R[0][0],cy:R[0][1],r:6*s,fill:K.bg,stroke:K.text,strokeWidth:2.5*s}));
+    E.push(h('rect',{key:'re',x:e[0]-6*s,y:e[1]-6*s,width:12*s,height:12*s,rx:2*s,fill:K.cyan,stroke:K.bg,strokeWidth:2*s}));}
+  if(o.incidents) [[60,450],[305,150]].forEach((p,i)=>E.push(h('g',{key:'in'+i},h('circle',{cx:p[0],cy:p[1],r:24*s,fill:'none',stroke:K.coral,strokeWidth:1.5*s,opacity:.35}),h('circle',{cx:p[0],cy:p[1],r:16*s,fill:'rgba(251,113,133,.12)',stroke:K.coral,strokeWidth:1.5*s,opacity:.8}))));
+  PINS.forEach((p,i)=>E.push(pin(p,i,s,o.sel)));
+  return h('svg',{viewBox:o.vb,width:'100%',height:'100%',preserveAspectRatio:'xMidYMid slice',style:{display:'block',position:'absolute',inset:0}},defs,E);
+}
+function pin(p,i,s,sel){const col=p.c==='unk'?K.d4:K[p.c],C=2*Math.PI*9*s;
+  return h('g',{key:'p'+i},
+    sel&&p.sel?h('circle',{cx:p.x,cy:p.y,r:16*s,fill:'rgba(103,232,249,.15)',stroke:K.cyan,strokeWidth:1.5*s}):null,
+    h('circle',{cx:p.x,cy:p.y,r:9*s,fill:K.bg,stroke:'#2a3644',strokeWidth:2*s}),
+    h('circle',{cx:p.x,cy:p.y,r:9*s,fill:'none',stroke:col,strokeWidth:2*s,strokeDasharray:`${C*p.f} ${C}`,transform:`rotate(-90 ${p.x} ${p.y})`,strokeLinecap:'round'}),
+    p.c==='unk'?h('text',{x:p.x,y:p.y+3.2*s,textAnchor:'middle',fontSize:9*s,fontWeight:700,fontFamily:MONO,fill:K.d4},'?'):h('circle',{cx:p.x,cy:p.y,r:4*s,fill:col}));}
+function bars(n,play,hg){const out=[];for(let i=0;i<n;i++){const v=Math.min(1,Math.max(.08,Math.pow(Math.sin(i/n*Math.PI*1.05+.25),2)*.85+((i*37)%11)/45));
+  out.push(h('div',{key:i,style:{flex:1,height:Math.round(v*hg),background:i<play?K.cyan:'#2a3644',opacity:i<play?.8:1,borderRadius:1}}));}
+  return h('div',{style:{display:'flex',alignItems:'flex-end',gap:2,height:hg}},out);}
+class Component extends DCLogic {
+  renderVals() {
+    const rain = this.props.rain ?? true;
+    const d = Math.max(0, Math.min(60, this.props.heroDepth ?? 18));
+    const heroNote = d===0?'dry':d<15?'below curb':d<=20?'just above curb':d<30?'below door sill':d<45?'over door sill':'over truck limit';
+    const anim = rain ? undefined : 'none';
+    const rainHero = h('div',{style:{position:'absolute',inset:0,pointerEvents:'none',opacity:.55,
+      backgroundImage:'linear-gradient(100deg,transparent 47%,rgba(210,230,245,.55) 50%,transparent 53%),linear-gradient(100deg,transparent 47%,rgba(210,230,245,.35) 50%,transparent 53%)',
+      backgroundSize:'23px 61px,37px 97px',backgroundPosition:'0 0,11px 30px',animation:anim||'wl-rain .55s linear infinite'}});
+    const dropsA = h('div',{style:{position:'absolute',inset:0,pointerEvents:'none',opacity:.7,
+      backgroundImage:'radial-gradient(circle at 40% 40%,rgba(230,240,250,.32) 0,rgba(230,240,250,.06) 2px,transparent 3.5px),radial-gradient(circle at 40% 40%,rgba(230,240,250,.22) 0,rgba(230,240,250,.04) 3px,transparent 5px),linear-gradient(175deg,transparent 48%,rgba(210,230,245,.10) 50%,transparent 52%)',
+      backgroundSize:'47px 45px,83px 70px,61px 60px',backgroundPosition:'0 0,20px 33px,5px 0',animation:anim||'wl-drops 9s linear infinite'}});
+    const orbRings = h('div',{style:{position:'absolute',inset:0}},[0,1].map(i=>h('span',{key:i,style:{position:'absolute',inset:0,borderRadius:'50%',border:'1.5px solid rgba(103,232,249,.5)',animation:rain?`wl-pulse 2.4s ease-out ${i*1.2}s infinite`:'none',opacity:rain?undefined:.3}})));
+    const ic = (t,c)=>vehSvg(t,{full:true,k:.075,H:t==='rescue'?310:t==='truck'?200:t==='suv'?185:150,color:c,fill:'transparent'});
+    const motionDemo = h('div',{style:{position:'relative',height:'100%',borderLeft:'1px solid #2a3644',marginLeft:28}},
+      h('div',{style:{position:'absolute',left:0,right:0,bottom:0,background:'linear-gradient(180deg,rgba(103,232,249,.28),rgba(103,232,249,.06))',borderTop:'2px solid #67e8f9',animation:rain?'wl-rise 4s cubic-bezier(.2,.7,.2,1) infinite':'none',height:'42.2%'}}),
+      [[15,'Curb'],[30,'Door sill'],[65,'Tire top'],[75,'Hydrant']].map(([c,n])=>h('div',{key:c,style:{position:'absolute',left:0,right:0,bottom:`${c/90*100}%`,borderTop:'1px dashed #2a3644',display:'flex',justifyContent:'space-between'}},
+        h('span',{style:{font:`500 10.5px ${MONO}`,color:'#c4ccd6',margin:'-8px 0 0 -26px'}},c),h('span',{style:{fontSize:12,marginTop:-9,background:'#0c1218',paddingLeft:6,color:K.text}},n))));
+    const pinRow = [[1,'d1','fresh'],[.5,'d3','6 h'],[.25,'d4','12 h'],[.7,'unk','unknown']].map(([f,c,l],i)=>h('div',{key:i,style:{display:'flex',flexDirection:'column',alignItems:'center',gap:4}},
+      h('svg',{width:40,height:40,viewBox:'0 0 40 40'},pin({x:20,y:20,c,f},i,1.8)),h('span',{style:{font:`500 10.5px ${MONO}`,color:'#c4ccd6'}},l)));
+    return {
+      heroDepth: d, heroNote,
+      gaugeHero: gauge({types:['sedan','suv','truck'],depth:d,k:.75,crop:130,H:100,ticks:[15,30,60],tone:'hero',gap:8,left:22}),
+      gaugeHeroL: gauge({types:['sedan','suv','truck'],depth:d,k:.75,crop:130,H:100,ticks:[15,30,60],tone:'hero',gap:8,left:22}),
+      gaugeEv: gauge({types:['sedan','suv','truck','rescue'],depth:38,k:.5,crop:146,H:130,tone:'dark',gap:6,left:0,lim:true}),
+      gaugeEvD: gauge({types:['sedan','suv','truck','rescue'],depth:38,k:.5,crop:148,H:130,tone:'dark',gap:6,left:0,lim:true}),
+      mapMain: buildMap({id:'mm',vb:'0 0 390 844'}),
+      mapEv: buildMap({id:'me',vb:'0 0 390 844',sel:true}),
+      mapRoute: buildMap({id:'mr',vb:'-165 15 810 830',s:1.9,route:'user',avoid:true,labels:false}),
+      mapResp: buildMap({id:'mx',vb:'-70 20 470 470',s:1.25,route:'rescue',incidents:true,labels:false}),
+      mapDesk: buildMap({id:'md',vb:'-133 0 656 844',route:'user',avoid:true,sel:true}),
+      barsMap: bars(48,28,26), barsDesk: bars(90,52,30), barsMotion: bars(60,35,40),
+      rainHero, dropsA, orbRings, motionDemo, pinRow,
+      icSedan: ic('sedan','#c4ccd6'), icSuvC: ic('suv',K.cyan), icTruck: ic('truck','#c4ccd6'), icRescue: ic('rescue','#c4ccd6'), icRescueC: ic('rescue',K.cyan),
+      canSuv: vehSvg('suv',{full:true,k:.3,H:185,depth:38,lim:true}),
+      canTruck: vehSvg('truck',{full:true,k:.27,H:200,depth:38,lim:true}),
+      simCar: vehSvg('sedan',{full:true,k:.45,H:150,color:'#3a4652',fill:'#0a0f14'}),
+    };
+  }
+}
+</script>
+</body>
+</html>

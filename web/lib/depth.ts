@@ -15,7 +15,7 @@ export const PALETTE: Record<Theme, Record<Band | "route" | "routeCasing" | "ale
     stall: "#fb923c",
     float: "#ff4d5e",
     sweep: "#fa0040", // was #a3002a (2.4:1 on --bg, unreadable as text)
-    unknownDepth: "#a78bfa",
+    unknownDepth: "#fa0040", // = sweep (design handoff 2026-10-20): unknown depth blocks every vehicle, so it looks like the deepest water; a "?" marks it
     stale: "#6d7e96", // was #64748b (4.15:1, just under 4.5)
     route: "#67e8f9",
     routeCasing: "#04151b",
@@ -27,7 +27,7 @@ export const PALETTE: Record<Theme, Record<Band | "route" | "routeCasing" | "ale
     stall: "#b9460a", // was #ea580c (3.1:1 on --bg)
     float: "#d12222", // was #dc2626 (4.24:1, just under 4.5)
     sweep: "#7f1d1d",
-    unknownDepth: "#7c3aed",
+    unknownDepth: "#7f1d1d", // = sweep, see dark
     stale: "#5a6d87", // was #94a3b8 (2.25:1 on --bg)
     route: "#0e7490",
     routeCasing: "#ffffff",
