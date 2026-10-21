@@ -54,6 +54,10 @@
 | Scale #3: multi-event + Ida 2021 NYC | stream-events (opus; finished by lead) | ✅ merged bbab386 (Ida data pending) | `python -m scripts.add_event ida2021` once Overpass accepts queries |
 | Scale #2: bigger eval | stream-eval-scale (sonnet; finished by lead) | ✅ merged 105d322 | pool 182 photos, 4 events; needs labels |
 
+## Queued for the Nebius run (no Kush action)
+- Re-run eval (dev + test) on Nebius; replace the build.nvidia.com numbers in SUBMISSION; Cosmos Reason 2 benchmark.
+- Reference-box probe (Kush chose the recommended option 2026-10-21): `python -m eval.box_probe --n 20` on the Nebius model, mark hits in eval/results/box_probe/index.json; draw an "approximate" box on evidence photos only if >= 80% hit, else keep the schematic. The shipped depth prompt is not changed.
+
 ## Blockers (not Kush)
 - Overpass (OSM) refused every road-graph query for Ida on 2026-09-28 (one of its two servers refuses all connections, the other is overloaded). Retry later; knobs OVERPASS_IP / OVERPASS_PAUSE_S in scripts/build_graph.py. Fallback: a Geofabrik extract + pyosmium (a package install, needs Kush's OK).
 - Ida/Helene/VT have almost no USGS peak-time summaries (Ida 5, VT 0, Helene 0): Ida peak times will be estimated from the nearest stream gauge or the rainfall peak, and labeled as estimated.
