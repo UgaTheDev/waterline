@@ -27,6 +27,26 @@ function hudState(result: DashcamResponse) {
   return result.over_limit || high === null ? ("turn" as const) : ("ahead" as const);
 }
 
+// Next reported water on the route, measured along the line from the driver's position (equirectangular metres:
+// fine over a city). Only water under the limit is on a route at all; deeper streets were routed around.
+function waterAhead(route: RouteResponse | null, pos: Point | null) {
+  if (!route?.found || !route.segments || !pos) return null;
+  const c = route.geometry.coordinates;
+  const kx = 111320 * Math.cos((pos.lat * Math.PI) / 180), ky = 110540;
+  let best = Infinity, along = 0, at = 0;
+  for (let i = 0; i + 1 < c.length; i++) {
+    const [ax, ay] = [c[i][0] * kx, c[i][1] * ky], [bx, by] = [c[i + 1][0] * kx, c[i + 1][1] * ky], [px, py] = [pos.lon * kx, pos.lat * ky];
+    const L = Math.hypot(bx - ax, by - ay) || 1e-9;
+    const f = Math.max(0, Math.min(1, ((px - ax) * (bx - ax) + (py - ay) * (by - ay)) / (L * L)));
+    const d = Math.hypot(ax + f * (bx - ax) - px, ay + f * (by - ay) - py);
+    if (d < best) [best, at] = [d, along + f * L];
+    along += L;
+  }
+  if (best > 150) return null; // off the route: a distance along it would be wrong
+  const next = route.segments.find((g) => g.state === "reported" && (g.high_cm ?? 0) > 15 && g.start_m + g.length_m > at);
+  return next ? { seg: next, in_m: Math.max(0, next.start_m - at) } : null;
+}
+
 // Depth against the wading limit; the limit marker sits at the middle, so a full bar is twice the limit.
 function DepthBar({ high, limit, color }: { high: number | null; limit: number; color: string }) {
   const t = useT();
@@ -106,6 +126,7 @@ export default function Drive() {
   const [error, setError] = useState<string | null>(null);
   const [camError, setCamError] = useState<string | null>(null);
   const [route, setRoute] = useState<RouteResponse | null>(null);
+  const ahead = waterAhead(route, pos);
   const [routing, setRouting] = useState(false);
   const [segments, setSegments] = useState<Segments | null>(null);
   const [flash, setFlash] = useState({ ids: [] as string[], key: 0 });
@@ -450,6 +471,12 @@ export default function Drive() {
               {camError && <p className="bg-bg/90 backdrop-blur rounded-lg border border-danger/60 px-3 py-2 text-[14px] text-danger">{camError}</p>}
               {error && <p className="bg-bg/90 backdrop-blur rounded-lg border border-danger/60 px-3 py-2 text-[14px] text-danger">{error}</p>}
               {route && !route.found && <p className="bg-bg/90 backdrop-blur rounded-lg border border-danger/60 px-3 py-2 text-[15px] text-text">{routerText(lang, route.reason)}</p>}
+              {ahead && (
+                <p className="bg-bg/90 rounded-lg border border-warn/70 px-3 py-2 flex items-baseline gap-3">
+                  <span className="font-mono text-[13px] font-semibold tracking-[0.12em] uppercase text-warn">{t("dr.waterIn", { d: fmtDistance(ahead.in_m) })}</span>
+                  <span className="text-[15px] text-text truncate">{ahead.seg.name} · {Math.round(ahead.seg.high_cm ?? 0)} cm</span>
+                </p>
+              )}
               {route?.found && (
                 <p className="bg-bg/90 backdrop-blur rounded-lg border border-accent/60 px-3 py-2 text-[15px] text-text">
                   {t("dr.newRoute", { d: fmtDistance(route.distance_m), n: route.avoided.length, streets: t(route.avoided.length === 1 ? "rt.street" : "rt.streets") })}

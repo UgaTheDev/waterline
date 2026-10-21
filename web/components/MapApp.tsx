@@ -374,6 +374,24 @@ export default function MapApp() {
     ? (segments?.features ?? []).filter((f) => !isInferred(f.properties) && f.properties.evidence.some((e) => derived.includes(e.obs_id))).map((f) => toSel(f.properties))
     : [];
 
+  // Other observed streets with reported water within 200 m of the selected one: corroboration the card can show.
+  const nearby = (() => {
+    const feats = segments?.features ?? [];
+    const me = selected?.id ? feats.find((f) => f.properties.edge_id === selected.id) : undefined;
+    if (!me) return undefined;
+    const mid = (f: (typeof feats)[number]) => f.geometry.coordinates[Math.floor(f.geometry.coordinates.length / 2)];
+    const [x0, y0] = mid(me);
+    const kx = 111320 * Math.cos((y0 * Math.PI) / 180);
+    const names = new Set<string>();
+    for (const f of feats) {
+      const p = f.properties;
+      if (f === me || isInferred(p) || p.state === "stale" || p.name === me.properties.name) continue;
+      const [x, y] = mid(f);
+      if (Math.hypot((x - x0) * kx, (y - y0) * 110540) <= 200) names.add(p.name ?? p.edge_id);
+    }
+    return names.size;
+  })();
+
   return (
     <div className="flex-1 flex flex-col md:flex-row min-h-0">
       <Hero />
@@ -470,7 +488,7 @@ export default function MapApp() {
         {selected && (
           <div className="absolute z-20 left-2 right-2 bottom-2 top-14 md:top-14 md:left-3 md:right-auto md:bottom-auto md:w-[360px] md:max-h-[calc(100%-13rem)] flex flex-col justify-end md:justify-start pointer-events-none">
             <div className="pointer-events-auto min-h-0 flex">
-              <EvidenceCard key={selected.id ?? selected.name} {...selected} vehicle={current} sources={sources} onOpen={open} onClose={() => setSelected(null)} />
+              <EvidenceCard key={selected.id ?? selected.name} {...selected} vehicle={current} sources={sources} nearby={nearby} onOpen={open} onClose={() => setSelected(null)} />
             </div>
           </div>
         )}

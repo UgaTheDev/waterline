@@ -63,6 +63,9 @@ export type Segments = FC<LineString, SegmentProps>;
 export type AlertProps = { event: string; issued: string; expires: string; source: string };
 export type Alerts = FC<Polygon, AlertProps>;
 export type Point = { lat: number; lon: number; label?: string };
+// "none" = no reports, "stale" = old report (both unknown, never dry), "reported" = water under the vehicle limit.
+export type RouteSegment = { name: string; start_m: number; length_m: number; state: "none" | "stale" | "reported"; high_cm: number | null; edge_id: string | null };
+
 export type Avoided = {
   edge_id: string;
   name: string | null;
@@ -76,6 +79,8 @@ export type RouteResponse =
       found: true;
       geometry: LineString;
       distance_m: number;
+      duration_s?: number; // normal-traffic estimate from OSM speeds; flood traffic is slower
+      segments?: RouteSegment[]; // one row per run of a street in one state, in driving order
       avoided: Avoided[];
       unknown_m: number;
       warnings: string[];

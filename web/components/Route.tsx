@@ -1,5 +1,5 @@
 "use client";
-import type { Avoided, RouteResponse } from "@/lib/api";
+import type { Avoided, RouteResponse, RouteSegment } from "@/lib/api";
 import { PALETTE, bandFor, fmtDistance } from "@/lib/depth";
 import { routerText, useLang, useT } from "@/lib/i18n";
 import { useTheme } from "@/lib/theme";
@@ -15,8 +15,6 @@ export type Selection = {
 };
 
 // Design handoff "04 Route sheet": five row states. Never green, and "none" (no reports) is a dashed outline, never a fill.
-// ponytail: the route API returns avoided streets and the unreported distance, not per-street rows on the route,
-// so only "avoided", "unknownDepth" and "none" rows are drawn today; "clear" and "under" render once it does.
 export type RowKind = "clear" | "none" | "under" | "unknownDepth" | "avoided";
 
 export function SegmentRow(p: { kind: RowKind; name: string; note: string; color?: string; dist?: string; onClick?: () => void; delay?: number }) {
@@ -83,10 +81,44 @@ function Rows({ route, onEvidence }: { route: RouteResponse; onEvidence: (s: Sel
             />
           );
         })}
-        {route.found && route.unknown_m > 0 && (
+        {route.found && route.unknown_m > 0 && !route.segments && (
           <SegmentRow kind="none" name={t("rt.noReportsRow")} note={t("rt.noReportsNote")} dist={fmtDistance(route.unknown_m)} delay={120 + route.avoided.length * 60} />
         )}
       </ul>
+      {route.found && route.segments && route.segments.length > 0 && <OnRoute segments={route.segments} />}
+    </div>
+  );
+}
+
+const MAX_ROWS = 12; // ponytail: a cross-town route is ~40 street runs; the first 12 cover the next few km
+
+function OnRoute({ segments }: { segments: RouteSegment[] }) {
+  const theme = useTheme();
+  const t = useT();
+  const shown = segments.slice(0, MAX_ROWS);
+  return (
+    <div className="mt-3">
+      <p className="eyebrow mb-1">{t("rt.onRoute")}</p>
+      <ul>
+        {shown.map((g, i) => {
+          const shallow = g.state === "reported" && (g.high_cm ?? 0) <= 15;
+          const kind: RowKind = g.state === "reported" ? (shallow ? "clear" : "under") : "none";
+          const note =
+            g.state === "none" ? t("rt.noReportsNote") : g.state === "stale" ? t("rt.staleNote") : shallow ? t("rt.clearNote") : t("rt.underNote", { cm: Math.round(g.high_cm ?? 0) });
+          return (
+            <SegmentRow
+              key={`${g.start_m}-${g.name}`}
+              kind={kind}
+              name={g.name}
+              note={note}
+              color={kind === "under" ? PALETTE[theme][bandFor("reported", g.high_cm)] : undefined}
+              dist={fmtDistance(g.length_m)}
+              delay={Math.min(i, 8) * 40}
+            />
+          );
+        })}
+      </ul>
+      {segments.length > MAX_ROWS && <p className="font-mono text-[11.5px] text-muted mt-1.5">{t("rt.more", { n: segments.length - MAX_ROWS })}</p>}
     </div>
   );
 }
@@ -111,11 +143,11 @@ export default function RouteSummary({ route, onEvidence }: { route: RouteRespon
   }
   return (
     <div className="space-y-3">
-      {/* ponytail: no ETA, the route API returns distance only; an invented speed would be fabricated data */}
       <div className="rise flex items-baseline justify-between gap-3">
         <p className="font-mono text-[26px] font-semibold leading-none text-text tabular-nums whitespace-nowrap">
           <span className="sr-only">{t("rt.found")}: </span>
-          {fmtDistance(route.distance_m)}
+          {route.duration_s != null ? `${Math.max(1, Math.round(route.duration_s / 60))} min` : fmtDistance(route.distance_m)}
+          {route.duration_s != null && <span className="block font-mono text-[12.5px] font-normal text-muted mt-1.5">{fmtDistance(route.distance_m)} · {t("rt.traffic")}</span>}
         </p>
         <p className="font-mono text-[12.5px] text-muted text-right">
           {t("rt.avoids")} {route.avoided.length} {t(route.avoided.length === 1 ? "rt.street" : "rt.streets")} {t("rt.withWater")}

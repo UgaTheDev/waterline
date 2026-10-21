@@ -363,6 +363,7 @@ const en = {
   "vg.blocked": "BLOCKED · {n}",
   "vg.rescue": "Rescue truck",
   "evd.latestOf": "latest of {n}",
+  "evd.nearby": "{n} more streets with water within 200 m",
   "evd.range": "range {r}",
   "evd.reference": "Reference",
   "evd.taken": "Taken",
@@ -434,6 +435,14 @@ const en = {
   "rs.blocksAll": "treated as deep, blocks all",
   "rs.model": "model {n}",
   "rs.routeChip": "{v} · {n} cm",
+  // stream: route segments
+  "rt.traffic": "normal-traffic estimate",
+  "rt.onRoute": "On this route",
+  "rt.underNote": "{cm} cm reported · under your limit",
+  "rt.clearNote": "No deep water reported",
+  "rt.staleNote": "Old report · unknown now, not dry",
+  "rt.more": "+{n} more streets",
+  "dr.waterIn": "Water ahead · {d}",
 };
 export type Key = keyof typeof en;
 
@@ -783,6 +792,7 @@ const es: Record<Key, string> = {
   "vg.blocked": "BLOQUEADO · {n}",
   "vg.rescue": "Rescate",
   "evd.latestOf": "el más reciente de {n}",
+  "evd.nearby": "{n} calles más con agua a menos de 200 m",
   "evd.range": "rango {r}",
   "evd.reference": "Referencia",
   "evd.taken": "Tomada",
@@ -854,6 +864,14 @@ const es: Record<Key, string> = {
   "rs.blocksAll": "se trata como profunda, bloquea todo",
   "rs.model": "modelo {n}",
   "rs.routeChip": "{v} · {n} cm",
+  // stream: route segments
+  "rt.traffic": "estimado con tráfico normal",
+  "rt.onRoute": "En esta ruta",
+  "rt.underNote": "{cm} cm reportados · bajo su límite",
+  "rt.clearNote": "No se reporta agua profunda",
+  "rt.staleNote": "Reporte viejo · desconocido ahora, no seco",
+  "rt.more": "+{n} calles más",
+  "dr.waterIn": "Agua adelante · {d}",
 };
 
 const DICT: Record<Lang, Record<Key, string>> = { en, es };

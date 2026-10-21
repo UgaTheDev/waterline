@@ -37,11 +37,15 @@ Never display the word "safe". Shallow reports read "no deep water reported".
 
 `POST /route` body `{"from":{"lat":..,"lon":..}|"place name","to":...,"vehicle":"sedan","t":"ISO"}` →
 ```json
-{"found":true,"geometry":{"type":"LineString","coordinates":[...]},"distance_m":5230,
+{"found":true,"geometry":{"type":"LineString","coordinates":[...]},"distance_m":5230,"duration_s":610,
+ "segments":[{"name":"Shepherd Dr","start_m":0,"length_m":420,"state":"none|stale|reported","high_cm":null,"edge_id":null}],
  "avoided":[{"edge_id":"...","name":"...","state":"reported","high_cm":55,"reason":"reported up to 55 cm; sedan limit 15 cm","evidence":[Evidence]}],
  "unknown_m":800,"warnings":["Route passes 800 m of streets with no reports inside an active Flash Flood Warning"],
  "from":{"lat":..,"lon":..,"label":".."},"to":{...}}
 ```
+`duration_s` is a normal-traffic estimate (OSM maxspeed, else a per-class default); flood traffic is slower. `segments`
+are runs of one street in one state, in driving order; `reported` rows carry water under the vehicle limit (deeper
+streets are routed around and listed in `avoided`).
 `found:false` → `{"found":false,"reason":"No route avoids reported deep water for a sedan.","avoided":[...]}`
 
 `POST /chat` body `{"messages":[{"role":"user","content":"..."}],"vehicle":"sedan","t":"ISO","location":{"lat":..,"lon":..}|null}`

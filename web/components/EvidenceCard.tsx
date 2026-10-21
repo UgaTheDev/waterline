@@ -157,10 +157,11 @@ export default function EvidenceCard(props: {
   basis?: "observed" | "inferred";
   vehicle: Vehicle | undefined;
   sources?: Selection[]; // the reports an inferred street was interpolated from, when they're on the map
+  nearby?: number; // other streets with observed water within 200 m (corroboration), computed from the loaded map
   onOpen?: (s: Selection) => void;
   onClose: () => void;
 }) {
-  const { name, state, low, high, evidence, vehicle, sources = [], onOpen, onClose } = props;
+  const { name, state, low, high, evidence, vehicle, sources = [], nearby, onOpen, onClose } = props;
   const sims = useSimulations();
   const sim = name ? sims.find((s) => s.street === name) : undefined;
   const [showSim, setShowSim] = useState(false);
@@ -206,6 +207,7 @@ export default function EvidenceCard(props: {
             <p className="text-[12.5px] text-muted mt-0.5">
               {t(inferred ? "ev.inferredHead" : "ev.streetReport")}
               {evidence.length > 1 && ` · ${t("evd.latestOf", { n: evidence.length })}`}
+              {nearby ? ` · ${t("evd.nearby", { n: nearby })}` : ""}
             </p>
             <p className="text-[13px] mt-1 flex items-center gap-2" style={{ color }}>
               <span className="inline-block w-2 h-2 rounded-full" style={{ background: color }} />

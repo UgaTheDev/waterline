@@ -8,6 +8,24 @@ from shapely.ops import transform
 from .profiles import VEHICLES, SNAP_M, UNKNOWN_COST, ALERT_UNKNOWN_COST
 
 
+# Normal-traffic speeds (km/h) by OSM class when maxspeed is untagged. ponytail: free-flow estimate; flood traffic is
+# slower, so the UI labels the time "normal traffic"; real congestion needs a traffic feed.
+SPEED_KMH = {"motorway": 100, "motorway_link": 60, "trunk": 80, "trunk_link": 50, "primary": 60, "primary_link": 40,
+             "secondary": 50, "secondary_link": 40, "tertiary": 40, "tertiary_link": 30}
+DEFAULT_KMH = 30  # residential, unclassified, living_street, road
+
+
+def speed_kmh(d):
+    m = d.get("maxspeed")
+    m = m[0] if isinstance(m, list) else m
+    try:
+        v = float(str(m).split()[0])
+        return v * 1.609 if "mph" in str(m) else v
+    except (TypeError, ValueError, IndexError):
+        h = d.get("highway")
+        return SPEED_KMH.get(h[0] if isinstance(h, list) else h, DEFAULT_KMH)
+
+
 def edge_id(u, v, k):
     return f"{u}-{v}-{k}"
 
@@ -107,9 +125,20 @@ class Roads:
             return {"found": False, "reason": f"No route avoids reported deep water for a {VEHICLES[vehicle]['label'].lower()}.", "avoided": avoided}
 
         chosen = list(self._path_edges(path, lambda u, v: min(self.G[u][v], key=lambda k: cost(u, v, {k: self.G[u][v][k]}) or math.inf)))
-        coords, dist, unknown_m, unknown_alert_m = [], 0.0, 0.0, 0.0
+        coords, dist, unknown_m, unknown_alert_m, secs, segs = [], 0.0, 0.0, 0.0, 0.0, []
         for eid in chosen:
-            u, v, _, geom, _, length = self.edges[eid]
+            u, v, k, geom, name, length = self.edges[eid]
+            secs += length / (speed_kmh(self.G[u][v][k]) / 3.6)
+            s = states.get(eid)
+            st = "none" if not s else ("stale" if s["state"] == "stale" else "reported")
+            hi = s["high_cm"] if st == "reported" else None
+            if segs and segs[-1]["name"] == name and segs[-1]["state"] == st:
+                segs[-1]["length_m"] += length
+                if hi is not None:
+                    segs[-1]["high_cm"] = max(segs[-1]["high_cm"] or 0, hi)
+            else:  # one row per run of the same street in the same state; start_m lets drive mode say "water in N m"
+                segs.append({"name": name, "start_m": round(dist), "length_m": length, "state": st, "high_cm": hi,
+                             "edge_id": eid if st == "reported" else None})
             pts = list(geom.coords)
             if pts and (round(pts[0][0], 7), round(pts[0][1], 7)) != (round(self.G.nodes[u]["x"], 7), round(self.G.nodes[u]["y"], 7)):
                 pts.reverse()
@@ -122,8 +151,10 @@ class Roads:
         warnings = []
         if unknown_alert_m:
             warnings.append(f"Route passes {unknown_alert_m:.0f} m of streets with no recent reports inside an active flood warning.")
+        for g in segs:
+            g["length_m"] = round(g["length_m"])
         return {"found": True, "geometry": {"type": "LineString", "coordinates": coords}, "distance_m": round(dist),
-                "avoided": avoided, "unknown_m": round(unknown_m), "warnings": warnings}
+                "duration_s": round(secs), "segments": segs, "avoided": avoided, "unknown_m": round(unknown_m), "warnings": warnings}
 
     @staticmethod
     def _path_edges(path, pick_key):

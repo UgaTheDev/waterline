@@ -50,6 +50,11 @@ def test_router():
     assert sedan["found"] and route_names(sedan) == ["AB St"] and sedan["distance_m"] == 300, sedan
     truck = R.route(a, c, "truck", flooded)
     assert truck["found"] and truck["distance_m"] == 200 and not truck["avoided"], "16 cm is under the truck limit"
+    segs = truck["segments"]
+    assert sum(g["length_m"] for g in segs) == 200 and segs[0]["start_m"] == 0, segs
+    wet = [g for g in segs if g["state"] == "reported"]
+    assert wet and wet[0]["high_cm"] == 16 and wet[0]["edge_id"], "water under the limit stays on the route, with its depth"
+    assert truck["duration_s"] == round(200 / (30 / 3.6)), "untagged residential: 30 km/h"
     unk = {"A-B-0": edge_state([obs(status="unknown")], t)}
     for v in ("sedan", "truck"):
         assert R.route(a, c, v, unk)["distance_m"] == 300, "water photographed with unreadable depth blocks every vehicle"
