@@ -456,5 +456,10 @@ def media(name: str):
 
 @app.get("/eval")
 def eval_report():
-    p = P.ROOT / "eval/results/test.json"
-    return json.loads(p.read_text()) if p.exists() else {"n": 0}
+    # The dev split is the clean headline: the unread-zero rule was found on test misses, so test is contaminated
+    # (docs/SUBMISSION.md). Falls back to test when no dev run exists.
+    for split in ("dev", "test"):
+        p = P.ROOT / f"eval/results/{split}.json"
+        if p.exists():
+            return json.loads(p.read_text())
+    return {"n": 0}

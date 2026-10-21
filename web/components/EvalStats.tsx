@@ -88,6 +88,7 @@ export default function EvalStats() {
           {res.note ? ` · ${res.note}` : ""}
         </p>
       )}
+      {res && "endpoint" in res && res.endpoint && !res.endpoint.includes("nebius") && <p className="font-mono text-[11px] text-warn">{t("eval.provisional", { e: res.endpoint })}</p>}
     </div>
   );
 }

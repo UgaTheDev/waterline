@@ -471,7 +471,8 @@ export const api = {
     await wait(900);
     return dashcam(form);
   },
-  eval: async (): Promise<EvalResult> => ({ n: 0 }),
+  // a real measured result (eval/results/dev.json, copied into the snapshot), not sample data
+  eval: async (): Promise<EvalResult> => fetch("/snapshot/harvey2017/eval.json").then((r) => (r.ok ? r.json() : { n: 0 })),
   risk: async (t: string) => risk(t),
   simulations: async () => simulations,
   responderQueue: async (token: string) => {

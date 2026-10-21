@@ -127,6 +127,7 @@ export type EvalResult =
       misses?: number;
       prompt_version?: string;
       model?: string;
+      endpoint?: string; // inference host; anything but Nebius is shown as provisional
       by_reference: Record<string, { n: number; mae_cm: number }>;
       note: string;
     };
