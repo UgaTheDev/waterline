@@ -351,6 +351,14 @@ const en = {
   "rs.flaggedHead": "Flagged reports · needs human review",
   "rs.signOut": "Sign out",
   "rs.rescue": "Rescue routing",
+  // stream: map
+  "lg.observed": "Observed",
+  "lg.inferredShort": "Inferred",
+  "lg.unknownBlocks": "Unknown depth · blocks all",
+  "lg.fresh": "Ring = freshness",
+  "lg.freshNote": "The ring drains as a report ages: half gone after one half-life.",
+  "lg.noDry": "No reports doesn't mean dry.",
+  "tl.reports": "{n} reports",
 };
 export type Key = keyof typeof en;
 
@@ -688,6 +696,14 @@ const es: Record<Key, string> = {
   "rs.flaggedHead": "Reportes marcados · requiere revisión humana",
   "rs.signOut": "Cerrar sesión",
   "rs.rescue": "Rutas de rescate",
+  // stream: map
+  "lg.observed": "Observado",
+  "lg.inferredShort": "Inferido",
+  "lg.unknownBlocks": "Profundidad desconocida · bloquea todo",
+  "lg.fresh": "Anillo = frescura",
+  "lg.freshNote": "El anillo se vacía al envejecer el reporte: a la mitad tras una vida media.",
+  "lg.noDry": "Sin reportes no significa seco.",
+  "tl.reports": "{n} reportes",
 };
 
 const DICT: Record<Lang, Record<Key, string>> = { en, es };

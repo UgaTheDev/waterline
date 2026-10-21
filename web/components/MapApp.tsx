@@ -7,7 +7,7 @@ import { useOffline } from "@/lib/fallback";
 import { api, parsePoint, type Alerts, type Config, type EventInfo, type Point, type Risk, type RiskProps, type RouteResponse, type SegmentProps, type Segments } from "@/lib/api";
 import { LEGEND, PALETTE, bandFor, fmtClock, fmtTime } from "@/lib/depth";
 import { useReducedMotion, useTheme } from "@/lib/theme";
-import { useLang, useT, vehicleName, type Key } from "@/lib/i18n";
+import { useLang, useT, vehicleName } from "@/lib/i18n";
 import Chat from "./Chat";
 import EvidenceCard from "./EvidenceCard";
 import Hero from "./Hero";
@@ -24,14 +24,19 @@ const FloodMap = dynamic(() => import("./FloodMap"), {
 
 const TICK_MS = 400;
 const TICK_STEP = 10 * 60_000; // 1x plays the whole event in about four minutes
-const HOUR = 3_600_000;
 
 const toSel = (p: SegmentProps): Selection => ({ id: p.edge_id, name: p.name, state: p.state, low: p.low_cm, high: p.high_cm, evidence: p.evidence, basis: p.basis });
 const isInferred = (p: SegmentProps) => p.basis === "inferred";
 
+// Design 02 Map legend: the depth ramp and the "no reports" callout always show; the key to line styles opens on demand.
 function Legend({ open, onToggle, risk }: { open: boolean; onToggle: () => void; risk: boolean }) {
   const theme = useTheme();
   const t = useT();
+  const p = PALETTE[theme];
+  const ramp = LEGEND.filter((l) => ["shallow", "stall", "float", "sweep"].includes(l.band));
+  const stale = LEGEND.find((l) => l.band === "stale")!;
+  const swatch = "inline-block w-[22px] h-[5px] rounded-full shrink-0";
+  const ring = "w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center";
   return (
     <div className="glass rounded-xl border border-line shadow-[var(--shadow)] text-[12px] overflow-hidden">
       <button onClick={onToggle} aria-expanded={open} className="w-full flex items-center justify-between gap-3 px-3 py-2">
@@ -40,51 +45,59 @@ function Legend({ open, onToggle, risk }: { open: boolean; onToggle: () => void;
           ⌃
         </span>
       </button>
-      {!open && <p className="px-3 pb-2 -mt-1 text-[11px] text-muted">{t("lg.collapsed")}</p>}
-      {open && (
-        <div className="px-3 pb-3 fade">
-          <ul className="grid grid-cols-2 md:grid-cols-1 gap-x-3 gap-y-1.5">
-            {LEGEND.map((l) => {
-              const c = PALETTE[theme][l.band];
-              return (
-                <li key={l.band} className="flex items-center gap-2.5">
-                  <span
-                    className="inline-block w-6 h-[5px] rounded-full shrink-0"
-                    style={
-                      l.band === "stale"
-                        ? { background: `repeating-linear-gradient(90deg, ${c} 0 4px, transparent 4px 7px)` }
-                        : l.band === "sweep" && theme === "dark"
-                          ? { background: `linear-gradient(${c} 0 35%, #ffb3bf 35% 65%, ${c} 65%)`, boxShadow: `0 0 8px ${c}` }
-                          : { background: c, boxShadow: l.band === "float" ? `0 0 8px ${c}` : undefined }
-                    }
-                  />
-                  <span className="font-mono text-[11px] text-text w-12 shrink-0">{l.label.startsWith("lg.") ? t(l.label as Key) : l.label}</span>
-                  <span className="text-muted hidden md:inline">{t(l.note)}</span>
-                </li>
-              );
-            })}
+      <div className="px-3 pb-3 space-y-2.5">
+        <div>
+          <div className="flex h-2 rounded overflow-hidden gap-0.5" aria-hidden>
+            {ramp.map((l) => (
+              <span key={l.band} className="flex-1" style={{ background: p[l.band] }} />
+            ))}
+          </div>
+          <ul className="flex mt-1 font-mono text-[10.5px] text-text">
+            {ramp.map((l) => (
+              <li key={l.band} className="flex-1" title={t(l.note)}>
+                {l.label}
+                <span className="sr-only"> cm: {t(l.note)}</span>
+              </li>
+            ))}
           </ul>
-          <p className="mt-2 flex items-center gap-2.5 text-muted leading-snug">
-            <span
-              className="inline-block w-6 h-[5px] rounded-full shrink-0 opacity-60"
-              style={{ background: `repeating-linear-gradient(90deg, ${PALETTE[theme].float} 0 5px, transparent 5px 8px)` }}
-              aria-hidden
-            />
-            {t("lg.inferred")}
-          </p>
-          {risk && (
-            <p className="mt-2 flex items-center gap-2.5 text-muted leading-snug">
-              <span className="inline-block w-6 h-[9px] rounded-full shrink-0 blur-[2px]" style={{ background: PALETTE[theme].risk, opacity: 0.45 }} aria-hidden />
-              {t("lg.risk", { label: t("risk.label") })}
-            </p>
-          )}
-          <p className="mt-2.5 pt-2.5 border-t border-line text-muted leading-snug">
-            {t("lg.noReportsA")}
-            <span className="text-text">{t("lg.noReportsB")}</span>
-            {t("lg.noReportsC")}
-          </p>
         </div>
-      )}
+        {open && (
+          <ul className="fade grid grid-cols-2 gap-x-3.5 gap-y-2 text-text leading-snug">
+            <li className="flex items-center gap-2">
+              <span className={swatch} style={{ background: p.float, boxShadow: `0 0 6px ${p.float}` }} aria-hidden />
+              {t("lg.observed")}
+            </li>
+            <li className="flex items-center gap-2" title={t("lg.inferred")}>
+              <span className="inline-block w-[22px] h-[6px] shrink-0 opacity-75" style={{ background: `repeating-linear-gradient(45deg, ${p.float} 0 2px, transparent 2px 5px)` }} aria-hidden />
+              {t("lg.inferredShort")}
+            </li>
+            <li className="flex items-center gap-2">
+              <span className={`${ring} font-mono text-[9px] font-bold`} style={{ borderColor: p.unknownDepth, color: p.unknownDepth }} aria-hidden>
+                ?
+              </span>
+              {t("lg.unknownBlocks")}
+            </li>
+            <li className="flex items-center gap-2" title={t("lg.freshNote")}>
+              <span className={`${ring} border-line-strong`} style={{ borderTopColor: "var(--text)", borderRightColor: "var(--text)" }} aria-hidden />
+              {t("lg.fresh")}
+            </li>
+            <li className="flex items-center gap-2">
+              <span className={swatch} style={{ background: `repeating-linear-gradient(90deg, ${p.stale} 0 4px, transparent 4px 7px)` }} aria-hidden />
+              {t(stale.note)}
+            </li>
+            {risk && (
+              <li className="flex items-center gap-2 col-span-2">
+                <span className="inline-block w-[22px] h-[9px] rounded-full shrink-0 blur-[2px]" style={{ background: p.risk, opacity: 0.45 }} aria-hidden />
+                {t("lg.risk", { label: t("risk.label") })}
+              </li>
+            )}
+          </ul>
+        )}
+        <p className="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-dashed border-line-strong text-[12.5px] text-text leading-snug">
+          <span className={`${swatch} bg-line-strong`} aria-hidden />
+          {t("lg.noDry")}
+        </p>
+      </div>
     </div>
   );
 }
@@ -146,7 +159,7 @@ export default function MapApp() {
   const [t, setT] = useState<number>(0);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
-  const [hist, setHist] = useState<number[]>([]);
+  const [times, setTimes] = useState<number[]>([]);
   const [segments, setSegments] = useState<Segments | null>(null);
   const [alerts, setAlerts] = useState<Alerts | null>(null);
   const [layerError, setLayerError] = useState<string | null>(null);
@@ -190,22 +203,19 @@ export default function MapApp() {
         setT(new Date(c.replay.default_t || c.replay.start).getTime());
         const pub = c.vehicles.filter((v) => !v.responder_only);
         if (pub.length && !pub.some((v) => v.id === "sedan")) setVehicle(pub[0].id);
-        // Sparkline: every observation the replay will ever show, bucketed by hour.
-        const start = new Date(c.replay.start).getTime();
-        const hours = Math.ceil((new Date(c.replay.end).getTime() - start) / HOUR);
+        // Scrubber histogram + count: the time of every observed report the replay will ever show (Timeline buckets them).
         api
           .segments(c.replay.end)
           .then((s) => {
-            const h = new Array(Math.max(1, hours)).fill(0);
             const ids = new Set<string>();
+            const ts: number[] = [];
             for (const f of s.features)
               for (const e of f.properties.evidence) {
                 if (ids.has(e.obs_id) || e.kind === "inferred") continue; // both directions of a street share observations
                 ids.add(e.obs_id);
-                const i = Math.floor((new Date(e.time).getTime() - start) / HOUR);
-                if (i >= 0 && i < h.length) h[i]++;
+                ts.push(new Date(e.time).getTime());
               }
-            setHist(h);
+            setTimes(ts);
           })
           .catch(() => {});
       })
@@ -388,6 +398,8 @@ export default function MapApp() {
             setSelected(null);
           }}
           onPick={onPick}
+          time={t}
+          live={config.live}
         />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-bg/50 to-transparent" aria-hidden />
 
@@ -489,7 +501,7 @@ export default function MapApp() {
             }}
             speed={speed}
             onSpeed={setSpeed}
-            hist={hist}
+            times={times}
             live={config.live}
           />
         </div>

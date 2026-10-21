@@ -18,6 +18,10 @@ const empty = { type: "FeatureCollection" as const, features: [] };
 const FRESH_MS = 1600;
 const FLASH_MS = 2600;
 const ROUTE_MS = 1400;
+// Fallback when an observation carries no half_life_min (backend/profiles.py HALF_LIFE_MIN).
+const HALF_LIFE_MIN = 45;
+const RING_STEPS = 24; // ring arcs are pre-drawn in 1/24 steps, made on demand by styleimagemissing
+const PIN_BG: Record<Theme, [string, string]> = { dark: ["#070b10", "#2a3847"], light: ["#f3f0e8", "#cfc8b8"] }; // --bg, --line-strong
 const RISK_GLOW = [
   ["high", 0.55],
   ["elevated", 0.34],
@@ -38,6 +42,8 @@ type Props = {
   onSegment: (p: SegmentProps) => void;
   onPick: (p: Point) => void;
   onRisk?: (p: RiskProps) => void;
+  time?: number; // scrubber time; when set, report pins with freshness rings are drawn
+  live?: boolean; // live mode drops pins past 3 half-lives; replay keeps them
 };
 
 type SegFeature = Feature<LineString, SegmentProps>;
@@ -72,6 +78,58 @@ function hatch(color: string) {
     g.stroke();
   }
   return g.getImageData(0, 0, 14, 14);
+}
+
+// A 45° hatch tile in a band colour, for inferred streets (line-pattern).
+function hatchTile(color: string) {
+  const c = document.createElement("canvas");
+  c.width = c.height = 14; // 7 px at pixelRatio 2: ~5 px stripe period
+  const g = c.getContext("2d")!;
+  g.strokeStyle = color;
+  g.lineWidth = 4.8; // 2.4 px bars
+  for (const o of [-14, 0, 14]) {
+    g.beginPath();
+    g.moveTo(o, 14);
+    g.lineTo(o + 14, 0);
+    g.stroke();
+  }
+  return g.getImageData(0, 0, 14, 14);
+}
+
+// Report pin: 9 px ring on the bg with a track; the arc in the depth colour is the freshness left; "?" core = depth unknown.
+function ringPin(color: string, frac: number, unknown: boolean, theme: Theme) {
+  const [bg, track] = PIN_BG[theme];
+  const r = 2;
+  const c = document.createElement("canvas");
+  c.width = c.height = 24 * r;
+  const g = c.getContext("2d")!;
+  const m = 12 * r;
+  g.lineWidth = 2 * r;
+  g.beginPath();
+  g.arc(m, m, 9 * r, 0, Math.PI * 2);
+  g.fillStyle = bg;
+  g.fill();
+  g.strokeStyle = track;
+  g.stroke();
+  if (frac > 0) {
+    g.beginPath();
+    g.arc(m, m, 9 * r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * frac);
+    g.strokeStyle = color;
+    g.lineCap = "round";
+    g.stroke();
+  }
+  g.fillStyle = color;
+  if (unknown) {
+    g.font = `700 ${11 * r}px ui-monospace, Menlo, monospace`;
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    g.fillText("?", m, m + 0.5 * r);
+  } else {
+    g.beginPath();
+    g.arc(m, m, 4 * r, 0, Math.PI * 2);
+    g.fill();
+  }
+  return g.getImageData(0, 0, c.width, c.height);
 }
 
 function midpoint(coords: [number, number][]): [number, number] {
@@ -122,9 +180,32 @@ export default function FloodMap(props: Props) {
   };
   const pushAlerts = () => src("alerts")?.setData(latest.current.alerts ?? empty);
   const pushRisk = () => src("risk")?.setData(latest.current.risk ?? empty);
+  const haloFilter = (): ExpressionSpecification => ["==", ["get", "edge_id"], latest.current.selectedId ?? ""];
   const pushSelected = () => {
     const f = latest.current.segments?.features.find((x) => x.properties.edge_id === latest.current.selectedId);
     src("selected")?.setData(f ? fc([slim(f)]) : empty);
+    if (map.current?.getLayer("pins-halo")) map.current.setFilter("pins-halo", haloFilter());
+  };
+  // One pin per observed report (inferred values are not reports), at its street's midpoint.
+  // Ring arc = 0.5^(age / half-life), age measured from the scrubber time.
+  const pushPins = () => {
+    const { segments, time, live } = latest.current;
+    const feats: Feature<{ type: "Point"; coordinates: [number, number] }, { edge_id: string; ring: string; t: number }>[] = [];
+    const seenObs = new Set<string>();
+    if (time !== undefined)
+      for (const f of segments?.features ?? []) {
+        if (f.properties.state === "unknown") continue;
+        for (const e of f.properties.evidence) {
+          if (e.kind === "inferred" || seenObs.has(e.obs_id)) continue; // both directions of a street share observations
+          seenObs.add(e.obs_id);
+          const at = Date.parse(e.time);
+          const frac = 0.5 ** (Math.max(0, time - at) / 60_000 / (e.half_life_min || HALF_LIFE_MIN));
+          if (live && frac < 0.125) continue; // past 3 half-lives: off the live map, still shown in replay
+          const band = bandFor("reported", e.high_cm); // null high = depth unreadable = unknownDepth
+          feats.push({ type: "Feature", geometry: { type: "Point", coordinates: midpoint(f.geometry.coordinates) }, properties: { edge_id: f.properties.edge_id, ring: `ring-${band}-${Math.round(frac * RING_STEPS)}`, t: at } });
+        }
+      }
+    src("pins")?.setData({ type: "FeatureCollection", features: feats });
   };
   const pushEndpoints = () => {
     const { from, to } = latest.current.endpoints;
@@ -151,7 +232,7 @@ export default function FloodMap(props: Props) {
     const under = (layer: Parameters<MLMap["addLayer"]>[0]) => m.addLayer(layer, firstLabel);
     if (m.hasImage("hatch")) m.removeImage("hatch");
     m.addImage("hatch", hatch(pal.alert));
-    for (const id of ["alerts", "risk", "segments", "fresh", "selected", "flash", "endpoints"]) m.addSource(id, { type: "geojson", data: empty });
+    for (const id of ["alerts", "risk", "segments", "fresh", "selected", "flash", "endpoints", "pins"]) m.addSource(id, { type: "geojson", data: empty });
     m.addSource("route", { type: "geojson", data: empty, lineMetrics: true });
     const round = { "line-cap": "round", "line-join": "round" } as const;
     const w = (a: number, b: number): ExpressionSpecification => ["interpolate", ["exponential", 1.5], ["zoom"], 11, a, 17, b];
@@ -167,14 +248,15 @@ export default function FloodMap(props: Props) {
       under({ id: `risk-glow-${band}`, type: "line", source: "risk", layout: round, filter: ["==", ["get", "band"], band], paint: { "line-color": pal.risk, "line-width": w(16, 40), "line-blur": w(8, 16), "line-opacity": op } });
     under({ id: "risk-line", type: "line", source: "risk", layout: round, paint: { "line-color": pal.risk, "line-width": w(2.2, 4), "line-opacity": 0.9, "line-dasharray": [0.1, 2] } });
     under({ id: "selected", type: "line", source: "selected", layout: round, paint: { "line-color": pal.route, "line-width": w(10, 26), "line-blur": 3, "line-opacity": 0.55 } });
-    under({ id: "seg-glow", type: "line", source: "segments", layout: round, filter: ["all", observed, ["in", ["get", "band"], ["literal", ["float", "sweep"]]]], paint: { "line-color": color, "line-width": w(10, 30), "line-blur": w(6, 16), "line-opacity": 0.4 } });
-    // Inferred streets: same depth colour, dashed and dimmer, drawn below observed ones so they never read stronger.
-    under({ id: "inferred-casing", type: "line", source: "segments", filter: inferred, paint: { "line-color": theme === "dark" ? "#04070a" : "#ffffff", "line-width": w(4, 10), "line-opacity": 0.6 } });
-    under({ id: "inferred", type: "line", source: "segments", filter: inferred, paint: { "line-color": color, "line-width": w(2.5, 7), "line-opacity": 0.6, "line-dasharray": [2, 1.5] } });
+    // Observed depth: solid stroke plus a soft steady glow. Inferred: hatched, dimmer, no glow.
+    under({ id: "seg-glow", type: "line", source: "segments", layout: round, filter: notStale, paint: { "line-color": color, "line-width": w(8, 24), "line-blur": w(3, 8), "line-opacity": theme === "dark" ? 0.3 : 0.15 } });
+    // Inferred streets: same depth colour, 45° hatch at .6, drawn below observed ones so they never read stronger.
+    under({ id: "inferred-casing", type: "line", source: "segments", filter: inferred, paint: { "line-color": theme === "dark" ? "#04070a" : "#ffffff", "line-width": w(5, 11), "line-opacity": 0.6 } });
+    under({ id: "inferred", type: "line", source: "segments", filter: inferred, paint: { "line-pattern": ["concat", "hatch-", ["get", "band"]], "line-width": w(4, 9), "line-opacity": 0.6 } });
     under({ id: "seg-casing", type: "line", source: "segments", layout: round, filter: notStale, paint: { "line-color": theme === "dark" ? "#04070a" : "#ffffff", "line-width": w(6, 15) } });
     under({ id: "segments", type: "line", source: "segments", layout: round, filter: notStale, paint: { "line-color": color, "line-width": w(3.5, 11) } });
-    // Deepest band gets a hot core so it reads apart from 30-60 cm on a dark map.
-    if (theme === "dark") under({ id: "seg-core", type: "line", source: "segments", layout: round, filter: ["all", observed, ["==", ["get", "band"], "sweep"]], paint: { "line-color": "#ffb3bf", "line-width": w(1, 3) } });
+    // Deepest band (and unknown depth, drawn exactly like it) gets a hot core so it reads apart from 30-60 cm on a dark map.
+    if (theme === "dark") under({ id: "seg-core", type: "line", source: "segments", layout: round, filter: ["all", observed, ["in", ["get", "band"], ["literal", ["sweep", "unknownDepth"]]]], paint: { "line-color": "#ffb3bf", "line-width": w(1, 3) } });
     under({ id: "segments-stale", type: "line", source: "segments", layout: { "line-join": "round" }, filter: ["==", ["get", "state"], "stale"], paint: { "line-color": color, "line-width": w(2, 6), "line-dasharray": [1.2, 1.2] } });
     under({ id: "fresh", type: "line", source: "fresh", layout: round, paint: { "line-color": color, "line-width": 0, "line-blur": 4, "line-opacity": 0 } });
     under({ id: "flash", type: "line", source: "flash", layout: round, paint: { "line-color": theme === "dark" ? "#ffffff" : pal.alert, "line-width": w(8, 22), "line-blur": 2, "line-opacity": 0 } });
@@ -193,8 +275,22 @@ export default function FloodMap(props: Props) {
         "circle-stroke-width": 3,
       },
     });
+    m.addLayer({ id: "pins-halo", type: "circle", source: "pins", filter: haloFilter(), paint: { "circle-radius": 16, "circle-color": pal.route, "circle-opacity": 0.15, "circle-stroke-color": pal.route, "circle-stroke-width": 1.5 } });
+    m.addLayer({
+      id: "pins",
+      type: "symbol",
+      source: "pins",
+      layout: {
+        "icon-image": ["get", "ring"],
+        "icon-size": ["interpolate", ["linear"], ["zoom"], 11, 0.6, 15, 1],
+        "icon-allow-overlap": true,
+        "icon-ignore-placement": true,
+        "symbol-sort-key": ["get", "t"], // newest report on top
+      },
+    });
     pushAlerts();
     pushRisk();
+    pushPins();
     pushSegments(true);
     pushSelected();
     pushEndpoints();
@@ -214,12 +310,24 @@ export default function FloodMap(props: Props) {
     m.addControl(new NavigationControl({ showCompass: false }), "top-right");
     m.addControl(new AttributionControl({ compact: true }), "bottom-right");
     m.on("style.load", () => install(m));
-    m.on("click", "seg-hit", (e) => {
-      if (latest.current.picking) return;
-      const edge = e.features?.[0]?.properties?.edge_id;
-      const f = latest.current.segments?.features.find((x) => x.properties.edge_id === edge);
-      if (f) latest.current.onSegment(f.properties);
+    // Pin rings and hatch tiles are drawn on first use, in the current theme (setStyle drops them, so they redraw).
+    m.on("styleimagemissing", ({ id }) => {
+      const theme = latest.current.theme;
+      const [kind, band, step] = id.split("-");
+      const color = PALETTE[theme][band as Band];
+      if (!color || m.hasImage(id)) return;
+      if (kind === "hatch") m.addImage(id, hatchTile(color), { pixelRatio: 2 });
+      else if (kind === "ring") m.addImage(id, ringPin(color, Number(step) / RING_STEPS, band === "unknownDepth", theme), { pixelRatio: 2 });
     });
+    let lastPick = 0;
+    for (const layer of ["seg-hit", "pins"])
+      m.on("click", layer, (e) => {
+        if (latest.current.picking || e.originalEvent.timeStamp === lastPick) return; // a pin over its street fires both
+        lastPick = e.originalEvent.timeStamp;
+        const edge = e.features?.[0]?.properties?.edge_id;
+        const f = latest.current.segments?.features.find((x) => x.properties.edge_id === edge);
+        if (f) latest.current.onSegment(f.properties);
+      });
     // Depth reports win over the risk layer when both are under the pointer.
     m.on("click", "risk-hit", (e) => {
       if (latest.current.picking || m.queryRenderedFeatures(e.point, { layers: ["seg-hit"] }).length) return;
@@ -227,7 +335,7 @@ export default function FloodMap(props: Props) {
       const f = latest.current.risk?.features.find((x) => x.properties.edge_id === edge);
       if (f) latest.current.onRisk?.(f.properties);
     });
-    for (const layer of ["seg-hit", "risk-hit"]) {
+    for (const layer of ["seg-hit", "risk-hit", "pins"]) {
       m.on("mouseenter", layer, () => {
         if (!latest.current.picking) m.getCanvas().style.cursor = "pointer";
       });
@@ -245,8 +353,6 @@ export default function FloodMap(props: Props) {
       raf = requestAnimationFrame(tick);
       if (latest.current.reduced) return;
       const s = now / 1000;
-      const k = latest.current.theme === "dark" ? 1 : 0.4;
-      paint("seg-glow", "line-opacity", k * (0.32 + 0.2 * Math.sin(s * 2.4)));
       paint("alerts-hatch", "fill-opacity", 0.16 + 0.1 * Math.sin(s * 0.8));
       if (latest.current.risk) {
         const b = 0.85 + 0.15 * Math.sin(s * 1.1);
@@ -295,6 +401,8 @@ export default function FloodMap(props: Props) {
   useEffect(() => void pushAlerts(), [props.alerts]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => void pushRisk(), [props.risk]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => pushPins(), [props.segments, props.time, props.live]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => pushSelected(), [props.selectedId, props.segments]);
   const { from, to } = props.endpoints;

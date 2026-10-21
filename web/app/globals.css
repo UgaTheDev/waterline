@@ -191,3 +191,8 @@ input[type="range"].scrub:focus-visible { outline: 2px solid var(--accent); outl
     transition-duration: 0.01ms !important;
   }
 }
+
+/* stream: map */
+/* Scrubber playhead: a 2 px bar in the text colour (design 02 Map), over the report histogram. */
+input[type="range"].scrub::-webkit-slider-thumb { width: 2px; background: var(--text); box-shadow: none; }
+input[type="range"].scrub::-moz-range-thumb { width: 2px; background: var(--text); }
