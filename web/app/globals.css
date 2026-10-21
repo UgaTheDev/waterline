@@ -191,3 +191,49 @@ input[type="range"].scrub:focus-visible { outline: 2px solid var(--accent); outl
     transition-duration: 0.01ms !important;
   }
 }
+
+/* stream: drive */
+/* Rain on the windscreen (handoff 05): sits under every HUD plate, decorative only, gone under reduced motion. */
+.drive-rain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.7;
+  background-image:
+    radial-gradient(circle at 40% 40%, rgb(230 240 250 / 0.32) 0, rgb(230 240 250 / 0.06) 2px, transparent 3.5px),
+    radial-gradient(circle at 40% 40%, rgb(230 240 250 / 0.22) 0, rgb(230 240 250 / 0.04) 3px, transparent 5px),
+    linear-gradient(175deg, transparent 48%, rgb(210 230 245 / 0.1) 50%, transparent 52%);
+  background-size: 47px 45px, 83px 70px, 61px 60px;
+  background-position: 0 0, 20px 33px, 5px 0;
+  animation: drive-drops 9s linear infinite;
+}
+@keyframes drive-drops { to { background-position: 0 90px, 20px 173px, 5px 60px; } }
+/* Turn around: 6 px coral frame plus an 80 px inner glow. */
+.hud-turn {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 6px var(--danger), inset 0 0 80px color-mix(in srgb, var(--danger) 35%, transparent);
+}
+/* Push-to-talk orb (handoff 06). */
+.ptt-orb {
+  background: radial-gradient(circle at 50% 35%, #cffafe 0, #67e8f9 30%, #0e7490 72%, #083344 100%);
+  box-shadow: 0 0 50px rgb(103 232 249 / 0.4), inset 0 -10px 30px rgb(8 51 68 / 0.6);
+}
+.ptt-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid rgb(103 232 249 / 0.5);
+  pointer-events: none;
+  animation: ptt-pulse 2.4s ease-out infinite;
+}
+.ptt-ring + .ptt-ring { animation-delay: 1.2s; }
+@keyframes ptt-pulse {
+  0% { transform: scale(0.6); opacity: 0.9; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .drive-rain { display: none; }
+  .ptt-ring { animation: none !important; opacity: 0.3; transform: scale(1.15); }
+}
